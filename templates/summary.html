@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Expense Tracker - Monthly Summary{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Monthly Expense Summary</h5>
+            </div>
+            <div class="card-body">
+                {% if summaries %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Year</th>
+                                <th>Total Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for summary in summaries %}
+                            <tr>
+                                <td>{{ summary.month }}</td>
+                                <td>{{ summary.year }}</td>
+                                <td>${{ "%.2f"|format(summary.total_amount) }}</td>
+                            </tr>
+                            {% endfor %}
+                            <tr class="table-secondary">
+                                <td colspan="2" class="text-end fw-bold">Grand Total:</td>
+                                <td class="fw-bold">${{ "%.2f"|format(summaries|sum(attribute='total_amount')) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">No expense data available for summary.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
