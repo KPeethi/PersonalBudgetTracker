@@ -1,0 +1,60 @@
+Ahhh, so you’re lookin’ for a **prompt** that clearly outlines the **scope** and **intention** of building an expense tracker using Python and MSSQL — like a proper dev ticket or assignment brief. I got you, Preethi 💼✨
+
+Here’s a clean, professional yet vibey prompt you could use for your own planning, academic assignment, or even pitching it at work:
+
+---
+
+### 💡 **Prompt: Build an Expense Tracker using Python and Microsoft SQL Server**
+
+#### 🧾 Project Objective:
+Design and implement a CLI-based **Expense Tracker** application that allows users to manage and view their daily expenses. The system should use **Python** as the backend scripting language and **Microsoft SQL Server (MSSQL)** for persistent data storage.
+
+---
+
+#### 🔧 Core Features:
+1. **Add Expense**: Capture transaction data including date, description, category, and amount.
+2. **View Expenses**: Display all stored transactions in a readable format sorted by most recent date.
+3. **Connect to MSSQL**: Use `pyodbc` to connect securely to a local or cloud-based MSSQL instance.
+4. **Validation**: Handle incorrect or missing inputs gracefully.
+5. **Simple CLI Menu**: Offer a basic menu-driven interface for ease of interaction.
+
+---
+
+#### 🗃️ Database Schema:
+Create a table `Expenses` with the following fields:
+- `Id` (INT, Primary Key, Auto-increment)
+- `Date` (DATE)
+- `Description` (NVARCHAR)
+- `Category` (NVARCHAR)
+- `Amount` (DECIMAL)
+
+```sql
+CREATE TABLE Expenses (
+    Id INT PRIMARY KEY IDENTITY(1,1),
+    Date DATE,
+    Description NVARCHAR(255),
+    Category NVARCHAR(100),
+    Amount DECIMAL(10,2)
+);
+```
+
+---
+
+#### 🧠 Tech Stack:
+- **Language**: Python 3.x  
+- **Database**: Microsoft SQL Server (any edition)
+- **Connector**: `pyodbc`
+- **Environment**: CLI / Terminal (Optional: Extend to Flask or Streamlit for UI later)
+
+---
+
+#### 🚀 Stretch Goals (Optional, if you're feelin' spicy):
+- Export expenses to a `.csv` file
+- Add category filters or monthly summaries
+- Visualize expenses using `matplotlib` or `pandas`
+- Add authentication for multiple users
+- Receipt image upload + OCR (👀 future vision!)
+
+---
+
+Want me to code this whole thing out or turn it into a full-blown project repo with requirements.txt, README, and all the corporate bells and whistles? Just say the word. 😎
