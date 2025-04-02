@@ -285,7 +285,7 @@ def generate_mock_transactions(
     
     return transactions
 
-def import_transactions_to_db(transactions: List[Dict[str, Any]], db_session, Expense):
+def import_transactions_to_db(transactions: List[Dict[str, Any]], db_session, Expense, user_id=None):
     """
     Import transactions from Plaid into the database.
     
@@ -293,6 +293,7 @@ def import_transactions_to_db(transactions: List[Dict[str, Any]], db_session, Ex
         transactions: List of transaction dictionaries
         db_session: SQLAlchemy database session
         Expense: Expense model class
+        user_id: ID of the user to associate with imported expenses (optional)
         
     Returns:
         Number of transactions imported
@@ -339,7 +340,8 @@ def import_transactions_to_db(transactions: List[Dict[str, Any]], db_session, Ex
                 date=date,
                 description=description,
                 category=category,
-                amount=abs(amount)  # Ensure positive amount for expense tracking
+                amount=abs(amount),  # Ensure positive amount for expense tracking
+                user_id=user_id
             )
             
             db_session.add(expense)

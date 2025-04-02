@@ -1,14 +1,24 @@
 {% extends "base.html" %}
 
-{% block title %}Expense Tracker - Monthly Summary{% endblock %}
+{% block title %}Monthly Summary - Expense Tracker{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
+<div class="row">
+    <div class="col-12 mb-4">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Monthly Summary</h5>
-                <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-outline-secondary">View Dashboard</a>
+                <h5 class="mb-0">Monthly Expense Summary</h5>
+                {% if is_admin %}
+                <div>
+                    <a href="{{ url_for('monthly_summary') }}{% if 'all_users' not in request.args %}?all_users=true{% endif %}" class="btn btn-sm btn-outline-primary">
+                        {% if 'all_users' in request.args %}
+                            View My Expenses Only
+                        {% else %}
+                            View All Users' Expenses
+                        {% endif %}
+                    </a>
+                </div>
+                {% endif %}
             </div>
             <div class="card-body">
                 {% if summaries %}
@@ -34,47 +44,74 @@
                     </div>
                 {% else %}
                     <div class="alert alert-info">
-                        No expenses found. Add some expenses to see monthly summaries.
+                        No monthly expense data available yet. <a href="{{ url_for('index') }}">Add some expenses</a> to see your monthly summary.
                     </div>
                 {% endif %}
             </div>
         </div>
-        
-        <div class="mt-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Insights</h5>
-                </div>
-                <div class="card-body">
-                    {% if summaries|length > 1 %}
-                        {% set current_month = summaries[0] %}
-                        {% set prev_month = summaries[1] %}
-                        {% set pct_change = ((current_month.total_amount - prev_month.total_amount) / prev_month.total_amount * 100)|round(1) %}
-                        
-                        <div class="alert {% if pct_change > 0 %}alert-danger{% elif pct_change < 0 %}alert-success{% else %}alert-info{% endif %}">
-                            {% if pct_change > 0 %}
-                                Your expenses in {{ current_month.month }} {{ current_month.year }} increased by {{ pct_change }}% compared to {{ prev_month.month }} {{ prev_month.year }}.
-                            {% elif pct_change < 0 %}
-                                Your expenses in {{ current_month.month }} {{ current_month.year }} decreased by {{ (pct_change * -1)|round(1) }}% compared to {{ prev_month.month }} {{ prev_month.year }}.
-                            {% else %}
-                                Your expenses in {{ current_month.month }} {{ current_month.year }} remained the same as {{ prev_month.month }} {{ prev_month.year }}.
-                            {% endif %}
-                        </div>
-                        
-                        {% if summaries|length > 3 %}
-                            {% set avg_three_months = ((summaries[0].total_amount + summaries[1].total_amount + summaries[2].total_amount) / 3)|round(2) %}
-                            <div class="alert alert-info">
-                                Your average monthly expense for the last 3 months is ${{ "%.2f"|format(avg_three_months) }}.
-                            </div>
-                        {% endif %}
-                    {% else %}
-                        <div class="alert alert-info">
-                            Add expenses for multiple months to see trending insights.
-                        </div>
-                    {% endif %}
-                </div>
+    </div>
+    
+    {% if summaries %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Monthly Trend</h5>
+            </div>
+            <div class="card-body">
+                <div id="monthly-chart" style="width: 100%; height: 400px;"></div>
             </div>
         </div>
     </div>
+    {% endif %}
 </div>
+{% endblock %}
+
+{% block scripts %}
+{% if summaries %}
+<script src="https://cdn.jsdelivr.net/npm/plotly.js@2.24.3/dist/plotly.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const months = [];
+        const amounts = [];
+        
+        {% for summary in summaries %}
+            months.push('{{ summary.month }} {{ summary.year }}');
+            amounts.push({{ summary.total_amount }});
+        {% endfor %}
+        
+        const trace = {
+            x: months.reverse(),
+            y: amounts.reverse(),
+            type: 'bar',
+            marker: {
+                color: '#6610f2'
+            }
+        };
+        
+        const layout = {
+            title: 'Monthly Expenses',
+            xaxis: {
+                title: 'Month'
+            },
+            yaxis: {
+                title: 'Total Amount ($)'
+            },
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: {
+                color: '#fff'
+            },
+            margin: {
+                l: 50,
+                r: 50,
+                b: 100,
+                t: 50,
+                pad: 4
+            }
+        };
+        
+        Plotly.newPlot('monthly-chart', [trace], layout);
+    });
+</script>
+{% endif %}
 {% endblock %}

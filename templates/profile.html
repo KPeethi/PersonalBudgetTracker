@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">User Profile</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center me-3" style="width: 64px; height: 64px; font-size: 24px;">
+                        {{ current_user.username[0] | upper }}
+                    </div>
+                    <div>
+                        <h5 class="mb-1">{{ current_user.username }}</h5>
+                        <p class="text-muted mb-0">{{ current_user.email }}</p>
+                    </div>
+                </div>
+                
+                <p class="mb-2">
+                    <strong>Member since:</strong> {{ current_user.created_at.strftime('%B %d, %Y') }}
+                </p>
+                
+                <p class="mb-2">
+                    <strong>Role:</strong> {% if current_user.is_admin %}Administrator{% else %}User{% endif %}
+                </p>
+                
+                <p class="mb-0">
+                    <strong>Total expenses:</strong> ${{ "%.2f"|format(total_amount) }}
+                </p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Categories Used</h5>
+            </div>
+            <div class="card-body">
+                {% if categories %}
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for category in categories %}
+                            <a href="{{ url_for('expenses_by_category', category=category) }}" class="badge rounded-pill bg-secondary text-decoration-none">
+                                {{ category }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">No categories yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Recent Expenses</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_expenses %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Category</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for expense in recent_expenses %}
+                                <tr>
+                                    <td>{{ expense.date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ expense.description }}</td>
+                                    <td>
+                                        <a href="{{ url_for('expenses_by_category', category=expense.category) }}" class="badge bg-secondary text-decoration-none">
+                                            {{ expense.category }}
+                                        </a>
+                                    </td>
+                                    <td>${{ "%.2f"|format(expense.amount) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-primary">View All Expenses</a>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary ms-2">View Dashboard</a>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        No expenses found. <a href="{{ url_for('index') }}">Add your first expense</a>.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
