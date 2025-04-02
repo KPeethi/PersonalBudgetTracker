@@ -22,9 +22,10 @@ from plaid.model.item_public_token_exchange_request import ItemPublicTokenExchan
 # Configure logging
 logger = logging.getLogger(__name__)
 
-# Check if Plaid credentials are available
+# Get Plaid credentials from environment variables
 PLAID_CLIENT_ID = os.environ.get('PLAID_CLIENT_ID')
 PLAID_SECRET = os.environ.get('PLAID_SECRET')
+PLAID_ENV = os.environ.get('PLAID_ENV', 'sandbox').lower()
 
 # Flag to determine if we use real Plaid or mock data
 USE_MOCK_DATA = not (PLAID_CLIENT_ID and PLAID_SECRET)
@@ -33,8 +34,20 @@ USE_MOCK_DATA = not (PLAID_CLIENT_ID and PLAID_SECRET)
 plaid_client = None
 if not USE_MOCK_DATA:
     try:
+        # Set the appropriate Plaid environment
+        if PLAID_ENV == 'sandbox':
+            plaid_environment = plaid.Environment.Sandbox
+        elif PLAID_ENV == 'development':
+            plaid_environment = plaid.Environment.Development
+        elif PLAID_ENV == 'production':
+            plaid_environment = plaid.Environment.Production
+        else:
+            logger.warning(f"Unknown PLAID_ENV value: {PLAID_ENV}, defaulting to Sandbox")
+            plaid_environment = plaid.Environment.Sandbox
+            
+        # Configure Plaid client
         configuration = plaid.Configuration(
-            host=plaid.Environment.Sandbox,
+            host=plaid_environment,
             api_key={
                 'clientId': PLAID_CLIENT_ID,
                 'secret': PLAID_SECRET,
@@ -42,7 +55,7 @@ if not USE_MOCK_DATA:
         )
         api_client = plaid.ApiClient(configuration)
         plaid_client = plaid_api.PlaidApi(api_client)
-        logger.info("Plaid client initialized successfully")
+        logger.info(f"Plaid client initialized successfully in {PLAID_ENV} environment")
     except Exception as e:
         logger.error(f"Error initializing Plaid client: {str(e)}")
         USE_MOCK_DATA = True
@@ -84,6 +97,7 @@ def create_link_token() -> Dict[str, Any]:
     """
     if USE_MOCK_DATA:
         # Return a mock link token
+        logger.warning("Using mock link token since Plaid credentials are not available")
         return {
             "link_token": "mock_link_token",
             "expiration": datetime.datetime.now().isoformat(),
@@ -91,6 +105,9 @@ def create_link_token() -> Dict[str, Any]:
         }
     
     try:
+        # Create a unique client user ID
+        client_user_id = f"user-{random.randint(10000, 99999)}"
+        
         # Create a link token with configs
         request = LinkTokenCreateRequest(
             products=[Products("transactions")],
@@ -98,11 +115,26 @@ def create_link_token() -> Dict[str, Any]:
             country_codes=[CountryCode('US')],
             language='en',
             user=LinkTokenCreateRequestUser(
-                client_user_id=str(random.randint(10000, 99999))
+                client_user_id=client_user_id
             )
+            # Optional: Add a webhook to receive events
+            # webhook="https://webhook.example.com",
+            
+            # Optional: Specify a redirect URI after OAuth completion
+            # redirect_uri="https://expense-tracker.replit.app/plaid-oauth-callback"
         )
+        
+        logger.info(f"Creating link token for client_user_id: {client_user_id}")
         response = plaid_client.link_token_create(request)
-        return response.to_dict()
+        token_dict = response.to_dict()
+        
+        # Log partial token for debugging (don't log the full token for security)
+        if "link_token" in token_dict:
+            token = token_dict["link_token"]
+            masked_token = token[:5] + "..." + token[-5:] if len(token) > 10 else "***"
+            logger.info(f"Successfully created link token: {masked_token}")
+        
+        return token_dict
     except Exception as e:
         logger.error(f"Error creating link token: {str(e)}")
         return {"error": str(e)}
@@ -162,11 +194,15 @@ def get_transactions(
         # Default to today
         end_date = datetime.date.today()
     
-    if USE_MOCK_DATA or not access_token:
+    if USE_MOCK_DATA or not access_token or access_token == "mock_access_token":
+        logger.info(f"Using mock transactions data for date range: {start_date} to {end_date}")
         # Generate and return mock transactions
         return generate_mock_transactions(start_date, end_date, num_transactions)
     
     try:
+        logger.info(f"Fetching real transactions from Plaid for date range: {start_date} to {end_date}")
+        logger.info(f"Using access token: {access_token[:5]}...{access_token[-5:] if len(access_token) > 10 else '***'}")
+        
         # Get transactions from Plaid API
         request = TransactionsGetRequest(
             access_token=access_token,
@@ -176,10 +212,28 @@ def get_transactions(
                 count=num_transactions
             )
         )
+        
         response = plaid_client.transactions_get(request)
-        return response.to_dict()["transactions"]
+        response_dict = response.to_dict()
+        
+        if "transactions" in response_dict and isinstance(response_dict["transactions"], list):
+            transactions = response_dict["transactions"]
+            logger.info(f"Successfully retrieved {len(transactions)} transactions from Plaid")
+            
+            # Process transactions to match our expected format
+            processed_transactions = []
+            for transaction in transactions:
+                # Add is_mock flag to differentiate from mock data
+                transaction["is_mock"] = False
+                processed_transactions.append(transaction)
+                
+            return processed_transactions
+        else:
+            logger.error("No transactions found in Plaid response")
+            return generate_mock_transactions(start_date, end_date, num_transactions)
+            
     except Exception as e:
-        logger.error(f"Error getting transactions: {str(e)}")
+        logger.error(f"Error getting transactions from Plaid: {str(e)}")
         # Fall back to mock data if there's an error
         return generate_mock_transactions(start_date, end_date, num_transactions)
 
@@ -245,24 +299,55 @@ def import_transactions_to_db(transactions: List[Dict[str, Any]], db_session, Ex
     """
     count = 0
     for transaction in transactions:
-        # Skip positive amounts (income) - we're just tracking expenses
-        if float(transaction["amount"]) <= 0:
-            continue
+        # For real Plaid transactions, the amount is negative for expenses
+        # For mock transactions, we generate positive amounts
+        amount = float(transaction.get("amount", 0))
+        
+        # Handle both real and mock transactions
+        # For real Plaid: Skip negative amounts (income) as we track expenses as positive
+        # For mock data: Skip amounts <= 0
+        if (not transaction.get("is_mock", False) and amount < 0) or \
+           (transaction.get("is_mock", False) and amount <= 0):
+            pass  # This is an expense, continue processing
+        else:
+            continue  # Skip incomes
             
         # Convert transaction to Expense object
         try:
-            date = datetime.datetime.fromisoformat(transaction["date"]).date()
+            # Handle date format from both real Plaid (YYYY-MM-DD) and mock data
+            if isinstance(transaction.get("date"), str):
+                date = datetime.datetime.fromisoformat(transaction["date"]).date()
+            else:
+                date = transaction.get("date")
+            
+            # Get transaction name/description
+            description = transaction.get("name", transaction.get("merchant_name", "Unknown"))
+            
+            # Handle category from both real Plaid and mock data
+            category_value = transaction.get("category", [])
+            if isinstance(category_value, list) and len(category_value) > 0:
+                # Use the most specific category (last in the list)
+                category = category_value[-1]
+            else:
+                category = str(category_value)
+            
+            # Ensure we have a valid category
+            if not category or category == "[]":
+                category = "Uncategorized"
+                
             expense = Expense(
                 date=date,
-                description=transaction["name"],
-                category=transaction["category"][0] if isinstance(transaction["category"], list) else transaction["category"],
-                amount=abs(float(transaction["amount"]))  # Ensure positive amount
+                description=description,
+                category=category,
+                amount=abs(amount)  # Ensure positive amount for expense tracking
             )
             
             db_session.add(expense)
             count += 1
+            
         except Exception as e:
             logger.error(f"Error importing transaction: {str(e)}")
+            logger.error(f"Problematic transaction data: {transaction}")
     
     try:
         db_session.commit()
