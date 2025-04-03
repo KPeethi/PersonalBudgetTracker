@@ -21,6 +21,8 @@ class NumpyEncoder(json.JSONEncoder):
             return float(o)
         elif isinstance(o, np.ndarray):
             return o.tolist()
+        elif isinstance(o, datetime.date):
+            return o.isoformat()
         return super(NumpyEncoder, self).default(o)
 
 def generate_category_distribution_chart(expenses: List[Any]) -> str:
