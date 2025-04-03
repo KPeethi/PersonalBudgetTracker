@@ -10,6 +10,18 @@ from typing import List, Dict, Any, Tuple
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import numpy as np
+
+# Custom JSON encoder to handle NumPy types
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, np.integer):
+            return int(o)
+        elif isinstance(o, np.floating):
+            return float(o)
+        elif isinstance(o, np.ndarray):
+            return o.tolist()
+        return super(NumpyEncoder, self).default(o)
 
 def generate_category_distribution_chart(expenses: List[Any]) -> str:
     """
@@ -25,7 +37,7 @@ def generate_category_distribution_chart(expenses: List[Any]) -> str:
         return json.dumps({
             "data": [],
             "layout": {"title": "No data available"}
-        })
+        }, cls=NumpyEncoder)
     
     # Create a dataframe from expenses
     df = pd.DataFrame([
@@ -51,7 +63,7 @@ def generate_category_distribution_chart(expenses: List[Any]) -> str:
         margin=dict(t=40, b=80, l=40, r=40)
     )
     
-    return json.dumps(fig.to_dict())
+    return json.dumps(fig.to_dict(), cls=NumpyEncoder)
 
 def generate_monthly_trend_chart(
     monthly_data: List[Dict[str, Any]]
@@ -69,7 +81,7 @@ def generate_monthly_trend_chart(
         return json.dumps({
             "data": [],
             "layout": {"title": "No data available"}
-        })
+        }, cls=NumpyEncoder)
     
     # Create a dataframe from monthly data
     df = pd.DataFrame(monthly_data)
@@ -101,7 +113,7 @@ def generate_monthly_trend_chart(
         margin=dict(t=40, b=80, l=60, r=40)
     )
     
-    return json.dumps(fig.to_dict())
+    return json.dumps(fig.to_dict(), cls=NumpyEncoder)
 
 def generate_daily_expense_chart(expenses: List[Any], days: int = 30) -> str:
     """
@@ -118,7 +130,7 @@ def generate_daily_expense_chart(expenses: List[Any], days: int = 30) -> str:
         return json.dumps({
             "data": [],
             "layout": {"title": "No data available"}
-        })
+        }, cls=NumpyEncoder)
     
     # Get date range
     end_date = datetime.date.today()
@@ -135,7 +147,7 @@ def generate_daily_expense_chart(expenses: List[Any], days: int = 30) -> str:
         return json.dumps({
             "data": [],
             "layout": {"title": f"No data available for the past {days} days"}
-        })
+        }, cls=NumpyEncoder)
     
     # Group by date and sum amounts
     daily_totals = df.groupby("date").sum().reset_index()
@@ -155,7 +167,7 @@ def generate_daily_expense_chart(expenses: List[Any], days: int = 30) -> str:
         margin=dict(t=40, b=80, l=60, r=40)
     )
     
-    return json.dumps(fig.to_dict())
+    return json.dumps(fig.to_dict(), cls=NumpyEncoder)
 
 def generate_category_comparison_chart(
     expenses: List[Any],
@@ -181,7 +193,7 @@ def generate_category_comparison_chart(
         return json.dumps({
             "data": [],
             "layout": {"title": "No data available"}
-        })
+        }, cls=NumpyEncoder)
     
     # Create dataframes for the two periods
     period1_expenses = [
@@ -202,7 +214,7 @@ def generate_category_comparison_chart(
         return json.dumps({
             "data": [],
             "layout": {"title": "No data available for the specified periods"}
-        })
+        }, cls=NumpyEncoder)
     
     # Group by category and period, sum amounts
     category_totals = df.groupby(["category", "period"]).sum().reset_index()
@@ -225,4 +237,4 @@ def generate_category_comparison_chart(
         legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5)
     )
     
-    return json.dumps(fig.to_dict())
+    return json.dumps(fig.to_dict(), cls=NumpyEncoder)
