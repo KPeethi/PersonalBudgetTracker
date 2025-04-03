@@ -34,20 +34,20 @@ USE_MOCK_DATA = not (PLAID_CLIENT_ID and PLAID_SECRET)
 plaid_client = None
 if not USE_MOCK_DATA:
     try:
-        # Set the appropriate Plaid environment
+        # Set the appropriate Plaid API URL based on environment
         if PLAID_ENV == 'sandbox':
-            plaid_environment = plaid.Environment.Sandbox
+            host = 'https://sandbox.plaid.com'
         elif PLAID_ENV == 'development':
-            plaid_environment = plaid.Environment.Development
+            host = 'https://development.plaid.com'
         elif PLAID_ENV == 'production':
-            plaid_environment = plaid.Environment.Production
+            host = 'https://production.plaid.com'
         else:
             logger.warning(f"Unknown PLAID_ENV value: {PLAID_ENV}, defaulting to Sandbox")
-            plaid_environment = plaid.Environment.Sandbox
+            host = 'https://sandbox.plaid.com'
             
         # Configure Plaid client
         configuration = plaid.Configuration(
-            host=plaid_environment,
+            host=host,
             api_key={
                 'clientId': PLAID_CLIENT_ID,
                 'secret': PLAID_SECRET,

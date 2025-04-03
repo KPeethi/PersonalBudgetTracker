@@ -1,195 +1,102 @@
 {% extends "base.html" %}
 
-{% block title %}Expense Tracker - Analytics Dashboard{% endblock %}
+{% block title %}Dashboard - Expense Tracker{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <h2 class="mb-4">Expense Analytics Dashboard</h2>
-    
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0">Expense Distribution by Category</h5>
-                </div>
-                <div class="card-body">
-                    <div id="category-chart" style="height: 350px;"></div>
-                </div>
-            </div>
-        </div>
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <h2>Expense Analytics Dashboard</h2>
         
-        <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0">Monthly Expense Trend</h5>
-                </div>
-                <div class="card-body">
-                    <div id="monthly-chart" style="height: 350px;"></div>
-                </div>
+        {% if current_user.is_admin and users %}
+        <div class="dropdown">
+            <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+                   id="userFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                {% if request.args.get('user_id') %}
+                    Filter: {{ users|selectattr('id', 'eq', request.args.get('user_id')|int)|first|attr('username') }}
+                {% else %}
+                    All Users
+                {% endif %}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userFilterDropdown">
+                <li><a class="dropdown-item" href="{{ url_for('dashboard') }}">All Users</a></li>
+                <li><hr class="dropdown-divider"></li>
+                {% for user in users %}
+                <li><a class="dropdown-item" href="{{ url_for('dashboard', user_id=user.id) }}">{{ user.username }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Expenses by Category</h5>
+            </div>
+            <div class="card-body">
+                <div id="category-chart" style="width: 100%; height: 300px;"></div>
             </div>
         </div>
     </div>
     
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0">Daily Expenses (Last 30 Days)</h5>
-                </div>
-                <div class="card-body">
-                    <div id="daily-chart" style="height: 350px;"></div>
-                </div>
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Monthly Expense Trend</h5>
             </div>
-        </div>
-        
-        <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0">Category Comparison (Current vs Previous Month)</h5>
-                </div>
-                <div class="card-body">
-                    <div id="comparison-chart" style="height: 350px;"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Expense Insights</h5>
-                </div>
-                <div class="card-body">
-                    <ul id="expense-insights" class="list-group list-group-flush">
-                        <!-- Insights will be added via JavaScript -->
-                    </ul>
-                </div>
+            <div class="card-body">
+                <div id="monthly-trend-chart" style="width: 100%; height: 300px;"></div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Load Plotly.js -->
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Daily Expenses (Last 30 Days)</h5>
+            </div>
+            <div class="card-body">
+                <div id="daily-chart" style="width: 100%; height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Monthly Comparison</h5>
+            </div>
+            <div class="card-body">
+                <div id="comparison-chart" style="width: 100%; height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/plotly.js@2.24.3/dist/plotly.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Parse chart data from server
-    const categoryChartData = JSON.parse('{{ category_chart_data|safe }}');
-    const monthlyChartData = JSON.parse('{{ monthly_chart_data|safe }}');
-    const dailyChartData = JSON.parse('{{ daily_chart_data|safe }}');
-    const comparisonChartData = JSON.parse('{{ comparison_chart_data|safe }}');
-    
-    // Render charts
-    Plotly.newPlot('category-chart', categoryChartData.data, categoryChartData.layout);
-    Plotly.newPlot('monthly-chart', monthlyChartData.data, monthlyChartData.layout);
-    Plotly.newPlot('daily-chart', dailyChartData.data, dailyChartData.layout);
-    Plotly.newPlot('comparison-chart', comparisonChartData.data, comparisonChartData.layout);
-    
-    // Generate insights
-    generateInsights(categoryChartData, monthlyChartData, dailyChartData, comparisonChartData);
-});
-
-function generateInsights(categoryData, monthlyData, dailyData, comparisonData) {
-    const insightsList = document.getElementById('expense-insights');
-    const insights = [];
-    
-    // Top category insight
-    if (categoryData.data && categoryData.data[0] && categoryData.data[0].labels && categoryData.data[0].values) {
-        const labels = categoryData.data[0].labels;
-        const values = categoryData.data[0].values;
+    document.addEventListener('DOMContentLoaded', function() {
+        // Category Distribution Chart
+        const categoryData = {{ category_chart_data|safe }};
+        Plotly.newPlot('category-chart', categoryData.data, categoryData.layout);
         
-        if (labels.length > 0) {
-            // Find index of maximum value
-            const maxIndex = values.indexOf(Math.max(...values));
-            const topCategory = labels[maxIndex];
-            const topCategoryAmount = values[maxIndex].toFixed(2);
-            
-            insights.push(`Your highest expense category is <strong>${topCategory}</strong> at $${topCategoryAmount}.`);
-        }
-    }
-    
-    // Monthly trend insight
-    if (monthlyData.data && monthlyData.data[0] && monthlyData.data[0].x && monthlyData.data[0].y) {
-        const months = monthlyData.data[0].x;
-        const values = monthlyData.data[0].y;
+        // Monthly Trend Chart
+        const monthlyData = {{ monthly_chart_data|safe }};
+        Plotly.newPlot('monthly-trend-chart', monthlyData.data, monthlyData.layout);
         
-        if (months.length >= 2) {
-            const lastMonth = values[0];
-            const previousMonth = values[1];
-            const percentChange = ((lastMonth - previousMonth) / previousMonth * 100).toFixed(1);
-            
-            if (percentChange > 0) {
-                insights.push(`Your expenses have <strong>increased by ${percentChange}%</strong> compared to last month.`);
-            } else if (percentChange < 0) {
-                insights.push(`Your expenses have <strong>decreased by ${Math.abs(percentChange)}%</strong> compared to last month.`);
-            } else {
-                insights.push(`Your expenses are <strong>unchanged</strong> compared to last month.`);
-            }
-        }
-    }
-    
-    // Daily insight - highest spending day
-    if (dailyData.data && dailyData.data[0] && dailyData.data[0].x && dailyData.data[0].y) {
-        const days = dailyData.data[0].x;
-        const values = dailyData.data[0].y;
+        // Daily Expense Chart
+        const dailyData = {{ daily_chart_data|safe }};
+        Plotly.newPlot('daily-chart', dailyData.data, dailyData.layout);
         
-        if (days.length > 0) {
-            // Find index of maximum value
-            const maxIndex = values.indexOf(Math.max(...values));
-            const maxDay = days[maxIndex];
-            const maxAmount = values[maxIndex].toFixed(2);
-            
-            insights.push(`Your highest spending day in the last 30 days was <strong>${maxDay}</strong> at $${maxAmount}.`);
-        }
-    }
-    
-    // Category comparison insight
-    if (comparisonData.data && comparisonData.data[0] && comparisonData.data[0].x) {
-        const categories = comparisonData.data[0].x;
-        const currentMonthValues = comparisonData.data[0].y;
-        const prevMonthValues = comparisonData.data[1].y;
-        
-        if (categories.length > 0) {
-            // Find the category with biggest change
-            let maxChangePct = 0;
-            let maxChangeCategory = '';
-            let isIncrease = true;
-            
-            for (let i = 0; i < categories.length; i++) {
-                if (prevMonthValues[i] > 0) {
-                    const changePct = Math.abs((currentMonthValues[i] - prevMonthValues[i]) / prevMonthValues[i] * 100);
-                    if (changePct > maxChangePct) {
-                        maxChangePct = changePct;
-                        maxChangeCategory = categories[i];
-                        isIncrease = currentMonthValues[i] > prevMonthValues[i];
-                    }
-                }
-            }
-            
-            if (maxChangeCategory) {
-                if (isIncrease) {
-                    insights.push(`Your <strong>${maxChangeCategory}</strong> expenses have increased the most (${maxChangePct.toFixed(1)}%) compared to last month.`);
-                } else {
-                    insights.push(`Your <strong>${maxChangeCategory}</strong> expenses have decreased the most (${maxChangePct.toFixed(1)}%) compared to last month.`);
-                }
-            }
-        }
-    }
-    
-    // Add generic insight if none were generated
-    if (insights.length === 0) {
-        insights.push('Add more expense data to see personalized insights here.');
-    }
-    
-    // Add insights to the list
-    insights.forEach(insight => {
-        const listItem = document.createElement('li');
-        listItem.className = 'list-group-item';
-        listItem.innerHTML = insight;
-        insightsList.appendChild(listItem);
+        // Category Comparison Chart
+        const comparisonData = {{ comparison_chart_data|safe }};
+        Plotly.newPlot('comparison-chart', comparisonData.data, comparisonData.layout);
     });
-}
 </script>
 {% endblock %}

@@ -17,4 +17,6 @@ dependencies = [
     "sqlalchemy>=2.0.40",
     "flask-wtf>=1.2.2",
     "plaid>=0.1.7",
+    "wtforms>=3.2.1",
+    "werkzeug>=3.1.3",
 ]

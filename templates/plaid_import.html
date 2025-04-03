@@ -1,55 +1,61 @@
 {% extends "base.html" %}
 
-{% block title %}Expense Tracker - Import Plaid Data{% endblock %}
+{% block title %}Import Data - Expense Tracker{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card">
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">Import Transactions from Plaid</h5>
+                <h5 class="mb-0">Import Options</h5>
             </div>
             <div class="card-body">
-                <p class="mb-4">
-                    Connect your bank account via Plaid to import your transactions. For demo purposes, we can also generate sample transaction data.
-                </p>
-                
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Connect Bank Account</h5>
-                                <p class="card-text">Connect your real bank account using Plaid's secure API.</p>
-                                <button id="plaid-link-button" class="btn btn-primary">Connect Account</button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Use Sample Data</h5>
-                                <p class="card-text">Import randomly generated sample transactions for demonstration.</p>
-                                <form action="{{ url_for('import_sample_data') }}" method="post">
-                                    <div class="mb-3">
-                                        <label for="num_transactions" class="form-label">Number of Transactions</label>
-                                        <input type="number" id="num_transactions" name="num_transactions" class="form-control" value="50" min="1" max="200">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="start_date" class="form-label">Start Date</label>
-                                        <input type="date" id="start_date" name="start_date" class="form-control" 
-                                               value="{{ thirty_days_ago.strftime('%Y-%m-%d') }}">
-                                    </div>
-                                    <button type="submit" class="btn btn-secondary">Import Sample Data</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
+                <div class="mb-4">
+                    <h6 class="fw-bold">Connect Bank Account</h6>
+                    <p class="text-muted small">Connect your bank account to automatically import transactions.</p>
+                    <button id="plaid-link-button" class="btn btn-primary w-100">
+                        <i class="bi bi-bank me-2"></i>Connect Account
+                    </button>
                 </div>
                 
+                <div class="mb-3">
+                    <h6 class="fw-bold">Or Use Sample Data</h6>
+                    <p class="text-muted small">Generate sample transaction data for testing.</p>
+                    <form action="{{ url_for('import_sample_data') }}" method="post">
+                        <div class="mb-3">
+                            <label for="start_date" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" 
+                                   value="{{ thirty_days_ago.strftime('%Y-%m-%d') }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="num_transactions" class="form-label">Number of Transactions</label>
+                            <input type="number" class="form-control" id="num_transactions" name="num_transactions" 
+                                   value="50" min="1" max="100">
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-calendar-plus me-2"></i>Generate Sample Data
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Transactions</h5>
                 {% if transactions %}
-                <div class="mt-4">
-                    <h5>Imported Transactions ({{ transactions|length }})</h5>
+                <form action="{{ url_for('save_imported_data') }}" method="post">
+                    <input type="hidden" name="transaction_data" value="{{ transaction_data }}">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle me-2"></i>Save to Expenses
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if transactions %}
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead>
@@ -66,94 +72,85 @@
                                     <td>{{ transaction.date }}</td>
                                     <td>{{ transaction.name }}</td>
                                     <td>{{ transaction.category }}</td>
-                                    <td>${{ "%.2f"|format(transaction.amount) }}</td>
+                                    <td>${{ "%.2f"|format(transaction.amount|float) }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
-                    
-                    <form action="{{ url_for('save_imported_data') }}" method="post" class="mt-3">
-                        <input type="hidden" name="transaction_data" value="{{ transaction_data|tojson }}">
-                        <button type="submit" class="btn btn-success">Save Transactions to Expense Tracker</button>
-                    </form>
-                </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        No transactions loaded. Connect your bank account or generate sample data to see transactions here.
+                    </div>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
-<!-- Include Plaid Link script -->
+{% block scripts %}
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
-
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const plaidLinkButton = document.getElementById('plaid-link-button');
-    
-    if (plaidLinkButton) {
-        plaidLinkButton.addEventListener('click', function() {
-            // For demo purposes, we'll just simulate the Plaid Link flow
-            fetch("{{ url_for('get_link_token') }}")
-                .then(response => response.json())
-                .then(data => {
-                    if (data.link_token) {
-                        initializePlaidLink(data.link_token);
-                    } else {
-                        alert("Error getting link token. Using sample data instead.");
-                        // Redirect to sample data import
-                        window.location.href = "{{ url_for('import_plaid_data') }}?use_sample=true";
-                    }
-                })
-                .catch(error => {
-                    console.error("Error:", error);
-                    alert("Error connecting to Plaid. Using sample data instead.");
-                    // Redirect to sample data import
-                    window.location.href = "{{ url_for('import_plaid_data') }}?use_sample=true";
-                });
-        });
-    }
-    
-    function initializePlaidLink(token) {
-        const handler = Plaid.create({
-            token: token,
-            onSuccess: function(public_token, metadata) {
-                // Send public_token to server
-                fetch("{{ url_for('exchange_public_token') }}", {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ public_token: public_token }),
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        alert("Error: " + data.error);
-                    } else {
-                        // Redirect to get transactions
-                        window.location.href = "{{ url_for('get_plaid_transactions') }}?access_token=" + data.access_token;
-                    }
-                })
-                .catch(error => {
-                    console.error("Error:", error);
-                    alert("Error exchanging token. Using sample data instead.");
-                    // Redirect to sample data import
-                    window.location.href = "{{ url_for('import_plaid_data') }}?use_sample=true";
-                });
-            },
-            onExit: function(err, metadata) {
-                if (err != null) {
-                    console.error(err);
-                    alert("Error connecting to Plaid. Using sample data instead.");
-                    // Redirect to sample data import
-                    window.location.href = "{{ url_for('import_plaid_data') }}?use_sample=true";
-                }
-            },
-        });
+    document.addEventListener('DOMContentLoaded', function() {
+        // Plaid Link integration
+        const plaidLinkButton = document.getElementById('plaid-link-button');
         
-        handler.open();
-    }
-});
+        if (plaidLinkButton) {
+            plaidLinkButton.addEventListener('click', function() {
+                // Check if Plaid is available and configured
+                fetch('{{ url_for("get_link_token") }}')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert('Error initializing Plaid: ' + data.error);
+                            return;
+                        }
+                        
+                        const linkToken = data.link_token;
+                        
+                        if (!linkToken) {
+                            alert('Error: No link token available. Using sample data is recommended.');
+                            return;
+                        }
+                        
+                        const handler = Plaid.create({
+                            token: linkToken,
+                            onSuccess: (public_token, metadata) => {
+                                // Exchange public token for access token
+                                fetch('{{ url_for("exchange_public_token") }}', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({ public_token: public_token })
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.error) {
+                                        alert('Error exchanging token: ' + data.error);
+                                        return;
+                                    }
+                                    
+                                    // Redirect to get transactions with the access token
+                                    window.location.href = '{{ url_for("get_plaid_transactions") }}?access_token=' + data.access_token;
+                                });
+                            },
+                            onExit: (err, metadata) => {
+                                if (err != null) {
+                                    console.error('Plaid Link error:', err);
+                                }
+                            }
+                        });
+                        
+                        handler.open();
+                    })
+                    .catch(error => {
+                        console.error('Error fetching link token:', error);
+                        alert('Error initializing Plaid. Using sample data is recommended.');
+                    });
+            });
+        }
+    });
 </script>
 {% endblock %}
