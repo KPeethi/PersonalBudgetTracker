@@ -49,7 +49,21 @@ def login():
         if user:
             logger.debug(f"User found with email: {form.email.data}, is_admin: {user.is_admin}")
             if user.check_password(form.password.data):
+                if user.is_suspended:
+                    logger.debug(f"Login attempt for suspended account: {user.username}")
+                    flash(f'This account has been suspended. Reason: {user.suspension_reason or "Not specified"}', 'danger')
+                    return render_template('login.html', title='Login', form=form)
+                    
+                if not user.is_active:
+                    logger.debug(f"Login attempt for inactive account: {user.username}")
+                    flash('This account is inactive. Please contact an administrator.', 'danger')
+                    return render_template('login.html', title='Login', form=form)
+                
                 logger.debug("Password check passed, logging in user")
+                # Update last login time
+                user.last_login = datetime.utcnow()
+                db.session.commit()
+                
                 login_user(user, remember=form.remember.data)
                 next_page = request.args.get('next')
                 flash('Login successful!', 'success')
@@ -375,6 +389,8 @@ def admin_panel():
     users = User.query.all()
     total_expenses = Expense.query.count()
     total_users = User.query.count()
+    active_users = User.query.filter_by(is_active=True).count()
+    suspended_users = User.query.filter_by(is_suspended=True).count()
     
     # Get some statistics
     expense_stats = db.session.query(
@@ -383,12 +399,30 @@ def admin_panel():
         db.func.max(Expense.amount).label('max_amount')
     ).first()
     
+    # Get user spending statistics
+    user_spending = []
+    for user in users:
+        total_spent = db.session.query(db.func.sum(Expense.amount)).filter(Expense.user_id == user.id).scalar() or 0
+        expense_count = Expense.query.filter_by(user_id=user.id).count()
+        last_expense_date = db.session.query(db.func.max(Expense.date)).filter(Expense.user_id == user.id).scalar()
+        
+        user_spending.append({
+            'user_id': user.id,
+            'username': user.username,
+            'total_spent': total_spent,
+            'expense_count': expense_count,
+            'last_expense_date': last_expense_date
+        })
+    
     return render_template(
         'admin.html', 
         users=users, 
         total_expenses=total_expenses,
         total_users=total_users,
-        expense_stats=expense_stats
+        active_users=active_users,
+        suspended_users=suspended_users,
+        expense_stats=expense_stats,
+        user_spending=user_spending
     )
 
 @app.route('/admin/make_admin/<int:user_id>', methods=['POST'])
@@ -416,6 +450,125 @@ def remove_admin(user_id):
     db.session.commit()
     flash(f'{user.username} is no longer an admin.', 'success')
     return redirect(url_for('admin_panel'))
+
+@app.route('/admin/deactivate/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def deactivate_user(user_id):
+    """Deactivate a user account"""
+    if current_user.id == user_id:
+        flash('You cannot deactivate your own account.', 'danger')
+        return redirect(url_for('admin_panel'))
+        
+    user = User.query.get_or_404(user_id)
+    user.is_active = False
+    db.session.commit()
+    flash(f'{user.username}\'s account has been deactivated.', 'success')
+    return redirect(url_for('admin_panel'))
+
+@app.route('/admin/activate/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def activate_user(user_id):
+    """Activate a user account"""
+    user = User.query.get_or_404(user_id)
+    user.is_active = True
+    # If user was suspended, we also unsuspend them
+    if user.is_suspended:
+        user.is_suspended = False
+        user.suspension_reason = None
+    db.session.commit()
+    flash(f'{user.username}\'s account has been activated.', 'success')
+    return redirect(url_for('admin_panel'))
+
+@app.route('/admin/suspend/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def suspend_user(user_id):
+    """Suspend a user account"""
+    if current_user.id == user_id:
+        flash('You cannot suspend your own account.', 'danger')
+        return redirect(url_for('admin_panel'))
+        
+    reason = request.form.get('suspension_reason', 'Account suspended by administrator')
+    user = User.query.get_or_404(user_id)
+    user.is_suspended = True
+    user.suspension_reason = reason
+    db.session.commit()
+    flash(f'{user.username}\'s account has been suspended.', 'success')
+    return redirect(url_for('admin_panel'))
+
+@app.route('/admin/user_details/<int:user_id>')
+@login_required
+@admin_required
+def user_details(user_id):
+    """Show detailed information about a user"""
+    user = User.query.get_or_404(user_id)
+    
+    # Get user's expenses
+    expenses = Expense.query.filter_by(user_id=user.id).order_by(Expense.date.desc()).all()
+    
+    # Get user's expense statistics
+    total_spent = db.session.query(db.func.sum(Expense.amount)).filter(Expense.user_id == user.id).scalar() or 0
+    expense_count = len(expenses)
+    
+    # Get user's categories
+    categories = db.session.query(Expense.category).filter_by(user_id=user.id).distinct().all()
+    category_list = [cat[0] for cat in categories]
+    
+    # Get category spending distribution
+    category_spending = []
+    for category in category_list:
+        category_total = db.session.query(db.func.sum(Expense.amount)).filter(
+            Expense.user_id == user.id,
+            Expense.category == category
+        ).scalar() or 0
+        
+        category_spending.append({
+            'category': category,
+            'total': category_total,
+            'percentage': (category_total / total_spent * 100) if total_spent > 0 else 0
+        })
+    
+    # Sort categories by spending (highest first)
+    category_spending.sort(key=lambda x: x['total'], reverse=True)
+    
+    # Get recent activity (last 5 expenses)
+    recent_expenses = expenses[:5] if len(expenses) > 5 else expenses
+    
+    # Generate monthly spending chart
+    monthly_data = db.session.query(
+        db.func.extract('month', Expense.date).label('month'),
+        db.func.extract('year', Expense.date).label('year'),
+        db.func.sum(Expense.amount).label('total_amount')
+    ).filter(Expense.user_id == user.id).group_by(
+        db.func.extract('year', Expense.date),
+        db.func.extract('month', Expense.date)
+    ).order_by(
+        db.func.extract('year', Expense.date).desc(),
+        db.func.extract('month', Expense.date).desc()
+    ).all()
+    
+    # Format the data for the template
+    monthly_spending = []
+    for month_num, year, total in monthly_data:
+        month_name = datetime(int(year), int(month_num), 1).strftime('%B')
+        monthly_spending.append({
+            'month': month_name,
+            'year': int(year),
+            'total_amount': float(total)
+        })
+    
+    return render_template(
+        'user_details.html',
+        user=user,
+        expenses=expenses,
+        total_spent=total_spent,
+        expense_count=expense_count,
+        category_spending=category_spending,
+        recent_expenses=recent_expenses,
+        monthly_spending=monthly_spending
+    )
 
 # Export functionality
 @app.route('/export/expenses')

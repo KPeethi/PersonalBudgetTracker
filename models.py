@@ -18,6 +18,10 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_admin = db.Column(db.Boolean, default=False)
+    last_login = db.Column(db.DateTime)
+    is_active = db.Column(db.Boolean, default=True)
+    is_suspended = db.Column(db.Boolean, default=False)
+    suspension_reason = db.Column(db.String(255), nullable=True)
     
     # Relationship with expenses
     expenses = db.relationship('Expense', backref='user', lazy=True)
