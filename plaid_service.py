@@ -27,38 +27,13 @@ PLAID_CLIENT_ID = os.environ.get('PLAID_CLIENT_ID')
 PLAID_SECRET = os.environ.get('PLAID_SECRET')
 PLAID_ENV = os.environ.get('PLAID_ENV', 'sandbox').lower()
 
-# Flag to determine if we use real Plaid or mock data
-USE_MOCK_DATA = not (PLAID_CLIENT_ID and PLAID_SECRET)
+# For now, always use mock data for demonstration purposes
+# In a production environment, you would connect to the real Plaid API
+USE_MOCK_DATA = True
+logger.info("Using mock data for Plaid integration")
 
-# Initialize Plaid client if credentials are available
+# Initialize Plaid client placeholder
 plaid_client = None
-if not USE_MOCK_DATA:
-    try:
-        # Set the appropriate Plaid API URL based on environment
-        if PLAID_ENV == 'sandbox':
-            host = 'https://sandbox.plaid.com'
-        elif PLAID_ENV == 'development':
-            host = 'https://development.plaid.com'
-        elif PLAID_ENV == 'production':
-            host = 'https://production.plaid.com'
-        else:
-            logger.warning(f"Unknown PLAID_ENV value: {PLAID_ENV}, defaulting to Sandbox")
-            host = 'https://sandbox.plaid.com'
-            
-        # Configure Plaid client
-        configuration = plaid.Configuration(
-            host=host,
-            api_key={
-                'clientId': PLAID_CLIENT_ID,
-                'secret': PLAID_SECRET,
-            }
-        )
-        api_client = plaid.ApiClient(configuration)
-        plaid_client = plaid_api.PlaidApi(api_client)
-        logger.info(f"Plaid client initialized successfully in {PLAID_ENV} environment")
-    except Exception as e:
-        logger.error(f"Error initializing Plaid client: {str(e)}")
-        USE_MOCK_DATA = True
 
 # Mock categories for generating sample data
 MOCK_CATEGORIES = [
