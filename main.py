@@ -35,18 +35,29 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     """Login user"""
+    logger.debug("Login route accessed")
     if current_user.is_authenticated:
+        logger.debug(f"User is already authenticated: {current_user.username}")
         return redirect(url_for('index'))
         
     form = LoginForm()
     if form.validate_on_submit():
+        logger.debug(f"Login form submitted with email: {form.email.data}")
         user = User.query.filter_by(email=form.email.data).first()
-        if user and user.check_password(form.password.data):
-            login_user(user, remember=form.remember.data)
-            next_page = request.args.get('next')
-            flash('Login successful!', 'success')
-            return redirect(next_page) if next_page else redirect(url_for('index'))
+        if user:
+            logger.debug(f"User found with email: {form.email.data}, is_admin: {user.is_admin}")
+            if user.check_password(form.password.data):
+                logger.debug("Password check passed, logging in user")
+                login_user(user, remember=form.remember.data)
+                next_page = request.args.get('next')
+                flash('Login successful!', 'success')
+                logger.debug(f"Login successful for user: {user.username}, redirecting to: {next_page or 'index'}")
+                return redirect(next_page) if next_page else redirect(url_for('index'))
+            else:
+                logger.debug("Password check failed")
+                flash('Login unsuccessful. Please check email and password.', 'danger')
         else:
+            logger.debug(f"No user found with email: {form.email.data}")
             flash('Login unsuccessful. Please check email and password.', 'danger')
     return render_template('login.html', title='Login', form=form)
 
@@ -231,9 +242,16 @@ def delete_expense(expense_id):
 def admin_required(func):
     @wraps(func)
     def decorated_view(*args, **kwargs):
-        if not current_user.is_authenticated or not current_user.is_admin:
+        logger.debug(f"Admin required check for user: {current_user}")
+        if not current_user.is_authenticated:
+            logger.debug("User is not authenticated, redirecting to login")
+            flash('You must be an admin to access this page.', 'danger')
+            return redirect(url_for('login'))
+        elif not current_user.is_admin:
+            logger.debug(f"User {current_user.username} is not an admin (is_admin={current_user.is_admin})")
             flash('You must be an admin to access this page.', 'danger')
             return redirect(url_for('index'))
+        logger.debug(f"Admin check passed for user: {current_user.username}")
         return func(*args, **kwargs)
     return decorated_view
 

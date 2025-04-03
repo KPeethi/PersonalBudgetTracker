@@ -28,7 +28,11 @@ class User(UserMixin, db.Model):
     
     def check_password(self, password):
         """Check password hash."""
-        return check_password_hash(self.password_hash, password)
+        import logging
+        logger = logging.getLogger(__name__)
+        result = check_password_hash(self.password_hash, password)
+        logger.debug(f"Password check for user {self.username}: {'passed' if result else 'failed'}")
+        return result
     
     def __repr__(self):
         """String representation of a user."""
