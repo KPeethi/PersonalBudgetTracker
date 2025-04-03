@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Expense Tracker{% endblock %}</title>
-    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         .navbar-brand {
@@ -14,17 +14,17 @@
         .nav-link {
             font-weight: 500;
         }
-        .navbar-dark .navbar-nav .nav-link {
-            color: rgba(255, 255, 255, 0.8);
+        .navbar-light .navbar-nav .nav-link {
+            color: rgba(0, 0, 0, 0.7);
         }
-        .navbar-dark .navbar-nav .nav-link:hover {
-            color: rgba(255, 255, 255, 1);
+        .navbar-light .navbar-nav .nav-link:hover {
+            color: rgba(0, 0, 0, 0.9);
         }
         .dropdown-menu {
             box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
         }
         .active-nav-item {
-            color: white !important;
+            color: #0d6efd !important; /* Bootstrap primary color */
             font-weight: 600;
         }
         .badge {
@@ -53,14 +53,12 @@
             border-top: none;
             font-weight: 600;
         }
-        .footer-bg {
-            background-color: #212529;
-        }
+        /* Card and component styling */
     </style>
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4 shadow-sm">
             <div class="container">
                 <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
                     <i class="bi bi-wallet2 me-2 text-primary"></i>
@@ -170,7 +168,7 @@
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="footer-bg text-light py-4 mt-5">
+    <footer class="bg-light py-4 mt-5 border-top">
         <div class="container">
             <div class="row">
                 <div class="col-md-6">
