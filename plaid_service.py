@@ -7,17 +7,8 @@ import os
 import datetime
 import random
 import logging
+import json
 from typing import List, Dict, Any, Optional
-
-import plaid
-from plaid.api import plaid_api
-from plaid.model.transactions_get_request import TransactionsGetRequest
-from plaid.model.transactions_get_request_options import TransactionsGetRequestOptions
-from plaid.model.country_code import CountryCode
-from plaid.model.products import Products
-from plaid.model.link_token_create_request import LinkTokenCreateRequest
-from plaid.model.link_token_create_request_user import LinkTokenCreateRequestUser
-from plaid.model.item_public_token_exchange_request import ItemPublicTokenExchangeRequest
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -27,13 +18,20 @@ PLAID_CLIENT_ID = os.environ.get('PLAID_CLIENT_ID')
 PLAID_SECRET = os.environ.get('PLAID_SECRET')
 PLAID_ENV = os.environ.get('PLAID_ENV', 'sandbox').lower()
 
-# For now, always use mock data for demonstration purposes
-# In a production environment, you would connect to the real Plaid API
-USE_MOCK_DATA = True
-logger.info("Using mock data for Plaid integration")
+# Determine if we should use real Plaid API data or mock data
+USE_MOCK_DATA = False
+if not PLAID_CLIENT_ID or not PLAID_SECRET:
+    logger.warning("Plaid credentials not found, falling back to mock data")
+    USE_MOCK_DATA = True
+else:
+    logger.info("Using real Plaid API integration")
 
-# Initialize Plaid client placeholder
-plaid_client = None
+# Import requests for direct HTTP calls to Plaid API
+import requests
+
+# Set up Plaid API base URL based on environment
+PLAID_API_BASE = 'https://sandbox.plaid.com' if PLAID_ENV == 'sandbox' else 'https://production.plaid.com'
+logger.info(f"Using Plaid API environment: {PLAID_ENV} at {PLAID_API_BASE}")
 
 # Mock categories for generating sample data
 MOCK_CATEGORIES = [
@@ -83,33 +81,47 @@ def create_link_token() -> Dict[str, Any]:
         # Create a unique client user ID
         client_user_id = f"user-{random.randint(10000, 99999)}"
         
-        # Create a link token with configs
-        request = LinkTokenCreateRequest(
-            products=[Products("transactions")],
-            client_name="Expense Tracker",
-            country_codes=[CountryCode('US')],
-            language='en',
-            user=LinkTokenCreateRequestUser(
-                client_user_id=client_user_id
-            )
-            # Optional: Add a webhook to receive events
-            # webhook="https://webhook.example.com",
-            
-            # Optional: Specify a redirect URI after OAuth completion
-            # redirect_uri="https://expense-tracker.replit.app/plaid-oauth-callback"
-        )
+        # Prepare request payload
+        payload = {
+            "client_id": PLAID_CLIENT_ID,
+            "secret": PLAID_SECRET,
+            "client_name": "Expense Tracker",
+            "user": {
+                "client_user_id": client_user_id
+            },
+            "products": ["transactions"],
+            "country_codes": ["US"],
+            "language": "en"
+            # Optional fields:
+            # "webhook": "https://webhook.example.com",
+            # "redirect_uri": "https://expense-tracker.replit.app/oauth-callback"
+        }
         
         logger.info(f"Creating link token for client_user_id: {client_user_id}")
-        response = plaid_client.link_token_create(request)
-        token_dict = response.to_dict()
         
-        # Log partial token for debugging (don't log the full token for security)
-        if "link_token" in token_dict:
-            token = token_dict["link_token"]
-            masked_token = token[:5] + "..." + token[-5:] if len(token) > 10 else "***"
-            logger.info(f"Successfully created link token: {masked_token}")
+        # Make request to Plaid API
+        response = requests.post(
+            f"{PLAID_API_BASE}/link/token/create",
+            headers={"Content-Type": "application/json"},
+            json=payload
+        )
         
-        return token_dict
+        # Handle response
+        if response.status_code == 200:
+            token_dict = response.json()
+            
+            # Log partial token for debugging (don't log the full token for security)
+            if "link_token" in token_dict:
+                token = token_dict["link_token"]
+                masked_token = token[:5] + "..." + token[-5:] if len(token) > 10 else "***"
+                logger.info(f"Successfully created link token: {masked_token}")
+            
+            return token_dict
+        else:
+            error_message = f"Error creating link token. Status: {response.status_code}, Response: {response.text}"
+            logger.error(error_message)
+            return {"error": error_message}
+            
     except Exception as e:
         logger.error(f"Error creating link token: {str(e)}")
         return {"error": str(e)}
@@ -133,12 +145,36 @@ def exchange_public_token(public_token: str) -> Dict[str, Any]:
         }
     
     try:
-        # Exchange the public token for an access token
-        request = ItemPublicTokenExchangeRequest(
-            public_token=public_token
+        # Prepare request payload
+        payload = {
+            "client_id": PLAID_CLIENT_ID,
+            "secret": PLAID_SECRET,
+            "public_token": public_token
+        }
+        
+        # Make request to Plaid API
+        response = requests.post(
+            f"{PLAID_API_BASE}/item/public_token/exchange",
+            headers={"Content-Type": "application/json"},
+            json=payload
         )
-        response = plaid_client.item_public_token_exchange(request)
-        return response.to_dict()
+        
+        # Handle response
+        if response.status_code == 200:
+            result = response.json()
+            
+            # Log partial access token for debugging (don't log the full token for security)
+            if "access_token" in result:
+                token = result["access_token"]
+                masked_token = token[:5] + "..." + token[-5:] if len(token) > 10 else "***"
+                logger.info(f"Successfully exchanged public token for access token: {masked_token}")
+            
+            return result
+        else:
+            error_message = f"Error exchanging public token. Status: {response.status_code}, Response: {response.text}"
+            logger.error(error_message)
+            return {"error": error_message}
+            
     except Exception as e:
         logger.error(f"Error exchanging public token: {str(e)}")
         return {"error": str(e)}
@@ -178,33 +214,51 @@ def get_transactions(
         logger.info(f"Fetching real transactions from Plaid for date range: {start_date} to {end_date}")
         logger.info(f"Using access token: {access_token[:5]}...{access_token[-5:] if len(access_token) > 10 else '***'}")
         
-        # Get transactions from Plaid API
-        request = TransactionsGetRequest(
-            access_token=access_token,
-            start_date=start_date,
-            end_date=end_date,
-            options=TransactionsGetRequestOptions(
-                count=num_transactions
-            )
+        # Format dates as required by Plaid API (YYYY-MM-DD)
+        start_str = start_date.isoformat()
+        end_str = end_date.isoformat()
+        
+        # Prepare request payload
+        payload = {
+            "client_id": PLAID_CLIENT_ID,
+            "secret": PLAID_SECRET,
+            "access_token": access_token,
+            "start_date": start_str,
+            "end_date": end_str,
+            "options": {
+                "count": num_transactions
+            }
+        }
+        
+        # Make request to Plaid API
+        response = requests.post(
+            f"{PLAID_API_BASE}/transactions/get",
+            headers={"Content-Type": "application/json"},
+            json=payload
         )
         
-        response = plaid_client.transactions_get(request)
-        response_dict = response.to_dict()
-        
-        if "transactions" in response_dict and isinstance(response_dict["transactions"], list):
-            transactions = response_dict["transactions"]
-            logger.info(f"Successfully retrieved {len(transactions)} transactions from Plaid")
+        # Handle response
+        if response.status_code == 200:
+            response_dict = response.json()
             
-            # Process transactions to match our expected format
-            processed_transactions = []
-            for transaction in transactions:
-                # Add is_mock flag to differentiate from mock data
-                transaction["is_mock"] = False
-                processed_transactions.append(transaction)
+            if "transactions" in response_dict and isinstance(response_dict["transactions"], list):
+                transactions = response_dict["transactions"]
+                logger.info(f"Successfully retrieved {len(transactions)} transactions from Plaid")
                 
-            return processed_transactions
+                # Process transactions to match our expected format
+                processed_transactions = []
+                for transaction in transactions:
+                    # Add is_mock flag to differentiate from mock data
+                    transaction["is_mock"] = False
+                    processed_transactions.append(transaction)
+                    
+                return processed_transactions
+            else:
+                logger.error("No transactions found in Plaid response")
+                return generate_mock_transactions(start_date, end_date, num_transactions)
         else:
-            logger.error("No transactions found in Plaid response")
+            error_message = f"Error getting transactions. Status: {response.status_code}, Response: {response.text}"
+            logger.error(error_message)
             return generate_mock_transactions(start_date, end_date, num_transactions)
             
     except Exception as e:
