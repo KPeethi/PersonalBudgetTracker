@@ -8,8 +8,14 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Monthly Expense Summary</h5>
-                {% if is_admin %}
-                <div>
+                <div class="d-flex gap-2">
+                    {% if summaries %}
+                    <a href="{{ url_for('export_expenses') }}{% if is_admin and 'all_users' in request.args %}?all_users=true{% endif %}" class="btn btn-sm btn-info">
+                        <i class="bi bi-download me-1"></i> Export CSV
+                    </a>
+                    {% endif %}
+                    
+                    {% if is_admin %}
                     <a href="{{ url_for('monthly_summary') }}{% if 'all_users' not in request.args %}?all_users=true{% endif %}" class="btn btn-sm btn-outline-primary">
                         {% if 'all_users' in request.args %}
                             View My Expenses Only
@@ -17,8 +23,8 @@
                             View All Users' Expenses
                         {% endif %}
                     </a>
+                    {% endif %}
                 </div>
-                {% endif %}
             </div>
             <div class="card-body">
                 {% if summaries %}

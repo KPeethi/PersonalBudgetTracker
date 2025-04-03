@@ -7,25 +7,31 @@
     <div class="col-12 d-flex justify-content-between align-items-center">
         <h2>Expense Analytics Dashboard</h2>
         
-        {% if current_user.is_admin and users %}
-        <div class="dropdown">
-            <button class="btn btn-outline-primary dropdown-toggle" type="button" 
-                   id="userFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                {% if request.args.get('user_id') %}
-                    Filter: {{ users|selectattr('id', 'eq', request.args.get('user_id')|int)|first|attr('username') }}
-                {% else %}
-                    All Users
-                {% endif %}
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userFilterDropdown">
-                <li><a class="dropdown-item" href="{{ url_for('dashboard') }}">All Users</a></li>
-                <li><hr class="dropdown-divider"></li>
-                {% for user in users %}
-                <li><a class="dropdown-item" href="{{ url_for('dashboard', user_id=user.id) }}">{{ user.username }}</a></li>
-                {% endfor %}
-            </ul>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('export_expenses') }}{% if current_user.is_admin and request.args.get('user_id') %}?user_id={{ request.args.get('user_id') }}{% endif %}" class="btn btn-info">
+                <i class="bi bi-download me-1"></i> Export CSV
+            </a>
+            
+            {% if current_user.is_admin and users %}
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+                       id="userFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    {% if request.args.get('user_id') %}
+                        Filter: {{ users|selectattr('id', 'eq', request.args.get('user_id')|int)|first|attr('username') }}
+                    {% else %}
+                        All Users
+                    {% endif %}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userFilterDropdown">
+                    <li><a class="dropdown-item" href="{{ url_for('dashboard') }}">All Users</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    {% for user in users %}
+                    <li><a class="dropdown-item" href="{{ url_for('dashboard', user_id=user.id) }}">{{ user.username }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
 </div>
 

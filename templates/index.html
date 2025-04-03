@@ -93,6 +93,9 @@
                         {% endif %}
                     </h5>
                     <div>
+                        <a href="{{ url_for('export_expenses') }}{% if selected_category %}?category={{ selected_category }}{% endif %}" class="btn btn-sm btn-info me-2">
+                            <i class="bi bi-download me-1"></i> Export CSV
+                        </a>
                         <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-light">
                             <i class="bi bi-bar-chart-fill me-1"></i> View Dashboard
                         </a>

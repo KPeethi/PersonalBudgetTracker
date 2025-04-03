@@ -1,10 +1,12 @@
-from flask import render_template, request, redirect, url_for, flash, jsonify, session
+from flask import render_template, request, redirect, url_for, flash, jsonify, session, Response
 from flask_login import login_user, current_user, logout_user, login_required
 from datetime import datetime, timedelta
 from functools import wraps
 import logging
 import json
 import calendar
+import csv
+import io
 from app import app, db
 from models import User, Expense
 from forms import RegistrationForm, LoginForm, ExpenseForm
@@ -414,6 +416,99 @@ def remove_admin(user_id):
     db.session.commit()
     flash(f'{user.username} is no longer an admin.', 'success')
     return redirect(url_for('admin_panel'))
+
+# Export functionality
+@app.route('/export/expenses')
+@login_required
+def export_expenses():
+    """Export expenses to CSV file"""
+    try:
+        # Get filter parameters
+        category = request.args.get('category')
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        user_id = request.args.get('user_id')
+        
+        # Base query for expenses
+        if current_user.is_admin and user_id:
+            # Admin user can export a specific user's expenses
+            query = Expense.query.filter_by(user_id=user_id)
+            filename_prefix = f"user_{user_id}_expenses"
+        elif current_user.is_admin and request.args.get('all_users') == 'true':
+            # Admin user can export all users' expenses
+            query = Expense.query
+            filename_prefix = "all_users_expenses"
+        else:
+            # Regular user (or admin without specific filters) can only export their own expenses
+            query = Expense.query.filter_by(user_id=current_user.id)
+            filename_prefix = f"my_expenses"
+        
+        # Apply additional filters if provided
+        if category:
+            query = query.filter_by(category=category)
+            filename_prefix = f"{category.lower().replace(' ', '_')}_expenses"
+        
+        if start_date:
+            try:
+                start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+                query = query.filter(Expense.date >= start_date)
+            except ValueError:
+                flash('Invalid start date format. Using all dates.', 'warning')
+        
+        if end_date:
+            try:
+                end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+                query = query.filter(Expense.date <= end_date)
+            except ValueError:
+                flash('Invalid end date format. Using all dates.', 'warning')
+        
+        # Get expenses ordered by date (newest first)
+        expenses = query.order_by(Expense.date.desc()).all()
+        
+        if not expenses:
+            flash('No expenses found to export.', 'warning')
+            return redirect(url_for('index'))
+        
+        # Create CSV file in memory
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Write header row - include user information for admin exports
+        if current_user.is_admin and (user_id or request.args.get('all_users') == 'true'):
+            writer.writerow(['Date', 'Description', 'Category', 'Amount', 'User'])
+        else:
+            writer.writerow(['Date', 'Description', 'Category', 'Amount'])
+        
+        # Write expense data
+        for expense in expenses:
+            row_data = [
+                expense.date.strftime('%Y-%m-%d'),
+                expense.description,
+                expense.category,
+                f"${expense.amount:.2f}"
+            ]
+            
+            # Include username for admin exports of all users
+            if current_user.is_admin and (user_id or request.args.get('all_users') == 'true'):
+                username = User.query.filter_by(id=expense.user_id).first().username
+                row_data.append(username)
+                
+            writer.writerow(row_data)
+        
+        # Prepare response
+        output.seek(0)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        return Response(
+            output.getvalue(),
+            mimetype='text/csv',
+            headers={
+                'Content-Disposition': f'attachment; filename={filename_prefix}_{timestamp}.csv'
+            }
+        )
+    except Exception as e:
+        logger.exception("Error exporting expenses")
+        flash(f'Error exporting expenses: {str(e)}', 'danger')
+        return redirect(url_for('index'))
 
 # Plaid integration routes
 @app.route('/import')
