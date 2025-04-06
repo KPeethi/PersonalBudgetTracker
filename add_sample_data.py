@@ -67,30 +67,29 @@ def create_sample_expenses(user_id, num_expenses=20):
 
 def main():
     with app.app_context():
-        # Get the admin user
-        admin = User.query.filter_by(username='admin').first()
+        # Get all users
+        users = User.query.all()
         
-        if not admin:
-            print("Admin user not found! Make sure to create an admin user first.")
+        if not users:
+            print("No users found! Make sure to create users first.")
             return
         
-        # Check if there are already expenses
-        existing_expenses = Expense.query.filter_by(user_id=admin.id).first()
-        if existing_expenses:
-            print("Sample data already exists. Skipping creation.")
-            return
+        total_added = 0
         
-        # Create sample expenses for admin
-        print(f"Creating sample expenses for user: {admin.username}...")
-        sample_expenses = create_sample_expenses(admin.id, num_expenses=20)
-        
-        # Add expenses to database
-        for expense in sample_expenses:
-            db.session.add(expense)
+        for user in users:
+            # Force create sample expenses for all users
+            print(f"Creating sample expenses for user: {user.username}...")
+            sample_expenses = create_sample_expenses(user.id, num_expenses=30)
+            
+            # Add expenses to database
+            for expense in sample_expenses:
+                db.session.add(expense)
+            
+            total_added += len(sample_expenses)
         
         # Commit changes
         db.session.commit()
-        print(f"Added {len(sample_expenses)} sample expenses successfully!")
+        print(f"Added {total_added} sample expenses successfully!")
 
 if __name__ == "__main__":
     main()

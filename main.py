@@ -194,6 +194,19 @@ def monthly_summary():
     """Show monthly expense summary"""
     logger.debug(f"Accessing monthly summary route, user: {current_user.username}, admin: {current_user.is_admin}")
     
+    # Add explicit debug for user ID
+    user_id = current_user.id
+    logger.debug(f"Current user ID: {user_id}")
+    
+    # Count all expenses for this user to verify data exists
+    expense_count = db.session.query(Expense).filter(Expense.user_id == user_id).count()
+    logger.debug(f"User {user_id} has {expense_count} total expenses")
+    
+    # Show some sample expenses for debugging
+    sample_expenses = db.session.query(Expense).filter(Expense.user_id == user_id).limit(3).all()
+    for expense in sample_expenses:
+        logger.debug(f"Sample expense: id={expense.id}, date={expense.date}, amount={expense.amount}, user_id={expense.user_id}")
+    
     # SQL query for monthly summary using SQLAlchemy with proper user filtering
     if current_user.is_admin and request.args.get('all_users') == 'true':
         # Admin viewing all users' data
@@ -232,7 +245,7 @@ def monthly_summary():
             db.func.extract('month', Expense.date).label('month'),
             db.func.extract('year', Expense.date).label('year'),
             db.func.sum(Expense.amount).label('total_amount')
-        ).filter(Expense.user_id == current_user.id).group_by(
+        ).filter(Expense.user_id == user_id).group_by(
             db.func.extract('year', Expense.date),
             db.func.extract('month', Expense.date)
         ).order_by(
@@ -246,7 +259,7 @@ def monthly_summary():
             db.func.extract('year', Expense.date).label('year'),
             Expense.category,
             db.func.sum(Expense.amount).label('category_amount')
-        ).filter(Expense.user_id == current_user.id).group_by(
+        ).filter(Expense.user_id == user_id).group_by(
             db.func.extract('year', Expense.date),
             db.func.extract('month', Expense.date),
             Expense.category
