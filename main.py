@@ -192,9 +192,12 @@ def expenses_by_category(category):
 @login_required
 def monthly_summary():
     """Show monthly expense summary"""
+    logger.debug(f"Accessing monthly summary route, user: {current_user.username}, admin: {current_user.is_admin}")
+    
     # SQL query for monthly summary using SQLAlchemy with proper user filtering
     if current_user.is_admin and request.args.get('all_users') == 'true':
         # Admin viewing all users' data
+        logger.debug("Admin viewing all users' data")
         monthly_data = db.session.query(
             db.func.extract('month', Expense.date).label('month'),
             db.func.extract('year', Expense.date).label('year'),
@@ -206,8 +209,25 @@ def monthly_summary():
             db.func.extract('year', Expense.date).desc(),
             db.func.extract('month', Expense.date).desc()
         ).all()
+        
+        # Get expenses grouped by category for each month
+        category_data = db.session.query(
+            db.func.extract('month', Expense.date).label('month'),
+            db.func.extract('year', Expense.date).label('year'),
+            Expense.category,
+            db.func.sum(Expense.amount).label('category_amount')
+        ).group_by(
+            db.func.extract('year', Expense.date),
+            db.func.extract('month', Expense.date),
+            Expense.category
+        ).order_by(
+            db.func.extract('year', Expense.date).desc(),
+            db.func.extract('month', Expense.date).desc(),
+            db.func.sum(Expense.amount).desc()
+        ).all()
     else:
         # Regular user or admin viewing personal data
+        logger.debug(f"User viewing personal data: {current_user.id}")
         monthly_data = db.session.query(
             db.func.extract('month', Expense.date).label('month'),
             db.func.extract('year', Expense.date).label('year'),
@@ -219,18 +239,82 @@ def monthly_summary():
             db.func.extract('year', Expense.date).desc(),
             db.func.extract('month', Expense.date).desc()
         ).all()
+        
+        # Get expenses grouped by category for each month
+        category_data = db.session.query(
+            db.func.extract('month', Expense.date).label('month'),
+            db.func.extract('year', Expense.date).label('year'),
+            Expense.category,
+            db.func.sum(Expense.amount).label('category_amount')
+        ).filter(Expense.user_id == current_user.id).group_by(
+            db.func.extract('year', Expense.date),
+            db.func.extract('month', Expense.date),
+            Expense.category
+        ).order_by(
+            db.func.extract('year', Expense.date).desc(),
+            db.func.extract('month', Expense.date).desc(),
+            db.func.sum(Expense.amount).desc()
+        ).all()
     
     # Format the data for the template
     summary_data = []
-    for month_num, year, total in monthly_data:
-        month_name = datetime(int(year), int(month_num), 1).strftime('%B')
-        summary_data.append({
-            'month': month_name,
-            'year': int(year),
-            'total_amount': float(total)
+    logger.debug(f"Monthly data count: {len(monthly_data)}")
+    
+    # Create a dictionary to store category breakdown for each month/year
+    category_breakdown = {}
+    
+    # Process category data first
+    for month_num, year, category, amount in category_data:
+        key = f"{int(year)}-{int(month_num)}"
+        if key not in category_breakdown:
+            category_breakdown[key] = []
+        
+        category_breakdown[key].append({
+            'category': category,
+            'amount': float(amount)
         })
     
-    return render_template('summary.html', summaries=summary_data, is_admin=current_user.is_admin)
+    # Now process the monthly totals and add category data
+    for month_num, year, total in monthly_data:
+        month_name = datetime(int(year), int(month_num), 1).strftime('%B')
+        key = f"{int(year)}-{int(month_num)}"
+        
+        month_data = {
+            'month': month_name,
+            'year': int(year),
+            'total_amount': float(total),
+            'categories': category_breakdown.get(key, [])
+        }
+        
+        summary_data.append(month_data)
+    
+    logger.debug(f"Processed summary data count: {len(summary_data)}")
+    
+    # Get year-to-date total
+    today = datetime.today()
+    ytd_total = 0
+    
+    if current_user.is_admin and request.args.get('all_users') == 'true':
+        ytd_total = db.session.query(
+            db.func.sum(Expense.amount)
+        ).filter(
+            db.extract('year', Expense.date) == today.year
+        ).scalar() or 0
+    else:
+        ytd_total = db.session.query(
+            db.func.sum(Expense.amount)
+        ).filter(
+            db.extract('year', Expense.date) == today.year,
+            Expense.user_id == current_user.id
+        ).scalar() or 0
+    
+    return render_template(
+        'summary.html', 
+        summaries=summary_data, 
+        is_admin=current_user.is_admin,
+        ytd_total=float(ytd_total),
+        current_year=today.year
+    )
 
 @app.route('/delete/<int:expense_id>', methods=['POST'])
 @login_required

@@ -28,6 +28,14 @@
             </div>
             <div class="card-body">
                 {% if summaries %}
+                    <!-- Year to date summary -->
+                    <div class="alert alert-primary mb-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">{{ current_year }} Year-to-Date Total:</h5>
+                            <h4 class="mb-0">${{ "%.2f"|format(ytd_total) }}</h4>
+                        </div>
+                    </div>
+                    
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead>
@@ -35,6 +43,7 @@
                                     <th>Month</th>
                                     <th>Year</th>
                                     <th>Total Expenses</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -43,6 +52,45 @@
                                     <td>{{ summary.month }}</td>
                                     <td>{{ summary.year }}</td>
                                     <td>${{ "%.2f"|format(summary.total_amount) }}</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-info" 
+                                                data-bs-toggle="collapse" 
+                                                data-bs-target="#collapse-{{ summary.month }}-{{ summary.year }}" 
+                                                aria-expanded="false">
+                                            <i class="bi bi-list-ul"></i> Details
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="collapse" id="collapse-{{ summary.month }}-{{ summary.year }}">
+                                    <td colspan="4" class="p-0">
+                                        <div class="card card-body m-2 bg-light">
+                                            <h6 class="mb-3">Category Breakdown</h6>
+                                            {% if summary.categories %}
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm table-striped mb-0">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Category</th>
+                                                                <th>Amount</th>
+                                                                <th>% of Month</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {% for cat in summary.categories %}
+                                                            <tr>
+                                                                <td>{{ cat.category }}</td>
+                                                                <td>${{ "%.2f"|format(cat.amount) }}</td>
+                                                                <td>{{ "%.1f"|format((cat.amount / summary.total_amount) * 100) }}%</td>
+                                                            </tr>
+                                                            {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            {% else %}
+                                                <p class="mb-0 text-muted">No category data available for this month.</p>
+                                            {% endif %}
+                                        </div>
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -58,13 +106,24 @@
     </div>
     
     {% if summaries %}
-    <div class="col-12">
+    <div class="col-12 mb-4">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Monthly Trend</h5>
+                <h5 class="mb-0">Monthly Expense Trend</h5>
             </div>
             <div class="card-body">
                 <div id="monthly-chart" style="width: 100%; height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Monthly Expense Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div id="category-chart" style="width: 100%; height: 400px;"></div>
             </div>
         </div>
     </div>
@@ -77,6 +136,7 @@
 <script src="https://cdn.jsdelivr.net/npm/plotly.js@2.24.3/dist/plotly.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Monthly trend chart
         const months = [];
         const amounts = [];
         
@@ -85,9 +145,13 @@
             amounts.push({{ summary.total_amount }});
         {% endfor %}
         
+        // Reverse the arrays to show oldest to newest
+        const reversedMonths = [...months].reverse();
+        const reversedAmounts = [...amounts].reverse();
+        
         const trace = {
-            x: months.reverse(),
-            y: amounts.reverse(),
+            x: reversedMonths,
+            y: reversedAmounts,
             type: 'bar',
             marker: {
                 color: '#6610f2'
@@ -105,7 +169,7 @@
             paper_bgcolor: 'rgba(0,0,0,0)',
             plot_bgcolor: 'rgba(0,0,0,0)',
             font: {
-                color: '#fff'
+                color: '#333'
             },
             margin: {
                 l: 50,
@@ -117,6 +181,48 @@
         };
         
         Plotly.newPlot('monthly-chart', [trace], layout);
+        
+        // Category distribution chart (using the first month's data)
+        {% if summaries[0].categories %}
+        const categories = [];
+        const categoryAmounts = [];
+        
+        {% for cat in summaries[0].categories %}
+            categories.push('{{ cat.category }}');
+            categoryAmounts.push({{ cat.amount }});
+        {% endfor %}
+        
+        const pieTrace = {
+            labels: categories,
+            values: categoryAmounts,
+            type: 'pie',
+            hole: 0.4,
+            marker: {
+                colors: [
+                    '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
+                    '#fd7e14', '#6f42c1', '#20c9a6', '#5a5c69', '#858796'
+                ]
+            }
+        };
+        
+        const pieLayout = {
+            title: 'Category Distribution for {{ summaries[0].month }} {{ summaries[0].year }}',
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: {
+                color: '#333'
+            },
+            margin: {
+                l: 50,
+                r: 50,
+                b: 100,
+                t: 50,
+                pad: 4
+            }
+        };
+        
+        Plotly.newPlot('category-chart', [pieTrace], pieLayout);
+        {% endif %}
     });
 </script>
 {% endif %}
