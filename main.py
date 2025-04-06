@@ -12,6 +12,7 @@ from models import User, Expense
 from forms import RegistrationForm, LoginForm, ExpenseForm
 import plaid_service
 import visualization
+import suggestions
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -905,3 +906,32 @@ def save_imported_data():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
+@app.route('/suggestions')
+@login_required
+def get_suggestions():
+    """Show smart financial suggestions based on expense patterns"""
+    logger.debug(f"Accessing suggestions route, user: {current_user.username}")
+    
+    # Get all expenses for the current user for analysis
+    expenses = Expense.query.filter_by(user_id=current_user.id).all()
+    
+    # Calculate previous month name and year for display
+    today = datetime.today()
+    if today.month == 1:
+        prev_month = 12
+        prev_year = today.year - 1
+    else:
+        prev_month = today.month - 1
+        prev_year = today.year
+    
+    prev_month_name = datetime(prev_year, prev_month, 1).strftime('%B')
+    
+    # Generate suggestions based on spending patterns
+    suggestion_data = suggestions.generate_spending_suggestions(expenses, current_user.id)
+    
+    return render_template(
+        'suggestions.html',
+        suggestions=suggestion_data,
+        prev_month_name=prev_month_name,
+        prev_month_year=prev_year
+    )
