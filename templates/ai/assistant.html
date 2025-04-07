@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}AI Financial Assistant{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <h1 class="mb-4">AI Financial Assistant</h1>
+    
+    <div class="row">
+        <!-- Left column with data summary and analysis options -->
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Data Summary</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Total Expenses:</strong> ${{ "%.2f"|format(total_amount) }}</p>
+                    <p><strong>Expense Records:</strong> {{ expense_count }}</p>
+                    <p><strong>Unique Categories:</strong> {{ category_count }}</p>
+                    
+                    {% if top_categories %}
+                    <hr>
+                    <h6>Top Spending Categories:</h6>
+                    <ul class="list-group list-group-flush">
+                        {% for category in top_categories %}
+                        <li class="list-group-item px-0">
+                            <div class="d-flex justify-content-between">
+                                <span>{{ category.name }}</span>
+                                <span>${{ "%.2f"|format(category.amount) }}</span>
+                            </div>
+                            <div class="progress" role="progressbar" aria-label="{{ category.name }} spending">
+                                <div class="progress-bar" style="width: {{ category.percentage }}%"></div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Analysis Options</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('ai_analysis') }}" method="get" class="mb-3">
+                        <div class="mb-3">
+                            <label for="time_period" class="form-label">Time Period:</label>
+                            <select name="time_period" id="time_period" class="form-select">
+                                <option value="all" {% if time_period == 'all' %}selected{% endif %}>All Time</option>
+                                <option value="year" {% if time_period == 'year' %}selected{% endif %}>This Year</option>
+                                <option value="month" {% if time_period == 'month' %}selected{% endif %}>This Month</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="analysis_type" class="form-label">Analysis Type:</label>
+                            <select name="analysis_type" id="analysis_type" class="form-select">
+                                {% for key, option in analysis_options.items() %}
+                                <option value="{{ key }}" {% if analysis_type == key %}selected{% endif %}>
+                                    {{ option.title }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">Generate Analysis</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right column with analysis results -->
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">{{ current_analysis.title }}</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">{{ current_analysis.description }}</p>
+                    
+                    {% if not expenses %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        No expense data available. Please add some expenses to get AI-powered insights.
+                    </div>
+                    {% elif not analysis_results %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Unable to generate analysis. Please try again later or contact support.
+                    </div>
+                    {% else %}
+                    <div class="analysis-results mt-3">
+                        {{ analysis_results|nl2br }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Financial tips based on analysis -->
+            {% if analysis_results %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">Tips & Recommendations</h5>
+                </div>
+                <div class="card-body">
+                    <p>Based on your spending patterns, here are some tailored financial tips:</p>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <i class="fas fa-chart-pie me-2 text-primary"></i>
+                            Track your expenses regularly to maintain better financial control.
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-piggy-bank me-2 text-success"></i>
+                            Set up a monthly budget for each spending category.
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-hand-holding-usd me-2 text-danger"></i>
+                            Focus on reducing expenses in your top spending categories.
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-coins me-2 text-warning"></i>
+                            Consider setting aside 10-15% of your income for savings.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

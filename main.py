@@ -1,4 +1,5 @@
 from flask import render_template, request, redirect, url_for, flash, jsonify, session, Response
+from markupsafe import Markup
 from flask_login import login_user, current_user, logout_user, login_required
 from datetime import datetime, timedelta
 from functools import wraps
@@ -13,10 +14,19 @@ from forms import RegistrationForm, LoginForm, ExpenseForm
 import plaid_service
 import visualization
 import suggestions
+import ai_assistant
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+# Add custom Jinja2 filters
+@app.template_filter('nl2br')
+def nl2br_filter(text):
+    """Convert newlines to <br> tags"""
+    if not text:
+        return ""
+    return Markup(text.replace('\n', '<br>'))
 
 # Authentication routes
 @app.route('/register', methods=['GET', 'POST'])
@@ -943,4 +953,199 @@ def get_suggestions():
         suggestions=suggestion_data,
         prev_month_name=prev_month_name,
         prev_month_year=prev_year
+    )
+
+# AI Assistant Routes
+@app.route('/ai')
+@login_required
+def ai_assistant_home():
+    """Show AI assistant homepage with analysis options"""
+    logger.debug(f"Accessing AI assistant homepage, user: {current_user.username}")
+    
+    # Get analysis options from AI module
+    analysis_options = ai_assistant.get_analysis_options()
+    
+    # Get expenses for current user
+    if current_user.is_admin:
+        # Admins can see all expenses or filter by user
+        user_id = request.args.get('user_id')
+        if user_id:
+            expenses = Expense.query.filter_by(user_id=user_id).all()
+        else:
+            expenses = Expense.query.all()
+    else:
+        # Regular users can only see their own expenses
+        expenses = Expense.query.filter_by(user_id=current_user.id).all()
+    
+    # Calculate basic stats for the data summary panel
+    expense_data = []
+    if expenses:
+        # Format expenses for AI processing
+        expense_data = [
+            {
+                'date': e.date,
+                'description': e.description,
+                'category': e.category,
+                'amount': e.amount
+            } for e in expenses
+        ]
+    
+    total_amount = sum(e.amount for e in expenses) if expenses else 0
+    expense_count = len(expenses)
+    
+    # Get unique categories
+    categories = {}
+    for expense in expenses:
+        if expense.category not in categories:
+            categories[expense.category] = 0
+        categories[expense.category] += expense.amount
+    
+    category_count = len(categories)
+    
+    # Get top 5 categories by amount
+    top_categories = []
+    if categories:
+        sorted_categories = sorted(categories.items(), key=lambda x: x[1], reverse=True)
+        for name, amount in sorted_categories[:5]:
+            percentage = (amount / total_amount * 100) if total_amount > 0 else 0
+            top_categories.append({
+                'name': name,
+                'amount': amount,
+                'percentage': percentage
+            })
+    
+    # Get general expense insights if there are expenses
+    analysis_results = None
+    if expenses:
+        analysis_results = ai_assistant.get_expense_insights(expense_data)
+    
+    # Set the current analysis type as general insights
+    current_analysis = {
+        'title': 'Expense Overview',
+        'description': 'General insights about your spending patterns.'
+    }
+    
+    return render_template(
+        'ai/assistant.html',
+        analysis_options=analysis_options,
+        current_analysis=current_analysis,
+        analysis_results=analysis_results,
+        expenses=expense_data,
+        total_amount=total_amount,
+        expense_count=expense_count,
+        category_count=category_count,
+        top_categories=top_categories,
+        time_period='all'
+    )
+
+@app.route('/ai/analysis')
+@login_required
+def ai_analysis():
+    """Generate AI analysis based on selected option"""
+    logger.debug(f"Accessing AI analysis, user: {current_user.username}")
+    
+    # Get analysis type from query parameters
+    analysis_type = request.args.get('analysis_type', 'expense_trends')
+    time_period = request.args.get('time_period', 'all')
+    
+    # Get analysis options
+    analysis_options = ai_assistant.get_analysis_options()
+    
+    # Get current analysis details
+    current_analysis = {
+        'title': analysis_options[analysis_type]['title'],
+        'description': analysis_options[analysis_type]['description']
+    } if analysis_type in analysis_options else {
+        'title': 'Custom Analysis',
+        'description': 'Tailored financial insights based on your data.'
+    }
+    
+    # Get expenses based on selected time period
+    if current_user.is_admin:
+        # Admins can see all expenses or filter by user
+        user_id = request.args.get('user_id')
+        if user_id:
+            query = Expense.query.filter_by(user_id=user_id)
+        else:
+            query = Expense.query
+    else:
+        # Regular users can only see their own expenses
+        query = Expense.query.filter_by(user_id=current_user.id)
+    
+    # Apply time period filter
+    today = datetime.today()
+    if time_period == 'month':
+        # This month only
+        start_date = datetime(today.year, today.month, 1)
+        end_date = datetime(today.year, today.month, calendar.monthrange(today.year, today.month)[1])
+        query = query.filter(Expense.date >= start_date, Expense.date <= end_date)
+    elif time_period == 'year':
+        # This year only
+        start_date = datetime(today.year, 1, 1)
+        end_date = datetime(today.year, 12, 31)
+        query = query.filter(Expense.date >= start_date, Expense.date <= end_date)
+    
+    # Get expenses
+    expenses = query.order_by(Expense.date.desc()).all()
+    
+    # Format expenses for AI processing
+    expense_data = [
+        {
+            'date': e.date,
+            'description': e.description,
+            'category': e.category,
+            'amount': e.amount
+        } for e in expenses
+    ]
+    
+    # Generate analysis results
+    analysis_results = None
+    if expenses:
+        # Default monthly income (this could be made configurable in user settings)
+        monthly_income = 4000.0
+        
+        # Generate analysis based on selected type
+        analysis_results = ai_assistant.generate_ai_analysis(
+            analysis_type, 
+            expense_data,
+            income=monthly_income
+        )
+    
+    # Calculate basic stats for the data summary panel
+    total_amount = sum(e.amount for e in expenses) if expenses else 0
+    expense_count = len(expenses)
+    
+    # Get unique categories
+    categories = {}
+    for expense in expenses:
+        if expense.category not in categories:
+            categories[expense.category] = 0
+        categories[expense.category] += expense.amount
+    
+    category_count = len(categories)
+    
+    # Get top 5 categories by amount
+    top_categories = []
+    if categories:
+        sorted_categories = sorted(categories.items(), key=lambda x: x[1], reverse=True)
+        for name, amount in sorted_categories[:5]:
+            percentage = (amount / total_amount * 100) if total_amount > 0 else 0
+            top_categories.append({
+                'name': name,
+                'amount': amount,
+                'percentage': percentage
+            })
+    
+    return render_template(
+        'ai/assistant.html',
+        analysis_options=analysis_options,
+        current_analysis=current_analysis,
+        analysis_results=analysis_results,
+        analysis_type=analysis_type,
+        expenses=expense_data,
+        total_amount=total_amount,
+        expense_count=expense_count,
+        category_count=category_count,
+        top_categories=top_categories,
+        time_period=time_period
     )
