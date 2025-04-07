@@ -221,6 +221,22 @@
 
 <style>
     /* Custom styles for the dashboard */
+    .sidebar-nav .list-group-item {
+        border: none;
+        border-radius: 10px !important;
+        margin-bottom: 5px;
+    }
+    
+    .sidebar-nav .list-group-item.active {
+        background-color: #f8f9fa;
+        color: #0d6efd;
+        border-left: 3px solid #0d6efd;
+    }
+    
+    .sidebar-nav .list-group-item:hover {
+        background-color: #f8f9fa;
+    }
+    
     .income-stats {
         color: #00acc1;
     }
