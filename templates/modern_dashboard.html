@@ -142,17 +142,15 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Category Chart (Pie Chart)
-    {% if category_chart_data %}
     var categoryLabels = [];
     var categoryValues = [];
     
-    {% if category_chart_data.data %}
-    {% if category_chart_data.data.labels %}
+    {% if category_chart_data and category_chart_data.data and category_chart_data.data.labels %}
     categoryLabels = {{ category_chart_data.data.labels|tojson }};
     {% endif %}
-    {% if category_chart_data.data.values %}
+    
+    {% if category_chart_data and category_chart_data.data and category_chart_data.data.values %}
     categoryValues = {{ category_chart_data.data.values|tojson }};
-    {% endif %}
     {% endif %}
     
     var categoryColors = [
@@ -202,24 +200,22 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         document.getElementById('categoryChart').innerHTML = '<div class="d-flex justify-content-center align-items-center h-100 text-muted">No category data available</div>';
     }
-    {% else %}
-    document.getElementById('categoryChart').innerHTML = '<div class="d-flex justify-content-center align-items-center h-100 text-muted">No category data available</div>';
-    {% endif %}
     
     // Monthly Chart (Bar Chart)
-    {% if monthly_chart_data and monthly_chart_data.data %}
     var monthlyLabels = [];
     var monthlyValues = [];
     var monthlyData = [];
     
+    {% if monthly_chart_data and monthly_chart_data.data %}
     {% for item in monthly_chart_data.data %}
     monthlyLabels.push("{{ item.label }}");
     monthlyValues.push({{ item.value }});
     monthlyData.push({
-        month_num: {{ item.month_num|default(0) }},
-        year: {{ item.year|default(0) }}
+        month_num: {{ item.month_num }},
+        year: {{ item.year }}
     });
     {% endfor %}
+    {% endif %}
     
     if (monthlyLabels.length > 0 && monthlyValues.length > 0) {
         var monthlyChartData = [{
@@ -264,9 +260,6 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         document.getElementById('monthlyChart').innerHTML = '<div class="d-flex justify-content-center align-items-center h-100 text-muted">No monthly data available</div>';
     }
-    {% else %}
-    document.getElementById('monthlyChart').innerHTML = '<div class="d-flex justify-content-center align-items-center h-100 text-muted">No monthly data available</div>';
-    {% endif %}
 });
 </script>
 {% endblock %}
