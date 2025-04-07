@@ -398,88 +398,76 @@ def dashboard():
     
     # Calculate total expenses
     total_expenses = sum(expense.amount for expense in expenses)
+    total_count = len(expenses)
     
-    # Generate category distribution chart (donut chart)
+    # Get first and last expense dates
+    first_date = "No data"
+    last_date = "No data"
+    current_date = datetime.now().strftime("%b %d, %Y")
+    
+    if expenses:
+        first_expense = min(expenses, key=lambda x: x.date)
+        last_expense = max(expenses, key=lambda x: x.date)
+        first_date = first_expense.date.strftime("%b %d, %Y")
+        last_date = last_expense.date.strftime("%b %d, %Y")
+    
+    # Generate category distribution chart (pie chart)
     category_chart_data = visualization.generate_category_distribution_chart(expenses)
-    
-    # Generate weekly expenses chart
-    weekly_expenses_chart_data = visualization.generate_weekly_expenses_chart(expenses)
     
     # Get monthly summary data for the relevant expenses
     if current_user.is_admin and not request.args.get('user_id'):
         # For admin viewing all expenses
-        monthly_data = db.session.query(
+        monthly_data_query = db.session.query(
             db.func.extract('month', Expense.date).label('month'),
             db.func.extract('year', Expense.date).label('year'),
-            db.func.sum(Expense.amount).label('total_amount')
+            db.func.sum(Expense.amount).label('total_amount'),
+            db.func.count(Expense.id).label('count')
         ).group_by(
             db.func.extract('year', Expense.date),
             db.func.extract('month', Expense.date)
         ).order_by(
             db.func.extract('year', Expense.date).desc(),
             db.func.extract('month', Expense.date).desc()
-        ).all()
+        )
     else:
         # For regular users or admin viewing specific user
         user_id = request.args.get('user_id') if current_user.is_admin else current_user.id
-        monthly_data = db.session.query(
+        monthly_data_query = db.session.query(
             db.func.extract('month', Expense.date).label('month'),
             db.func.extract('year', Expense.date).label('year'),
-            db.func.sum(Expense.amount).label('total_amount')
+            db.func.sum(Expense.amount).label('total_amount'),
+            db.func.count(Expense.id).label('count')
         ).filter(Expense.user_id == user_id).group_by(
             db.func.extract('year', Expense.date),
             db.func.extract('month', Expense.date)
         ).order_by(
             db.func.extract('year', Expense.date).desc(),
             db.func.extract('month', Expense.date).desc()
-        ).all()
+        )
+    
+    monthly_data = monthly_data_query.all()
     
     # Format the data for the monthly chart
     summary_data = []
-    for month_num, year, total in monthly_data:
-        month_name = datetime(int(year), int(month_num), 1).strftime('%B')
+    for month_num, year, total_amount, count in monthly_data:
+        month_name = datetime(int(year), int(month_num), 1).strftime('%b')
+        label = f"{month_name} {int(year)}"
+        
         summary_data.append({
-            'month': month_name,
+            'month': int(month_num),
             'year': int(year),
-            'total_amount': float(total)
+            'label': label,
+            'value': float(total_amount),
+            'count': int(count),
+            'month_num': int(month_num)
         })
     
-    monthly_chart_data = visualization.generate_monthly_trend_chart(summary_data)
-    
-    # Generate income vs expense chart (with default income of $4000)
-    # The income value could be made configurable through user settings
-    income_expense_chart_data = visualization.generate_income_vs_expenses_chart(expenses)
-    
-    # Generate category comparison chart (current month vs previous month)
-    today = datetime.today()
-    first_day_current_month = datetime(today.year, today.month, 1).date()
-    last_day_current_month = datetime(
-        today.year, 
-        today.month, 
-        calendar.monthrange(today.year, today.month)[1]
-    ).date()
-    
-    if today.month == 1:
-        first_day_prev_month = datetime(today.year - 1, 12, 1).date()
-        last_day_prev_month = datetime(today.year - 1, 12, 31).date()
-    else:
-        first_day_prev_month = datetime(today.year, today.month - 1, 1).date()
-        last_day_prev_month = datetime(
-            today.year, 
-            today.month - 1, 
-            calendar.monthrange(today.year, today.month - 1)[1]
-        ).date()
-    
-    current_month_name = first_day_current_month.strftime("%B")
-    prev_month_name = first_day_prev_month.strftime("%B")
-    
-    comparison_chart_data = visualization.generate_category_comparison_chart(
-        expenses,
-        (first_day_current_month, last_day_current_month),
-        (first_day_prev_month, last_day_prev_month),
-        f"{current_month_name} {today.year}",
-        f"{prev_month_name} {first_day_prev_month.year}"
-    )
+    # For the simplicity required in the new design, build our own data structure
+    monthly_chart_data = {
+        'data': summary_data,
+        'labels': [item['label'] for item in summary_data],
+        'values': [item['value'] for item in summary_data],
+    }
     
     # Get list of users for admin filter
     users = None
@@ -489,11 +477,12 @@ def dashboard():
     return render_template(
         'modern_dashboard.html',
         total_expenses=total_expenses,
+        total_count=total_count,
+        first_date=first_date,
+        last_date=last_date,
+        current_date=current_date,
         category_chart_data=category_chart_data,
-        weekly_expenses_chart_data=weekly_expenses_chart_data,
         monthly_chart_data=monthly_chart_data,
-        income_expense_chart_data=income_expense_chart_data,
-        comparison_chart_data=comparison_chart_data,
         users=users
     )
 

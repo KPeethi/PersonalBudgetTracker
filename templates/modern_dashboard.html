@@ -1,158 +1,136 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
-{% block title %}Expenses Dashboard - Expense Tracker{% endblock %}
+{% block title %}Dashboard - Expense Tracker{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-12 d-flex justify-content-between align-items-center">
-        <h2 class="mb-0">Expenses Dashboard</h2>
+<div class="container">
+    <div class="row mb-4">
+        <!-- First Expense Date Card -->
+        <div class="col-md-3">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="bi bi-calendar-date fs-2 mb-2 text-secondary"></i>
+                    <h4 class="card-title">{{ first_date|default('No data', true) }}</h4>
+                    <p class="text-muted small">First Expense Date</p>
+                </div>
+            </div>
+        </div>
         
-        <div class="d-flex gap-2">
-            <a href="{{ url_for('export_expenses') }}{% if current_user.is_admin and request.args.get('user_id') %}?user_id={{ request.args.get('user_id') }}{% endif %}" class="btn btn-outline-info">
-                <i class="bi bi-download me-1"></i> Export CSV
-            </a>
-            
-            {% if current_user.is_admin and users %}
-            <div class="dropdown">
-                <button class="btn btn-outline-primary dropdown-toggle" type="button" 
-                       id="userFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    {% if request.args.get('user_id') %}
-                        Filter: {{ users|selectattr('id', 'eq', request.args.get('user_id')|int)|first|attr('username') }}
-                    {% else %}
-                        All Users
-                    {% endif %}
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userFilterDropdown">
-                    <li><a class="dropdown-item" href="{{ url_for('dashboard') }}">All Users</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    {% for user in users %}
-                    <li><a class="dropdown-item" href="{{ url_for('dashboard', user_id=user.id) }}">{{ user.username }}</a></li>
-                    {% endfor %}
-                </ul>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-</div>
-
-<!-- Display Selection Tabs -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="d-flex justify-content-center">
-            <div class="btn-group" role="group" aria-label="Account tabs">
-                <a href="#" class="btn btn-outline-primary active" aria-current="page">Expenses</a>
-                <a href="#" class="btn btn-outline-primary">Income</a>
+        <!-- Latest Expense Date Card -->
+        <div class="col-md-3">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="bi bi-calendar-date fs-2 mb-2 text-secondary"></i>
+                    <h4 class="card-title">{{ last_date|default('No data', true) }}</h4>
+                    <p class="text-muted small">Latest Expense Date</p>
+                </div>
             </div>
         </div>
-    </div>
-</div>
-
-<!-- Main Dashboard Content -->
-<div class="row">
-    <!-- Sidebar Navigation -->
-    <div class="col-lg-1 mb-4">
-        <div class="list-group shadow-sm sidebar-nav" style="border-radius: 10px;">
-            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-center py-3" aria-current="true">
-                <i class="bi bi-person fs-4"></i>
-            </a>
-            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-center py-3 active">
-                <i class="bi bi-bar-chart fs-4"></i>
-            </a>
-            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-center py-3">
-                <i class="bi bi-wallet2 fs-4"></i>
-            </a>
-            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-center py-3">
-                <i class="bi bi-bell fs-4"></i>
-            </a>
-            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-center py-3">
-                <i class="bi bi-gear fs-4"></i>
-            </a>
+        
+        <!-- Number of Expenses Card -->
+        <div class="col-md-3">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="bi bi-list-check fs-2 mb-2 text-secondary"></i>
+                    <h4 class="card-title">{{ total_count|default('0', true) }}</h4>
+                    <p class="text-muted small">Number of Expenses</p>
+                </div>
+            </div>
         </div>
-    </div>
-    
-    <!-- Main Content Section -->
-    <div class="col-lg-11">
-        <div class="card shadow-sm mb-4" style="border-radius: 15px;">
-            <div class="card-body p-4">
-                <div class="row">
-                    <!-- Left Column - Pie Charts -->
-                    <div class="col-md-4">
-                        <div class="row mb-4">
-                            <div class="col-12 d-flex align-items-center">
-                                <div class="bg-light rounded-circle p-2 me-3">
-                                    <i class="bi bi-cash-stack text-primary fs-4"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-0 text-muted">Total Expenses</h6>
-                                    <h3 class="mb-0">${{ "{:,.2f}".format(total_expenses) }}</h3>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Category Distribution Chart -->
-                        <div id="category-chart" style="width: 100%; height: 220px;"></div>
-                        
-                        <!-- Income vs Expenses Chart -->
-                        <div class="row mt-3">
-                            <div class="col-12">
-                                <div id="income-expense-chart" style="width: 100%; height: 220px;"></div>
-                                <div class="d-flex justify-content-between text-center mt-2">
-                                    <div class="income-stats">
-                                        <h5 class="mb-0">Income</h5>
-                                        <p class="mb-0 lead" id="income-amount"></p>
-                                    </div>
-                                    <div class="expense-stats">
-                                        <h5 class="mb-0">Expenses</h5>
-                                        <p class="mb-0 lead" id="expense-amount"></p>
-                                    </div>
-                                    <div class="savings-stats">
-                                        <h5 class="mb-0">Savings</h5>
-                                        <p class="mb-0 lead" id="savings-amount"></p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Right Column - Bar and Area Charts -->
-                    <div class="col-md-8">
-                        <div class="mb-4">
-                            <h5>Expenses by Week</h5>
-                            <p class="text-muted mb-0" id="weekly-expense-avg"></p>
-                            <div id="weekly-expenses-chart" style="width: 100%; height: 300px;"></div>
-                        </div>
-                        
-                        <div>
-                            <h5>Income vs Expense</h5>
-                            <div id="income-vs-expense-chart" style="width: 100%; height: 300px;"></div>
-                        </div>
-                    </div>
+        
+        <!-- Total Amount Card -->
+        <div class="col-md-3">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="bi bi-currency-dollar fs-2 mb-2 text-secondary"></i>
+                    <h4 class="card-title">{{ "${:,.2f}".format(total_expenses|default(0)) }}</h4>
+                    <p class="text-muted small">Total Amount</p>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Additional Charts Section -->
-<div class="row">
-    <div class="col-md-6 mb-4">
-        <div class="card shadow-sm h-100" style="border-radius: 15px;">
-            <div class="card-header bg-transparent border-0">
-                <h5 class="mb-0">Monthly Expense Trend</h5>
+    <div class="row mb-4">
+        <!-- Category Summary Chart -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Category summary</h5>
+                </div>
+                <div class="card-body">
+                    <div id="categoryChart" style="height: 300px;"></div>
+                </div>
+                <div class="card-footer text-muted small">
+                    <span id="legendInfo">Hover over chart for details</span>
+                </div>
             </div>
-            <div class="card-body">
-                <div id="monthly-trend-chart" style="width: 100%; height: 300px;"></div>
+        </div>
+        
+        <!-- Monthly Summary Chart -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Monthly summary</h5>
+                    <div class="text-muted small">
+                        {{ current_date|default('', true) }}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="monthlyChart" style="height: 300px;"></div>
+                </div>
+                <div class="card-footer text-muted small">
+                    <span>Click the columns to view month details</span>
+                    <a href="{{ url_for('monthly_summary') }}" class="float-end">↩ Back to Monthly</a>
+                </div>
             </div>
         </div>
     </div>
     
-    <div class="col-md-6 mb-4">
-        <div class="card shadow-sm h-100" style="border-radius: 15px;">
-            <div class="card-header bg-transparent border-0">
-                <h5 class="mb-0">Monthly Comparison</h5>
-            </div>
-            <div class="card-body">
-                <div id="comparison-chart" style="width: 100%; height: 300px;"></div>
+    <!-- Recent expenses summary -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Recent monthly summary</h5>
+                    <a href="{{ url_for('monthly_summary') }}" class="btn btn-sm btn-outline-primary">
+                        View all <i class="bi bi-chevron-right"></i>
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Month</th>
+                                    <th>Total Amount</th>
+                                    <th>Number of Expenses</th>
+                                    <th>Average</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for month in monthly_chart_data.data[:3] %}
+                                <tr>
+                                    <td>{{ month.label }}</td>
+                                    <td>${{ "{:,.2f}".format(month.value) }}</td>
+                                    <td>{{ month.count }}</td>
+                                    <td>${{ "{:,.2f}".format(month.value / month.count) if month.count else '0.00' }}</td>
+                                    <td>
+                                        <a href="{{ url_for('monthly_summary') }}#{{ month.month_num }}-{{ month.year }}" 
+                                           class="btn btn-sm btn-outline-secondary">
+                                            Details
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-3">No expense data available</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -160,116 +138,113 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/plotly.js@2.24.3/dist/plotly.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/plotly.js@2.24.2/dist/plotly.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Category Distribution Chart
-        const categoryData = {{ category_chart_data|safe }};
-        Plotly.newPlot('category-chart', categoryData.data, categoryData.layout);
-        
-        // Weekly Expenses Chart
-        const weeklyData = {{ weekly_expenses_chart_data|safe }};
-        Plotly.newPlot('weekly-expenses-chart', weeklyData.data, weeklyData.layout);
-        
-        // Update weekly expense average
-        document.getElementById('weekly-expense-avg').textContent = 
-            'Average Weekly Expenses: $' + weeklyData.avg_weekly_expense.toFixed(2);
-        
-        // Income vs Expense Chart
-        const incomeExpenseData = {{ income_expense_chart_data|safe }};
-        Plotly.newPlot('income-expense-chart', incomeExpenseData.data, incomeExpenseData.layout);
-        
-        // Update income, expenses, and savings amounts
-        document.getElementById('income-amount').textContent = '$' + incomeExpenseData.income.toFixed(2);
-        document.getElementById('expense-amount').textContent = '$' + incomeExpenseData.total_expenses.toFixed(2);
-        document.getElementById('savings-amount').textContent = '$' + incomeExpenseData.savings.toFixed(2);
-        
-        // Monthly Trend Chart
-        const monthlyData = {{ monthly_chart_data|safe }};
-        Plotly.newPlot('monthly-trend-chart', monthlyData.data, monthlyData.layout);
-        
-        // Income vs Expense Over Time Chart (Area Chart)
-        // This is a simplified version using the monthly data
-        // In a real implementation, you'd have separate income data
-        const monthlyLabels = monthlyData.data[0].x;
-        const expenseValues = monthlyData.data[0].y;
-        
-        // Generate fake income data that's higher than expenses
-        const incomeValues = expenseValues.map(function(val) {
-            return val * 1.2 + Math.random() * 200;
-        });
-        
-        const areaChartData = [
-            {
-                x: monthlyLabels,
-                y: incomeValues,
-                name: 'Income',
-                fill: 'tozeroy',
-                type: 'scatter',
-                mode: 'lines',
-                line: {color: '#00acc1'}
-            },
-            {
-                x: monthlyLabels,
-                y: expenseValues,
-                name: 'Expense',
-                fill: 'tozeroy',
-                type: 'scatter',
-                mode: 'lines',
-                line: {color: '#ff5252'}
+document.addEventListener('DOMContentLoaded', function() {
+    // Category Chart (Pie Chart)
+    {% if category_chart_data and category_chart_data.data and category_chart_data.data.labels %}
+    const categoryLabels = {{ category_chart_data.data.labels|tojson }};
+    const categoryValues = {{ category_chart_data.data.values|tojson }};
+    const categoryColors = [
+        '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', 
+        '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'
+    ];
+    
+    const categoryData = [{
+        type: 'pie',
+        values: categoryValues,
+        labels: categoryLabels,
+        textinfo: 'label+percent',
+        insidetextorientation: 'radial',
+        marker: {
+            colors: categoryColors,
+            line: {
+                color: 'white',
+                width: 2
             }
-        ];
+        },
+        hoverinfo: 'label+value+percent'
+    }];
+    
+    const categoryLayout = {
+        showlegend: false,
+        margin: {t: 10, b: 10, l: 0, r: 0},
+        height: 300,
+    };
+    
+    Plotly.newPlot('categoryChart', categoryData, categoryLayout, {responsive: true});
+    
+    // Update legend info on hover
+    document.getElementById('categoryChart').on('plotly_hover', function(data) {
+        const point = data.points[0];
+        const label = point.label;
+        const value = point.value;
+        const percent = point.percent;
         
-        const areaChartLayout = {
-            margin: {t: 10, b: 40, l: 40, r: 10},
-            legend: {
-                orientation: 'h',
-                y: 1.1
-            },
-            yaxis: {
-                title: 'Amount ($)'
-            },
-            xaxis: {
-                title: ''
-            }
-        };
-        
-        Plotly.newPlot('income-vs-expense-chart', areaChartData, areaChartLayout);
-        
-        // Category Comparison Chart
-        const comparisonData = {{ comparison_chart_data|safe }};
-        Plotly.newPlot('comparison-chart', comparisonData.data, comparisonData.layout);
+        document.getElementById('legendInfo').innerText = 
+            `${label}: $${value.toFixed(2)} (${(percent * 100).toFixed(1)}%)`;
     });
+    
+    document.getElementById('categoryChart').on('plotly_unhover', function() {
+        document.getElementById('legendInfo').innerText = 'Hover over chart for details';
+    });
+    {% endif %}
+    
+    // Monthly Chart (Bar Chart)
+    {% if monthly_chart_data and monthly_chart_data.data %}
+    const monthlyLabels = [];
+    const monthlyValues = [];
+    const monthlyData = [];
+    
+    {% for item in monthly_chart_data.data %}
+    monthlyLabels.push("{{ item.label }}");
+    monthlyValues.push({{ item.value }});
+    monthlyData.push({
+        month_num: {{ item.month|default(0) }},
+        year: {{ item.year|default(0) }}
+    });
+    {% endfor %}
+    
+    const monthlyChartData = [{
+        type: 'bar',
+        x: monthlyLabels,
+        y: monthlyValues,
+        marker: {
+            color: '#1f77b4',
+            line: {
+                color: '#1f77b4',
+                width: 1.5
+            }
+        },
+        hovertemplate: '$%{y:.2f}<extra>%{x}</extra>'
+    }];
+    
+    const monthlyLayout = {
+        margin: {t: 10, b: 40, l: 50, r: 20},
+        xaxis: {
+            tickangle: -45,
+            automargin: true
+        },
+        yaxis: {
+            title: 'Total Expenses (USD)',
+            automargin: true
+        },
+        bargap: 0.3
+    };
+    
+    Plotly.newPlot('monthlyChart', monthlyChartData, monthlyLayout, {responsive: true});
+    
+    // Add click event to monthly chart bars
+    document.getElementById('monthlyChart').on('plotly_click', function(data) {
+        const point = data.points[0];
+        const pointIndex = point.pointIndex;
+        const monthData = monthlyData[pointIndex];
+        if (monthData && monthData.month_num && monthData.year) {
+            window.location.href = "{{ url_for('monthly_summary') }}#" + 
+                monthData.month_num + "-" + monthData.year;
+        }
+    });
+    {% endif %}
+});
 </script>
-
-<style>
-    /* Custom styles for the dashboard */
-    .sidebar-nav .list-group-item {
-        border: none;
-        border-radius: 10px !important;
-        margin-bottom: 5px;
-    }
-    
-    .sidebar-nav .list-group-item.active {
-        background-color: #f8f9fa;
-        color: #0d6efd;
-        border-left: 3px solid #0d6efd;
-    }
-    
-    .sidebar-nav .list-group-item:hover {
-        background-color: #f8f9fa;
-    }
-    
-    .income-stats {
-        color: #00acc1;
-    }
-    
-    .expense-stats {
-        color: #ff5252;
-    }
-    
-    .savings-stats {
-        color: #00C853;
-    }
-</style>
 {% endblock %}

@@ -25,7 +25,7 @@ class NumpyEncoder(json.JSONEncoder):
             return o.isoformat()
         return super(NumpyEncoder, self).default(o)
 
-def generate_category_distribution_chart(expenses: List[Any]) -> str:
+def generate_category_distribution_chart(expenses: List[Any]) -> Dict[str, Any]:
     """
     Generate a pie chart showing the distribution of expenses by category.
     
@@ -33,13 +33,15 @@ def generate_category_distribution_chart(expenses: List[Any]) -> str:
         expenses: List of Expense objects
         
     Returns:
-        JSON string representation of the chart data
+        Dictionary containing the chart data in a format suitable for modern dashboard
     """
     if not expenses:
-        return json.dumps({
-            "data": [],
-            "layout": {"title": "No data available"}
-        }, cls=NumpyEncoder)
+        return {
+            "data": {
+                "labels": [],
+                "values": []
+            }
+        }
     
     # Create a dataframe from expenses
     df = pd.DataFrame([
@@ -50,22 +52,19 @@ def generate_category_distribution_chart(expenses: List[Any]) -> str:
     # Group by category and sum amounts
     category_totals = df.groupby("category").sum().reset_index()
     
-    # Create a pie chart
-    fig = px.pie(
-        category_totals, 
-        values="amount", 
-        names="category",
-        title="Expense Distribution by Category",
-        hole=0.4,  # Create a donut chart
-        color_discrete_sequence=px.colors.sequential.Plasma
-    )
+    # Sort by amount (descending)
+    category_totals = category_totals.sort_values("amount", ascending=False)
     
-    fig.update_layout(
-        legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5),
-        margin=dict(t=40, b=80, l=40, r=40)
-    )
+    # Extract labels and values for the pie chart
+    labels = category_totals["category"].tolist()
+    values = category_totals["amount"].tolist()
     
-    return json.dumps(fig.to_dict(), cls=NumpyEncoder)
+    return {
+        "data": {
+            "labels": labels,
+            "values": values
+        }
+    }
 
 def generate_monthly_trend_chart(
     monthly_data: List[Dict[str, Any]]
