@@ -474,16 +474,39 @@ def dashboard():
     if current_user.is_admin:
         users = User.query.all()
     
+    # Generate charts data
+    category_chart_data = visualization.generate_category_distribution_chart(expenses)
+    weekly_expenses_chart_data = visualization.generate_weekly_expenses_chart(expenses)
+    monthly_chart_data = visualization.generate_monthly_trend_chart(monthly_data)
+    
+    # Income vs expenses chart (with a default income for now)
+    income_expense_chart_data = visualization.generate_income_vs_expenses_chart(expenses)
+    
+    # Category comparison chart (comparing current month vs last month)
+    today = datetime.now()
+    first_day_current_month = datetime(today.year, today.month, 1).date()
+    last_day_current_month = (datetime(today.year, today.month + 1, 1) - timedelta(days=1)).date()
+    first_day_prev_month = (first_day_current_month - timedelta(days=1)).replace(day=1)
+    last_day_prev_month = first_day_current_month - timedelta(days=1)
+    
+    comparison_chart_data = visualization.generate_category_comparison_chart(
+        expenses,
+        (first_day_current_month, last_day_current_month),
+        (first_day_prev_month, last_day_prev_month),
+        "Current Month",
+        "Previous Month"
+    )
+    
     return render_template(
-        'modern_dashboard.html',
+        'dashboard.html',
         total_expenses=total_expenses,
         total_count=total_count,
-        first_date=first_date,
-        last_date=last_date,
-        current_date=current_date,
+        users=users,
         category_chart_data=category_chart_data,
+        weekly_expenses_chart_data=weekly_expenses_chart_data,
         monthly_chart_data=monthly_chart_data,
-        users=users
+        income_expense_chart_data=income_expense_chart_data,
+        comparison_chart_data=comparison_chart_data
     )
 
 # Admin routes
