@@ -12,6 +12,9 @@ import calendar
 
 from openai import OpenAI
 
+# Import configuration
+from config import OPENAI_API_KEY, OPENAI_MODEL
+
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -19,7 +22,7 @@ logger = logging.getLogger(__name__)
 # Initialize OpenAI client
 # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
 # do not change this unless explicitly requested by the user
-openai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
 # AI Analysis Options
 ANALYSIS_OPTIONS = {
@@ -328,7 +331,7 @@ def generate_ai_analysis(analysis_type: str,
         
         # Generate response from OpenAI
         response = openai_client.chat.completions.create(
-            model="gpt-4o",
+            model=OPENAI_MODEL,
             messages=[
                 {"role": "system", "content": "You are a helpful financial advisor specializing in personal expense analysis."},
                 {"role": "user", "content": prompt}
@@ -397,7 +400,7 @@ def get_expense_insights(expenses: List[Dict[str, Any]],
         
         # Generate response from OpenAI
         response = openai_client.chat.completions.create(
-            model="gpt-4o",
+            model=OPENAI_MODEL,
             messages=[
                 {"role": "system", "content": "You are a helpful financial advisor specializing in personal expense analysis."},
                 {"role": "user", "content": prompt}

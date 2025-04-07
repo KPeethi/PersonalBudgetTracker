@@ -10,13 +10,11 @@ import logging
 import json
 from typing import List, Dict, Any, Optional
 
+# Import configuration
+from config import PLAID_CLIENT_ID, PLAID_SECRET, PLAID_ENV, PLAID_REDIRECT_URI
+
 # Configure logging
 logger = logging.getLogger(__name__)
-
-# Get Plaid credentials from environment variables
-PLAID_CLIENT_ID = os.environ.get('PLAID_CLIENT_ID')
-PLAID_SECRET = os.environ.get('PLAID_SECRET')
-PLAID_ENV = os.environ.get('PLAID_ENV', 'sandbox').lower()
 
 # Determine if we should use real Plaid API data or mock data
 USE_MOCK_DATA = False
@@ -89,12 +87,10 @@ def create_link_token() -> Dict[str, Any]:
             "user": {
                 "client_user_id": client_user_id
             },
-            "products": ["transactions"],
+            "products": ["transactions", "auth"],
             "country_codes": ["US"],
-            "language": "en"
-            # Optional fields:
-            # "webhook": "https://webhook.example.com",
-            # "redirect_uri": "https://expense-tracker.replit.app/oauth-callback"
+            "language": "en",
+            "redirect_uri": PLAID_REDIRECT_URI
         }
         
         logger.info(f"Creating link token for client_user_id: {client_user_id}")

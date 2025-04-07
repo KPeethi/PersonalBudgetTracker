@@ -4,6 +4,9 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from sqlalchemy.orm import DeclarativeBase
 
+# Import configuration
+from config import DATABASE_URL, SECRET_KEY, DEBUG
+
 # Create a base class for declarative table definitions
 class Base(DeclarativeBase):
     pass
@@ -17,12 +20,13 @@ def create_app():
     app = Flask(__name__)
     
     # Configure application
-    app.secret_key = os.environ.get("SESSION_SECRET", "expense-tracker-secret-key")
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+    app.secret_key = SECRET_KEY
+    app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
         "pool_recycle": 300,
         "pool_pre_ping": True,
     }
+    app.config["DEBUG"] = DEBUG
     
     # Initialize extensions with the app
     db.init_app(app)
