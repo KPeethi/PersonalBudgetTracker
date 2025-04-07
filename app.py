@@ -7,12 +7,13 @@ from sqlalchemy.orm import DeclarativeBase
 class Base(DeclarativeBase):
     pass
 
-db = SQLAlchemy(model_class=Base)
-login_manager = LoginManager()
-
-# create the app
+# create the app first
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "expense-tracker-secret-key")
+
+# then create extensions
+db = SQLAlchemy(model_class=Base)
+login_manager = LoginManager()
 
 # configure the database
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
