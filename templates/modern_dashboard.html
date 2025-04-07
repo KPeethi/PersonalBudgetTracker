@@ -142,108 +142,130 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Category Chart (Pie Chart)
-    {% if category_chart_data and category_chart_data.data and category_chart_data.data.labels %}
-    const categoryLabels = {{ category_chart_data.data.labels|tojson }};
-    const categoryValues = {{ category_chart_data.data.values|tojson }};
-    const categoryColors = [
+    {% if category_chart_data %}
+    var categoryLabels = [];
+    var categoryValues = [];
+    
+    {% if category_chart_data.data %}
+    {% if category_chart_data.data.labels %}
+    categoryLabels = {{ category_chart_data.data.labels|tojson }};
+    {% endif %}
+    {% if category_chart_data.data.values %}
+    categoryValues = {{ category_chart_data.data.values|tojson }};
+    {% endif %}
+    {% endif %}
+    
+    var categoryColors = [
         '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', 
         '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'
     ];
     
-    const categoryData = [{
-        type: 'pie',
-        values: categoryValues,
-        labels: categoryLabels,
-        textinfo: 'label+percent',
-        insidetextorientation: 'radial',
-        marker: {
-            colors: categoryColors,
-            line: {
-                color: 'white',
-                width: 2
-            }
-        },
-        hoverinfo: 'label+value+percent'
-    }];
-    
-    const categoryLayout = {
-        showlegend: false,
-        margin: {t: 10, b: 10, l: 0, r: 0},
-        height: 300,
-    };
-    
-    Plotly.newPlot('categoryChart', categoryData, categoryLayout, {responsive: true});
-    
-    // Update legend info on hover
-    document.getElementById('categoryChart').on('plotly_hover', function(data) {
-        const point = data.points[0];
-        const label = point.label;
-        const value = point.value;
-        const percent = point.percent;
+    if (categoryLabels.length > 0 && categoryValues.length > 0) {
+        var categoryData = [{
+            type: 'pie',
+            values: categoryValues,
+            labels: categoryLabels,
+            textinfo: 'label+percent',
+            insidetextorientation: 'radial',
+            marker: {
+                colors: categoryColors,
+                line: {
+                    color: 'white',
+                    width: 2
+                }
+            },
+            hoverinfo: 'label+value+percent'
+        }];
         
-        document.getElementById('legendInfo').innerText = 
-            `${label}: $${value.toFixed(2)} (${(percent * 100).toFixed(1)}%)`;
-    });
-    
-    document.getElementById('categoryChart').on('plotly_unhover', function() {
-        document.getElementById('legendInfo').innerText = 'Hover over chart for details';
-    });
+        var categoryLayout = {
+            showlegend: false,
+            margin: {t: 10, b: 10, l: 0, r: 0},
+            height: 300,
+        };
+        
+        Plotly.newPlot('categoryChart', categoryData, categoryLayout, {responsive: true});
+        
+        // Update legend info on hover
+        document.getElementById('categoryChart').on('plotly_hover', function(data) {
+            var point = data.points[0];
+            var label = point.label;
+            var value = point.value;
+            var percent = point.percent;
+            
+            document.getElementById('legendInfo').innerText = 
+                label + ': $' + value.toFixed(2) + ' (' + (percent * 100).toFixed(1) + '%)';
+        });
+        
+        document.getElementById('categoryChart').on('plotly_unhover', function() {
+            document.getElementById('legendInfo').innerText = 'Hover over chart for details';
+        });
+    } else {
+        document.getElementById('categoryChart').innerHTML = '<div class="d-flex justify-content-center align-items-center h-100 text-muted">No category data available</div>';
+    }
+    {% else %}
+    document.getElementById('categoryChart').innerHTML = '<div class="d-flex justify-content-center align-items-center h-100 text-muted">No category data available</div>';
     {% endif %}
     
     // Monthly Chart (Bar Chart)
     {% if monthly_chart_data and monthly_chart_data.data %}
-    const monthlyLabels = [];
-    const monthlyValues = [];
-    const monthlyData = [];
+    var monthlyLabels = [];
+    var monthlyValues = [];
+    var monthlyData = [];
     
     {% for item in monthly_chart_data.data %}
     monthlyLabels.push("{{ item.label }}");
     monthlyValues.push({{ item.value }});
     monthlyData.push({
-        month_num: {{ item.month|default(0) }},
+        month_num: {{ item.month_num|default(0) }},
         year: {{ item.year|default(0) }}
     });
     {% endfor %}
     
-    const monthlyChartData = [{
-        type: 'bar',
-        x: monthlyLabels,
-        y: monthlyValues,
-        marker: {
-            color: '#1f77b4',
-            line: {
+    if (monthlyLabels.length > 0 && monthlyValues.length > 0) {
+        var monthlyChartData = [{
+            type: 'bar',
+            x: monthlyLabels,
+            y: monthlyValues,
+            marker: {
                 color: '#1f77b4',
-                width: 1.5
+                line: {
+                    color: '#1f77b4',
+                    width: 1.5
+                }
+            },
+            hovertemplate: '$%{y:.2f}<extra>%{x}</extra>'
+        }];
+        
+        var monthlyLayout = {
+            margin: {t: 10, b: 40, l: 50, r: 20},
+            xaxis: {
+                tickangle: -45,
+                automargin: true
+            },
+            yaxis: {
+                title: 'Total Expenses (USD)',
+                automargin: true
+            },
+            bargap: 0.3
+        };
+        
+        Plotly.newPlot('monthlyChart', monthlyChartData, monthlyLayout, {responsive: true});
+        
+        // Add click event to monthly chart bars
+        document.getElementById('monthlyChart').on('plotly_click', function(data) {
+            var point = data.points[0];
+            var pointIndex = point.pointIndex;
+            var monthData = monthlyData[pointIndex];
+            if (monthData && monthData.month_num && monthData.year) {
+                window.location.href = "{{ url_for('monthly_summary') }}#" + 
+                    monthData.month_num + "-" + monthData.year;
             }
-        },
-        hovertemplate: '$%{y:.2f}<extra>%{x}</extra>'
-    }];
-    
-    const monthlyLayout = {
-        margin: {t: 10, b: 40, l: 50, r: 20},
-        xaxis: {
-            tickangle: -45,
-            automargin: true
-        },
-        yaxis: {
-            title: 'Total Expenses (USD)',
-            automargin: true
-        },
-        bargap: 0.3
-    };
-    
-    Plotly.newPlot('monthlyChart', monthlyChartData, monthlyLayout, {responsive: true});
-    
-    // Add click event to monthly chart bars
-    document.getElementById('monthlyChart').on('plotly_click', function(data) {
-        const point = data.points[0];
-        const pointIndex = point.pointIndex;
-        const monthData = monthlyData[pointIndex];
-        if (monthData && monthData.month_num && monthData.year) {
-            window.location.href = "{{ url_for('monthly_summary') }}#" + 
-                monthData.month_num + "-" + monthData.year;
-        }
-    });
+        });
+    } else {
+        document.getElementById('monthlyChart').innerHTML = '<div class="d-flex justify-content-center align-items-center h-100 text-muted">No monthly data available</div>';
+    }
+    {% else %}
+    document.getElementById('monthlyChart').innerHTML = '<div class="d-flex justify-content-center align-items-center h-100 text-muted">No monthly data available</div>';
     {% endif %}
 });
 </script>
