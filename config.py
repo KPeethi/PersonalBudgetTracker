@@ -27,6 +27,11 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 # For local MySQL deployments, uncomment and configure this:
 # DATABASE_URL = "mysql+pymysql://username:password@localhost/ExpenseDB"
 
+# Uncomment and modify the following line to hardcode your database connection:
+# DATABASE_URL = "postgresql://username:password@localhost:5432/your_database_name"
+# or for MySQL:
+# DATABASE_URL = "mysql+pymysql://username:password@localhost/your_database_name"
+
 if not DATABASE_URL:
     logger.warning("No DATABASE_URL found in environment, using SQLite as fallback")
     DATABASE_URL = "sqlite:///expense_tracker.db"
