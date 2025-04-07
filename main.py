@@ -477,7 +477,7 @@ def dashboard():
         users = User.query.all()
     
     return render_template(
-        'fixed_dashboard.html',
+        'modern_dashboard.html',
         total_expenses=total_expenses,
         category_chart_data=category_chart_data,
         weekly_expenses_chart_data=weekly_expenses_chart_data,

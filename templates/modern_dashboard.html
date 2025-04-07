@@ -191,50 +191,34 @@
         // Income vs Expense Over Time Chart (Area Chart)
         // This is a simplified version using the monthly data
         // In a real implementation, you'd have separate income data
-        let areaChartData = [];
+        const monthlyLabels = monthlyData.data[0].x;
+        const expenseValues = monthlyData.data[0].y;
         
-        // Only create the area chart if we have monthly data
-        if (monthlyData.data && monthlyData.data.length > 0 && monthlyData.data[0].x && monthlyData.data[0].y) {
-            const monthlyLabels = monthlyData.data[0].x;
-            const expenseValues = monthlyData.data[0].y;
-            
-            // Make sure expenseValues is an array before using map
-            let incomeValues = [];
-            if (Array.isArray(expenseValues)) {
-                incomeValues = expenseValues.map(function(val) {
-                    return val * 1.2 + Math.random() * 200;
-                });
-            } else {
-                // If expenseValues is not an array, create a dummy array
-                // This is a fallback case
-                incomeValues = [4000, 4200, 4100, 4300];
-                console.log("Warning: expenseValues is not an array");
+        // Generate fake income data that's higher than expenses
+        const incomeValues = expenseValues.map(function(val) {
+            return val * 1.2 + Math.random() * 200;
+        });
+        
+        const areaChartData = [
+            {
+                x: monthlyLabels,
+                y: incomeValues,
+                name: 'Income',
+                fill: 'tozeroy',
+                type: 'scatter',
+                mode: 'lines',
+                line: {color: '#00acc1'}
+            },
+            {
+                x: monthlyLabels,
+                y: expenseValues,
+                name: 'Expense',
+                fill: 'tozeroy',
+                type: 'scatter',
+                mode: 'lines',
+                line: {color: '#ff5252'}
             }
-            
-            areaChartData = [
-                {
-                    x: monthlyLabels,
-                    y: incomeValues,
-                    name: 'Income',
-                    fill: 'tozeroy',
-                    type: 'scatter',
-                    mode: 'lines',
-                    line: {color: '#00acc1'}
-                },
-                {
-                    x: monthlyLabels,
-                    y: expenseValues,
-                    name: 'Expense',
-                    fill: 'tozeroy',
-                    type: 'scatter',
-                    mode: 'lines',
-                    line: {color: '#ff5252'}
-                }
-            ];
-        } else {
-            // If we don't have proper monthly data, create a simplified version
-            console.log("Warning: incomplete monthly data for area chart");
-        }
+        ];
         
         const areaChartLayout = {
             margin: {t: 10, b: 40, l: 40, r: 10},
