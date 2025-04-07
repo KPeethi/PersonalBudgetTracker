@@ -94,8 +94,10 @@ def generate_monthly_trend_chart(
     )
     
     # Sort by year and month
+    # Use a dictionary for month name to number mapping to avoid indexing issues
+    month_to_num = {month: i for i, month in enumerate(calendar.month_name) if month}
     df["sort_key"] = df.apply(
-        lambda x: x["year"] * 100 + list(calendar.month_name).index(x["month"]), axis=1
+        lambda x: x["year"] * 100 + month_to_num.get(x["month"], 0), axis=1
     )
     df = df.sort_values("sort_key")
     
