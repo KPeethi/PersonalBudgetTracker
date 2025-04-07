@@ -935,8 +935,6 @@ def save_imported_data():
         flash(f"Error saving imported data: {str(e)}", "danger")
         return redirect(url_for('import_plaid_data'))
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
 @app.route('/suggestions')
 @login_required
 def get_suggestions():
@@ -1161,3 +1159,6 @@ def ai_analysis():
         top_categories=top_categories,
         time_period=time_period
     )
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
