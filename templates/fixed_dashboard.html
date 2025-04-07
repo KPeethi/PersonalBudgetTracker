@@ -91,27 +91,6 @@
                         
                         <!-- Category Distribution Chart -->
                         <div id="category-chart" style="width: 100%; height: 220px;"></div>
-                        
-                        <!-- Income vs Expenses Chart -->
-                        <div class="row mt-3">
-                            <div class="col-12">
-                                <div id="income-expense-chart" style="width: 100%; height: 220px;"></div>
-                                <div class="d-flex justify-content-between text-center mt-2">
-                                    <div class="income-stats">
-                                        <h5 class="mb-0">Income</h5>
-                                        <p class="mb-0 lead" id="income-amount"></p>
-                                    </div>
-                                    <div class="expense-stats">
-                                        <h5 class="mb-0">Expenses</h5>
-                                        <p class="mb-0 lead" id="expense-amount"></p>
-                                    </div>
-                                    <div class="savings-stats">
-                                        <h5 class="mb-0">Savings</h5>
-                                        <p class="mb-0 lead" id="savings-amount"></p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                     
                     <!-- Right Column - Bar and Area Charts -->
@@ -120,11 +99,6 @@
                             <h5>Expenses by Week</h5>
                             <p class="text-muted mb-0" id="weekly-expense-avg"></p>
                             <div id="weekly-expenses-chart" style="width: 100%; height: 300px;"></div>
-                        </div>
-                        
-                        <div>
-                            <h5>Income vs Expense</h5>
-                            <div id="income-vs-expense-chart" style="width: 100%; height: 300px;"></div>
                         </div>
                     </div>
                 </div>
@@ -175,82 +149,9 @@
         document.getElementById('weekly-expense-avg').textContent = 
             'Average Weekly Expenses: $' + weeklyData.avg_weekly_expense.toFixed(2);
         
-        // Income vs Expense Chart
-        const incomeExpenseData = {{ income_expense_chart_data|safe }};
-        Plotly.newPlot('income-expense-chart', incomeExpenseData.data, incomeExpenseData.layout);
-        
-        // Update income, expenses, and savings amounts
-        document.getElementById('income-amount').textContent = '$' + incomeExpenseData.income.toFixed(2);
-        document.getElementById('expense-amount').textContent = '$' + incomeExpenseData.total_expenses.toFixed(2);
-        document.getElementById('savings-amount').textContent = '$' + incomeExpenseData.savings.toFixed(2);
-        
         // Monthly Trend Chart
         const monthlyData = {{ monthly_chart_data|safe }};
         Plotly.newPlot('monthly-trend-chart', monthlyData.data, monthlyData.layout);
-        
-        // Income vs Expense Over Time Chart (Area Chart)
-        // This is a simplified version using the monthly data
-        // In a real implementation, you'd have separate income data
-        let areaChartData = [];
-        
-        // Only create the area chart if we have monthly data
-        if (monthlyData.data && monthlyData.data.length > 0 && monthlyData.data[0].x && monthlyData.data[0].y) {
-            const monthlyLabels = monthlyData.data[0].x;
-            const expenseValues = monthlyData.data[0].y;
-            
-            // Make sure expenseValues is an array before using map
-            let incomeValues = [];
-            if (Array.isArray(expenseValues)) {
-                incomeValues = expenseValues.map(function(val) {
-                    return val * 1.2 + Math.random() * 200;
-                });
-            } else {
-                // If expenseValues is not an array, create a dummy array
-                // This is a fallback case
-                incomeValues = [4000, 4200, 4100, 4300];
-                console.log("Warning: expenseValues is not an array");
-            }
-            
-            areaChartData = [
-                {
-                    x: monthlyLabels,
-                    y: incomeValues,
-                    name: 'Income',
-                    fill: 'tozeroy',
-                    type: 'scatter',
-                    mode: 'lines',
-                    line: {color: '#00acc1'}
-                },
-                {
-                    x: monthlyLabels,
-                    y: expenseValues,
-                    name: 'Expense',
-                    fill: 'tozeroy',
-                    type: 'scatter',
-                    mode: 'lines',
-                    line: {color: '#ff5252'}
-                }
-            ];
-        } else {
-            // If we don't have proper monthly data, create a simplified version
-            console.log("Warning: incomplete monthly data for area chart");
-        }
-        
-        const areaChartLayout = {
-            margin: {t: 10, b: 40, l: 40, r: 10},
-            legend: {
-                orientation: 'h',
-                y: 1.1
-            },
-            yaxis: {
-                title: 'Amount ($)'
-            },
-            xaxis: {
-                title: ''
-            }
-        };
-        
-        Plotly.newPlot('income-vs-expense-chart', areaChartData, areaChartLayout);
         
         // Category Comparison Chart
         const comparisonData = {{ comparison_chart_data|safe }};
