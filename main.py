@@ -386,8 +386,14 @@ def dashboard():
         # Regular users can only see their own expenses
         expenses = Expense.query.filter_by(user_id=current_user.id).all()
     
-    # Generate chart data
+    # Calculate total expenses
+    total_expenses = sum(expense.amount for expense in expenses)
+    
+    # Generate category distribution chart (donut chart)
     category_chart_data = visualization.generate_category_distribution_chart(expenses)
+    
+    # Generate weekly expenses chart
+    weekly_expenses_chart_data = visualization.generate_weekly_expenses_chart(expenses)
     
     # Get monthly summary data for the relevant expenses
     if current_user.is_admin and not request.args.get('user_id'):
@@ -430,8 +436,9 @@ def dashboard():
     
     monthly_chart_data = visualization.generate_monthly_trend_chart(summary_data)
     
-    # Generate daily expense chart
-    daily_chart_data = visualization.generate_daily_expense_chart(expenses)
+    # Generate income vs expense chart (with default income of $4000)
+    # The income value could be made configurable through user settings
+    income_expense_chart_data = visualization.generate_income_vs_expenses_chart(expenses)
     
     # Generate category comparison chart (current month vs previous month)
     today = datetime.today()
@@ -470,10 +477,12 @@ def dashboard():
         users = User.query.all()
     
     return render_template(
-        'dashboard.html',
+        'modern_dashboard.html',
+        total_expenses=total_expenses,
         category_chart_data=category_chart_data,
+        weekly_expenses_chart_data=weekly_expenses_chart_data,
         monthly_chart_data=monthly_chart_data,
-        daily_chart_data=daily_chart_data,
+        income_expense_chart_data=income_expense_chart_data,
         comparison_chart_data=comparison_chart_data,
         users=users
     )

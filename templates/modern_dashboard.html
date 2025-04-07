@@ -195,7 +195,9 @@
         const expenseValues = monthlyData.data[0].y;
         
         // Generate fake income data that's higher than expenses
-        const incomeValues = expenseValues.map(val => val * 1.2 + Math.random() * 200);
+        const incomeValues = expenseValues.map(function(val) {
+            return val * 1.2 + Math.random() * 200;
+        });
         
         const areaChartData = [
             {

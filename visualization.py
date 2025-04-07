@@ -173,6 +173,186 @@ def generate_daily_expense_chart(expenses: List[Any], days: int = 30) -> str:
     
     return json.dumps(fig.to_dict(), cls=NumpyEncoder)
 
+def generate_weekly_expenses_chart(expenses: List[Any], weeks: int = 4) -> str:
+    """
+    Generate a stacked bar chart showing weekly expenses by category.
+    
+    Args:
+        expenses: List of Expense objects
+        weeks: Number of weeks to include in the chart
+        
+    Returns:
+        JSON string representation of the chart data
+    """
+    if not expenses:
+        return json.dumps({
+            "data": [],
+            "layout": {"title": "No data available"}
+        }, cls=NumpyEncoder)
+    
+    # Get date range
+    end_date = datetime.date.today()
+    start_date = end_date - datetime.timedelta(days=weeks*7)
+    
+    # Create a dataframe from expenses
+    df = pd.DataFrame([
+        {"date": expense.date, "amount": expense.amount, "category": expense.category}
+        for expense in expenses
+        if hasattr(expense, "date") and expense.date >= start_date and expense.date <= end_date
+    ])
+    
+    if df.empty:
+        return json.dumps({
+            "data": [],
+            "layout": {"title": f"No data available for the past {weeks} weeks"}
+        }, cls=NumpyEncoder)
+    
+    # Add week number
+    df['week'] = df['date'].apply(lambda x: f"Week {(x - start_date).days // 7 + 1}")
+    
+    # Group by week and category, sum amounts
+    weekly_category_totals = df.groupby(['week', 'category']).sum().reset_index()
+    
+    # Calculate the average weekly expense for all categories combined
+    total_by_week = df.groupby('week')['amount'].sum().reset_index()
+    avg_weekly_expense = total_by_week['amount'].mean()
+    
+    # Sort by week to ensure proper order
+    weeks_order = [f"Week {i+1}" for i in range(weeks)]
+    weekly_category_totals['week'] = pd.Categorical(
+        weekly_category_totals['week'], 
+        categories=weeks_order, 
+        ordered=True
+    )
+    weekly_category_totals = weekly_category_totals.sort_values('week')
+    
+    # Get unique categories
+    categories = weekly_category_totals['category'].unique()
+    
+    # Create a stacked bar chart
+    fig = go.Figure()
+    
+    # Define a color palette for categories
+    colors = px.colors.qualitative.Bold
+    
+    # Add traces for each category
+    for i, category in enumerate(categories):
+        category_data = weekly_category_totals[weekly_category_totals['category'] == category]
+        fig.add_trace(go.Bar(
+            x=category_data['week'],
+            y=category_data['amount'],
+            name=category,
+            marker_color=colors[i % len(colors)]
+        ))
+    
+    # Update the layout
+    fig.update_layout(
+        barmode='stack',
+        title="Expenses by Week",
+        xaxis=dict(title=''),
+        yaxis=dict(
+            title='Amount ($)',
+            range=[0, total_by_week['amount'].max() * 1.1]  # Set max y slightly higher than data
+        ),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="center",
+            x=0.5
+        ),
+        margin=dict(t=50, b=50, l=50, r=50)
+    )
+    
+    # Create a custom annotation for average weekly expense
+    fig.add_annotation(
+        text=f"Average Weekly Expense: ${avg_weekly_expense:.2f}",
+        xref="paper", yref="paper",
+        x=0.5, y=-0.15,
+        showarrow=False,
+        font=dict(size=14)
+    )
+    
+    return json.dumps({
+        "data": fig.to_dict()["data"],
+        "layout": fig.to_dict()["layout"],
+        "avg_weekly_expense": float(avg_weekly_expense)
+    }, cls=NumpyEncoder)
+
+def generate_income_vs_expenses_chart(
+    expenses: List[Any], 
+    income: float = 4000,
+    period: int = 30
+) -> str:
+    """
+    Generate a donut chart showing income vs expenses and savings.
+    
+    Args:
+        expenses: List of Expense objects
+        income: Monthly income amount (default: 4000)
+        period: Number of days to calculate expenses (default: 30)
+        
+    Returns:
+        JSON string representation of the chart data
+    """
+    if not expenses:
+        return json.dumps({
+            "data": [],
+            "layout": {"title": "No data available"}
+        }, cls=NumpyEncoder)
+    
+    # Get date range
+    end_date = datetime.date.today()
+    start_date = end_date - datetime.timedelta(days=period-1)
+    
+    # Calculate total expenses for the period
+    total_expenses = sum(
+        expense.amount for expense in expenses
+        if hasattr(expense, "date") and start_date <= expense.date <= end_date
+    )
+    
+    # Calculate savings
+    savings = income - total_expenses
+    savings_percent = (savings / income) * 100 if income > 0 else 0
+    expense_percent = (total_expenses / income) * 100 if income > 0 else 0
+    
+    # Create data for the chart
+    labels = ['Expenses', 'Savings']
+    values = [total_expenses, savings]
+    colors = ['#FF5252', '#00C853']  # Red for expenses, green for savings
+    
+    # Create a donut chart
+    fig = go.Figure(data=[go.Pie(
+        labels=labels,
+        values=values,
+        hole=.6,
+        marker=dict(colors=colors),
+        textinfo='label+percent',
+        insidetextorientation='radial'
+    )])
+    
+    # Update layout
+    fig.update_layout(
+        showlegend=False,
+        annotations=[dict(
+            text=f'<b>{savings_percent:.0f}%</b><br>Savings',
+            x=0.5, y=0.5,
+            font_size=16,
+            showarrow=False
+        )],
+        margin=dict(t=30, b=30, l=30, r=30)
+    )
+    
+    return json.dumps({
+        "data": fig.to_dict()["data"],
+        "layout": fig.to_dict()["layout"],
+        "total_expenses": float(total_expenses),
+        "income": float(income),
+        "savings": float(savings),
+        "expense_percent": float(expense_percent),
+        "savings_percent": float(savings_percent)
+    }, cls=NumpyEncoder)
+
 def generate_category_comparison_chart(
     expenses: List[Any],
     period1: Tuple[datetime.date, datetime.date],
