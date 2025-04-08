@@ -89,8 +89,8 @@ def create_link_token() -> Dict[str, Any]:
             },
             "products": ["transactions", "auth"],
             "country_codes": ["US"],
-            "language": "en",
-            "redirect_uri": PLAID_REDIRECT_URI
+            "language": "en"
+            # Removed redirect_uri to avoid OAuth flow issues
         }
         
         logger.info(f"Creating link token for client_user_id: {client_user_id}")

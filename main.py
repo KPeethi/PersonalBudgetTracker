@@ -840,6 +840,8 @@ def export_expenses():
 # Plaid integration routes
 @app.route('/import')
 @login_required
+@app.route('/import_plaid_data')
+@login_required
 def import_plaid_data():
     """Show page to import data from Plaid"""
     transactions = None
