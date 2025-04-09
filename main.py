@@ -520,10 +520,20 @@ def dashboard():
     # Category comparison chart (comparing current month vs last month)
     today = datetime.now()
     first_day_current_month = datetime(today.year, today.month, 1).date()
-    last_day_current_month = (datetime(today.year, today.month + 1, 1) -
-                              timedelta(days=1)).date()
-    first_day_prev_month = (first_day_current_month -
-                            timedelta(days=1)).replace(day=1)
+    
+    # Correctly handle month rollover for calculating last day of month
+    if today.month == 12:
+        last_day_current_month = datetime(today.year + 1, 1, 1).date() - timedelta(days=1)
+    else:
+        last_day_current_month = datetime(today.year, today.month + 1, 1).date() - timedelta(days=1)
+    
+    # Calculate first day of previous month with proper month rollover handling
+    if today.month == 1:
+        first_day_prev_month = datetime(today.year - 1, 12, 1).date()
+    else:
+        first_day_prev_month = datetime(today.year, today.month - 1, 1).date()
+    
+    # Last day of previous month is the day before first day of current month
     last_day_prev_month = first_day_current_month - timedelta(days=1)
 
     # Filter expenses for current month and previous month
