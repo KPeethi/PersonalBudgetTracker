@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+
+{% block title %}
+Dashboard - Expense Tracker
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid dashboard-container py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="dashboard-header mb-4">Financial Dashboard</h1>
+        </div>
+    </div>
+
+    <!-- Summary Cards Row -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card summary-card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Expenses</h5>
+                    <h2 class="card-text">${{ "{:,.2f}".format(total_expenses) }}</h2>
+                    <p class="card-subtitle">This Month</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card summary-card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Savings</h5>
+                    <h2 class="card-text">${{ "{:,.2f}".format(income - total_expenses) }}</h2>
+                    <p class="card-subtitle">{{ "%.1f"|format((income - total_expenses) / income * 100) }}% of Income</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card summary-card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Monthly Budget</h5>
+                    <h2 class="card-text">${{ "{:,.2f}".format(income) }}</h2>
+                    <p class="card-subtitle">Income</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card summary-card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Average Weekly</h5>
+                    <h2 class="card-text">${{ "{:,.2f}".format(avg_weekly_expense) }}</h2>
+                    <p class="card-subtitle">Last 4 Weeks</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Charts Row -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card chart-card">
+                <div class="card-header bg-transparent">
+                    <h5 class="card-title">Expense Trends</h5>
+                </div>
+                <div class="card-body">
+                    <div id="weekly-chart" class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card chart-card">
+                <div class="card-header bg-transparent">
+                    <h5 class="card-title">Expense Categories</h5>
+                </div>
+                <div class="card-body">
+                    <div id="category-chart" class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Secondary Charts Row -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card chart-card">
+                <div class="card-header bg-transparent">
+                    <h5 class="card-title">Income vs. Expenses</h5>
+                </div>
+                <div class="card-body">
+                    <div id="income-expense-chart" class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card chart-card">
+                <div class="card-header bg-transparent">
+                    <h5 class="card-title">Month Comparison</h5>
+                </div>
+                <div class="card-body">
+                    <div id="category-comparison-chart" class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Trend and Daily Expenses Row -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card chart-card">
+                <div class="card-header bg-transparent">
+                    <h5 class="card-title">Monthly Trend</h5>
+                </div>
+                <div class="card-body">
+                    <div id="monthly-trend-chart" class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card chart-card">
+                <div class="card-header bg-transparent">
+                    <h5 class="card-title">Daily Expenses</h5>
+                </div>
+                <div class="card-body">
+                    <div id="daily-expense-chart" class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add custom CSS for the dashboard -->
+<style>
+    .dashboard-container {
+        background-color: #ffffff;
+        min-height: calc(100vh - 56px);
+    }
+    
+    .dashboard-header {
+        color: #2c3e50;
+        font-weight: 600;
+    }
+    
+    .chart-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        height: 100%;
+        border: none;
+        overflow: hidden;
+    }
+    
+    .chart-card .card-header {
+        border-bottom: none;
+        padding: 20px 20px 0 20px;
+    }
+    
+    .chart-card .card-body {
+        padding: 15px 20px 20px 20px;
+    }
+    
+    .chart-container {
+        width: 100%;
+        min-height: 300px;
+    }
+    
+    .summary-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border: none;
+        transition: transform 0.2s ease-in-out;
+    }
+    
+    .summary-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .summary-card .card-body {
+        padding: 25px;
+    }
+    
+    .summary-card .card-title {
+        font-size: 16px;
+        font-weight: 600;
+        opacity: 0.8;
+        margin-bottom: 10px;
+    }
+    
+    .summary-card .card-text {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .summary-card .card-subtitle {
+        font-size: 14px;
+        opacity: 0.7;
+    }
+    
+    /* Standard Bootstrap colors instead of custom gradients */
+    .bg-primary {
+        background-color: #0d6efd !important;
+    }
+    
+    .bg-success {
+        background-color: #198754 !important;
+    }
+    
+    .bg-info {
+        background-color: #0dcaf0 !important;
+    }
+    
+    .bg-warning {
+        background-color: #ffc107 !important;
+    }
+</style>
+
+<script>
+    // Category distribution chart
+    function renderCategoryChart(data) {
+        let chartData = {
+            labels: data.data.labels,
+            datasets: [{
+                data: data.data.values,
+                backgroundColor: [
+                    '#0d6efd', '#198754', '#0dcaf0', '#ffc107', '#dc3545', 
+                    '#6610f2', '#fd7e14', '#20c997', '#6c757d', '#d63384',
+                    '#0d6efd', '#198754', '#0dcaf0', '#ffc107', '#dc3545',
+                    '#6610f2', '#fd7e14'
+                ],
+                borderWidth: 0
+            }]
+        };
+        
+        const config = {
+            type: 'doughnut',
+            data: chartData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            boxWidth: 10,
+                            padding: 10
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: $${value.toFixed(2)} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        
+        new Chart(
+            document.getElementById('category-chart'),
+            config
+        );
+    }
+    
+    // Weekly expenses chart
+    function renderWeeklyChart(chartData) {
+        const parsedData = JSON.parse(chartData);
+        if (!parsedData.data || parsedData.data.length === 0) {
+            document.getElementById('weekly-chart').innerHTML = '<div class="text-center p-5"><p class="text-muted">No data available</p></div>';
+            return;
+        }
+        
+        // Create a new Plotly chart
+        Plotly.newPlot('weekly-chart', parsedData.data, parsedData.layout);
+    }
+    
+    // Monthly trend chart
+    function renderMonthlyTrendChart(chartData) {
+        const parsedData = JSON.parse(chartData);
+        if (!parsedData.data || parsedData.data.length === 0) {
+            document.getElementById('monthly-trend-chart').innerHTML = '<div class="text-center p-5"><p class="text-muted">No data available</p></div>';
+            return;
+        }
+        
+        // Create a new Plotly chart
+        Plotly.newPlot('monthly-trend-chart', parsedData.data, parsedData.layout);
+    }
+    
+    // Daily expense chart
+    function renderDailyExpenseChart(chartData) {
+        const parsedData = JSON.parse(chartData);
+        if (!parsedData.data || parsedData.data.length === 0) {
+            document.getElementById('daily-expense-chart').innerHTML = '<div class="text-center p-5"><p class="text-muted">No data available</p></div>';
+            return;
+        }
+        
+        // Create a new Plotly chart
+        Plotly.newPlot('daily-expense-chart', parsedData.data, parsedData.layout);
+    }
+    
+    // Income vs expenses chart
+    function renderIncomeExpenseChart(chartData) {
+        const parsedData = JSON.parse(chartData);
+        if (!parsedData.data || parsedData.data.length === 0) {
+            document.getElementById('income-expense-chart').innerHTML = '<div class="text-center p-5"><p class="text-muted">No data available</p></div>';
+            return;
+        }
+        
+        // Create a new Plotly chart
+        Plotly.newPlot('income-expense-chart', parsedData.data, parsedData.layout);
+    }
+    
+    // Category comparison chart
+    function renderCategoryComparisonChart(chartData) {
+        const parsedData = JSON.parse(chartData);
+        if (!parsedData.data || parsedData.data.length === 0) {
+            document.getElementById('category-comparison-chart').innerHTML = '<div class="text-center p-5"><p class="text-muted">No data available</p></div>';
+            return;
+        }
+        
+        // Create a new Plotly chart
+        Plotly.newPlot('category-comparison-chart', parsedData.data, parsedData.layout);
+    }
+    
+    // Load and render all charts
+    document.addEventListener('DOMContentLoaded', function() {
+        // Category distribution chart (using Chart.js)
+        renderCategoryChart({{ category_chart_data|safe }});
+        
+        // Weekly expenses chart
+        renderWeeklyChart('{{ weekly_chart_data|safe }}');
+        
+        // Monthly trend chart
+        renderMonthlyTrendChart('{{ monthly_trend_chart_data|safe }}');
+        
+        // Daily expense chart
+        renderDailyExpenseChart('{{ daily_expense_chart_data|safe }}');
+        
+        // Income vs expenses chart
+        renderIncomeExpenseChart('{{ income_expense_chart_data|safe }}');
+        
+        // Category comparison chart
+        renderCategoryComparisonChart('{{ category_comparison_chart_data|safe }}');
+    });
+</script>
+{% endblock %}
