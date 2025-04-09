@@ -526,10 +526,12 @@ def dashboard():
                             timedelta(days=1)).replace(day=1)
     last_day_prev_month = first_day_current_month - timedelta(days=1)
 
+    # Filter expenses for current month and previous month
+    current_month_expenses = [exp for exp in expenses if exp.date >= first_day_current_month and exp.date <= last_day_current_month]
+    previous_month_expenses = [exp for exp in expenses if exp.date >= first_day_prev_month and exp.date <= last_day_prev_month]
+
     comparison_chart_data = visualization.generate_category_comparison_chart(
-        expenses, (first_day_current_month, last_day_current_month),
-        (first_day_prev_month, last_day_prev_month), "Current Month",
-        "Previous Month")
+        current_month_expenses, previous_month_expenses, "month")
 
     return render_template(
         'dashboard.html',

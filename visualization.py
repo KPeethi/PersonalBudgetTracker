@@ -395,91 +395,49 @@ def generate_income_vs_expenses_chart(
     }, cls=NumpyEncoder)
 
 def generate_category_comparison_chart(
-    expenses: List[Any],
-    period1: Tuple[datetime.date, datetime.date] = None,
-    period2: Tuple[datetime.date, datetime.date] = None,
-    period1_name: str = "Current Month",
-    period2_name: str = "Previous Month"
+    current_period_expenses: List[Any],
+    previous_period_expenses: List[Any],
+    period_name: str = "month"
 ) -> str:
     """
-    Generate a comparison bar chart of category expenses between two periods.
+    Generate a comparative bar chart showing category expenses between two periods.
     
     Args:
-        expenses: List of Expense objects or dictionaries
-        period1: Tuple of (start_date, end_date) for the first period
-        period2: Tuple of (start_date, end_date) for the second period
-        period1_name: Name of the first period
-        period2_name: Name of the second period
+        current_period_expenses: List of current period Expense objects or dictionaries
+        previous_period_expenses: List of previous period Expense objects or dictionaries
+        period_name: Name of the period being compared (e.g., "month", "year")
         
     Returns:
         JSON string representation of the chart data
     """
-    if not expenses:
+    if not current_period_expenses and not previous_period_expenses:
         return json.dumps({
             "data": [],
             "layout": {"title": "No data available"}
         }, cls=NumpyEncoder)
     
-    # Set default periods if not provided
-    if period1 is None:
-        today = datetime.date.today()
-        first_day_current_month = datetime.date(today.year, today.month, 1)
-        if today.month == 12:
-            next_month = datetime.date(today.year + 1, 1, 1)
-        else:
-            next_month = datetime.date(today.year, today.month + 1, 1)
-        last_day_current_month = next_month - datetime.timedelta(days=1)
-        period1 = (first_day_current_month, last_day_current_month)
+    # Process current period expenses
+    current_df = pd.DataFrame([
+        {
+            "category": _get_expense_attr(expense, "category", "Uncategorized"),
+            "amount": _get_expense_attr(expense, "amount", 0),
+            "period": f"This {period_name.capitalize()}"
+        }
+        for expense in current_period_expenses
+    ])
     
-    if period2 is None:
-        today = datetime.date.today()
-        if today.month == 1:
-            prev_month = 12
-            prev_year = today.year - 1
-        else:
-            prev_month = today.month - 1
-            prev_year = today.year
-            
-        first_day_prev_month = datetime.date(prev_year, prev_month, 1)
-        first_day_current_month = datetime.date(today.year, today.month, 1)
-        last_day_prev_month = first_day_current_month - datetime.timedelta(days=1)
-        period2 = (first_day_prev_month, last_day_prev_month)
+    # Process previous period expenses
+    previous_df = pd.DataFrame([
+        {
+            "category": _get_expense_attr(expense, "category", "Uncategorized"),
+            "amount": _get_expense_attr(expense, "amount", 0),
+            "period": f"Last {period_name.capitalize()}"
+        }
+        for expense in previous_period_expenses
+    ])
     
-    # Create dataframes for the two periods with safer access
-    period1_expenses = []
-    period2_expenses = []
-    
-    for expense in expenses:
-        date = _get_expense_attr(expense, "date")
-        amount = _get_expense_attr(expense, "amount", 0)
-        category = _get_expense_attr(expense, "category", "Uncategorized")
-        
-        if date and isinstance(date, (datetime.date, datetime.datetime)):
-            if period1[0] <= date <= period1[1]:
-                period1_expenses.append({
-                    "category": category,
-                    "amount": amount,
-                    "period": period1_name
-                })
-            elif period2[0] <= date <= period2[1]:
-                period2_expenses.append({
-                    "category": category,
-                    "amount": amount,
-                    "period": period2_name
-                })
-    
-    # If no date info is available, let's just use all expenses for period 1
-    if not period1_expenses and not period2_expenses:
-        for expense in expenses:
-            amount = _get_expense_attr(expense, "amount", 0)
-            category = _get_expense_attr(expense, "category", "Uncategorized")
-            period1_expenses.append({
-                "category": category,
-                "amount": amount,
-                "period": period1_name
-            })
-    
-    df = pd.DataFrame(period1_expenses + period2_expenses)
+    # Combine the dataframes
+    df = pd.concat([current_df, previous_df])
     
     if df.empty:
         return json.dumps({
@@ -497,7 +455,7 @@ def generate_category_comparison_chart(
         y="amount",
         color="period",
         barmode="group",
-        title=f"Category Comparison: {period1_name} vs {period2_name}",
+        title=f"Category Comparison: This {period_name.capitalize()} vs Last {period_name.capitalize()}",
         labels={"category": "Category", "amount": "Total Expenses ($)", "period": "Period"},
         color_discrete_sequence=["#6200ee", "#03dac6"]
     )
