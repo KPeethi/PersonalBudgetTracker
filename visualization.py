@@ -6,7 +6,7 @@ Generates chart data for visualizing expense patterns.
 import json
 import datetime
 import calendar
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Union
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -25,12 +25,33 @@ class NumpyEncoder(json.JSONEncoder):
             return o.isoformat()
         return super(NumpyEncoder, self).default(o)
 
+def _get_expense_attr(expense, attr_name, default=None):
+    """
+    Safely get an attribute from an expense object or dictionary.
+    Works with both SQLAlchemy model objects and dictionaries.
+    
+    Args:
+        expense: Expense object or dictionary
+        attr_name: Name of the attribute to retrieve
+        default: Default value if attribute doesn't exist
+        
+    Returns:
+        The attribute value or default if not found
+    """
+    if hasattr(expense, '__dict__'):
+        # It's likely a SQLAlchemy model object
+        return getattr(expense, attr_name, default)
+    elif isinstance(expense, dict):
+        # It's a dictionary
+        return expense.get(attr_name, default)
+    return default
+
 def generate_category_distribution_chart(expenses: List[Any]) -> Dict[str, Any]:
     """
     Generate a pie chart showing the distribution of expenses by category.
     
     Args:
-        expenses: List of Expense objects
+        expenses: List of Expense objects or dictionaries
         
     Returns:
         Dictionary containing the chart data in a format suitable for modern dashboard
@@ -45,7 +66,10 @@ def generate_category_distribution_chart(expenses: List[Any]) -> Dict[str, Any]:
     
     # Create a dataframe from expenses
     df = pd.DataFrame([
-        {"category": expense.category, "amount": expense.amount}
+        {
+            "category": _get_expense_attr(expense, "category", "Uncategorized"),
+            "amount": _get_expense_attr(expense, "amount", 0)
+        }
         for expense in expenses
     ])
     
@@ -177,7 +201,7 @@ def generate_weekly_expenses_chart(expenses: List[Any], weeks: int = 4) -> str:
     Generate a stacked bar chart showing weekly expenses by category.
     
     Args:
-        expenses: List of Expense objects
+        expenses: List of Expense objects or dictionaries
         weeks: Number of weeks to include in the chart
         
     Returns:
@@ -193,17 +217,27 @@ def generate_weekly_expenses_chart(expenses: List[Any], weeks: int = 4) -> str:
     end_date = datetime.date.today()
     start_date = end_date - datetime.timedelta(days=weeks*7)
     
-    # Create a dataframe from expenses
-    df = pd.DataFrame([
-        {"date": expense.date, "amount": expense.amount, "category": expense.category}
-        for expense in expenses
-        if hasattr(expense, "date") and expense.date >= start_date and expense.date <= end_date
-    ])
+    # Create a dataframe from expenses with safer access
+    expense_data = []
+    for expense in expenses:
+        date = _get_expense_attr(expense, "date")
+        amount = _get_expense_attr(expense, "amount")
+        category = _get_expense_attr(expense, "category", "Uncategorized")
+        
+        if date and isinstance(date, (datetime.date, datetime.datetime)):
+            if start_date <= date <= end_date:
+                expense_data.append({
+                    "date": date,
+                    "amount": amount, 
+                    "category": category
+                })
+    
+    df = pd.DataFrame(expense_data)
     
     if df.empty:
         return json.dumps({
             "data": [],
-            "layout": {"title": f"No data available for the past {weeks} weeks"}
+            "layout": {"title": f"No date information available for the past {weeks} weeks"}
         }, cls=NumpyEncoder)
     
     # Add week number
@@ -287,7 +321,7 @@ def generate_income_vs_expenses_chart(
     Generate a donut chart showing income vs expenses and savings.
     
     Args:
-        expenses: List of Expense objects
+        expenses: List of Expense objects or dictionaries
         income: Monthly income amount (default: 4000)
         period: Number of days to calculate expenses (default: 30)
         
@@ -304,11 +338,19 @@ def generate_income_vs_expenses_chart(
     end_date = datetime.date.today()
     start_date = end_date - datetime.timedelta(days=period-1)
     
-    # Calculate total expenses for the period
-    total_expenses = sum(
-        expense.amount for expense in expenses
-        if hasattr(expense, "date") and start_date <= expense.date <= end_date
-    )
+    # Calculate total expenses for the period with safer access
+    total_expenses = 0
+    for expense in expenses:
+        date = _get_expense_attr(expense, "date")
+        amount = _get_expense_attr(expense, "amount", 0)
+        
+        # Only include expenses within the period if they have date information
+        if date and isinstance(date, (datetime.date, datetime.datetime)):
+            if start_date <= date <= end_date:
+                total_expenses += amount
+        else:
+            # If no date information, include all expenses
+            total_expenses += amount
     
     # Calculate savings
     savings = income - total_expenses
@@ -354,8 +396,8 @@ def generate_income_vs_expenses_chart(
 
 def generate_category_comparison_chart(
     expenses: List[Any],
-    period1: Tuple[datetime.date, datetime.date],
-    period2: Tuple[datetime.date, datetime.date],
+    period1: Tuple[datetime.date, datetime.date] = None,
+    period2: Tuple[datetime.date, datetime.date] = None,
     period1_name: str = "Current Month",
     period2_name: str = "Previous Month"
 ) -> str:
@@ -363,7 +405,7 @@ def generate_category_comparison_chart(
     Generate a comparison bar chart of category expenses between two periods.
     
     Args:
-        expenses: List of Expense objects
+        expenses: List of Expense objects or dictionaries
         period1: Tuple of (start_date, end_date) for the first period
         period2: Tuple of (start_date, end_date) for the second period
         period1_name: Name of the first period
@@ -378,18 +420,64 @@ def generate_category_comparison_chart(
             "layout": {"title": "No data available"}
         }, cls=NumpyEncoder)
     
-    # Create dataframes for the two periods
-    period1_expenses = [
-        {"category": expense.category, "amount": expense.amount, "period": period1_name}
-        for expense in expenses
-        if hasattr(expense, "date") and period1[0] <= expense.date <= period1[1]
-    ]
+    # Set default periods if not provided
+    if period1 is None:
+        today = datetime.date.today()
+        first_day_current_month = datetime.date(today.year, today.month, 1)
+        if today.month == 12:
+            next_month = datetime.date(today.year + 1, 1, 1)
+        else:
+            next_month = datetime.date(today.year, today.month + 1, 1)
+        last_day_current_month = next_month - datetime.timedelta(days=1)
+        period1 = (first_day_current_month, last_day_current_month)
     
-    period2_expenses = [
-        {"category": expense.category, "amount": expense.amount, "period": period2_name}
-        for expense in expenses
-        if hasattr(expense, "date") and period2[0] <= expense.date <= period2[1]
-    ]
+    if period2 is None:
+        today = datetime.date.today()
+        if today.month == 1:
+            prev_month = 12
+            prev_year = today.year - 1
+        else:
+            prev_month = today.month - 1
+            prev_year = today.year
+            
+        first_day_prev_month = datetime.date(prev_year, prev_month, 1)
+        first_day_current_month = datetime.date(today.year, today.month, 1)
+        last_day_prev_month = first_day_current_month - datetime.timedelta(days=1)
+        period2 = (first_day_prev_month, last_day_prev_month)
+    
+    # Create dataframes for the two periods with safer access
+    period1_expenses = []
+    period2_expenses = []
+    
+    for expense in expenses:
+        date = _get_expense_attr(expense, "date")
+        amount = _get_expense_attr(expense, "amount", 0)
+        category = _get_expense_attr(expense, "category", "Uncategorized")
+        
+        if date and isinstance(date, (datetime.date, datetime.datetime)):
+            if period1[0] <= date <= period1[1]:
+                period1_expenses.append({
+                    "category": category,
+                    "amount": amount,
+                    "period": period1_name
+                })
+            elif period2[0] <= date <= period2[1]:
+                period2_expenses.append({
+                    "category": category,
+                    "amount": amount,
+                    "period": period2_name
+                })
+    
+    # If no date info is available, let's just use all expenses for period 1
+    if not period1_expenses and not period2_expenses:
+        for expense in expenses:
+            amount = _get_expense_attr(expense, "amount", 0)
+            category = _get_expense_attr(expense, "category", "Uncategorized")
+            period1_expenses.append({
+                "category": category,
+                "amount": amount,
+                "period": period1_name
+            })
     
     df = pd.DataFrame(period1_expenses + period2_expenses)
     
