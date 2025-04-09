@@ -1,0 +1,711 @@
+"""
+Visualization module for the Expense Tracker application.
+Generates chart data for visualizing expense patterns.
+"""
+
+import json
+import datetime
+import calendar
+from typing import List, Dict, Any, Tuple, Union
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import numpy as np
+
+# Custom JSON encoder to handle NumPy types
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, np.integer):
+            return int(o)
+        elif isinstance(o, np.floating):
+            return float(o)
+        elif isinstance(o, np.ndarray):
+            return o.tolist()
+        elif isinstance(o, datetime.date):
+            return o.isoformat()
+        return super(NumpyEncoder, self).default(o)
+
+def _get_expense_attr(expense, attr_name, default=None):
+    """
+    Safely get an attribute from an expense object or dictionary.
+    Works with both SQLAlchemy model objects and dictionaries.
+    
+    Args:
+        expense: Expense object or dictionary
+        attr_name: Name of the attribute to retrieve
+        default: Default value if attribute doesn't exist
+        
+    Returns:
+        The attribute value or default if not found
+    """
+    if hasattr(expense, '__dict__'):
+        # It's likely a SQLAlchemy model object
+        return getattr(expense, attr_name, default)
+    elif isinstance(expense, dict):
+        # It's a dictionary
+        return expense.get(attr_name, default)
+    return default
+
+def generate_category_distribution_chart(expenses: List[Any]) -> Dict[str, Any]:
+    """
+    Generate a pie chart showing the distribution of expenses by category.
+    
+    Args:
+        expenses: List of Expense objects or dictionaries
+        
+    Returns:
+        Dictionary containing the chart data in a format suitable for modern dashboard
+    """
+    if not expenses:
+        return {
+            "data": {
+                "labels": [],
+                "values": []
+            }
+        }
+    
+    # Create a dataframe from expenses
+    df = pd.DataFrame([
+        {
+            "category": _get_expense_attr(expense, "category", "Uncategorized"),
+            "amount": _get_expense_attr(expense, "amount", 0)
+        }
+        for expense in expenses
+    ])
+    
+    # Group by category and sum amounts
+    category_totals = df.groupby("category").sum().reset_index()
+    
+    # Sort by amount (descending)
+    category_totals = category_totals.sort_values("amount", ascending=False)
+    
+    # Extract labels and values for the pie chart
+    labels = category_totals["category"].tolist()
+    values = category_totals["amount"].tolist()
+    
+    return {
+        "data": {
+            "labels": labels,
+            "values": values
+        }
+    }
+
+def generate_monthly_trend_chart(
+    monthly_data: List[Dict[str, Any]]
+) -> str:
+    """
+    Generate a line chart showing the monthly expense trends.
+    
+    Args:
+        monthly_data: List of monthly summary dictionaries
+        
+    Returns:
+        JSON string representation of the chart data
+    """
+    if not monthly_data:
+        return json.dumps({
+            "data": [],
+            "layout": {"title": "No data available"}
+        }, cls=NumpyEncoder)
+    
+    # Create a dataframe from monthly data
+    df = pd.DataFrame(monthly_data)
+    
+    # Create date labels
+    df["month_year"] = df.apply(
+        lambda x: f"{x['month']} {x['year']}", axis=1
+    )
+    
+    # Sort by year and month
+    # Use a dictionary for month name to number mapping to avoid indexing issues
+    month_to_num = {month: i for i, month in enumerate(calendar.month_name) if month}
+    df["sort_key"] = df.apply(
+        lambda x: x["year"] * 100 + month_to_num.get(x["month"], 0), axis=1
+    )
+    df = df.sort_values("sort_key")
+    
+    # Create a line chart
+    fig = px.line(
+        df, 
+        x="month_year", 
+        y="total_amount",
+        markers=True,
+        title="Monthly Expense Trend",
+        labels={"month_year": "Month", "total_amount": "Total Expenses ($)"},
+        color_discrete_sequence=["#6200ee"]
+    )
+    
+    fig.update_layout(
+        xaxis=dict(tickangle=45),
+        margin=dict(t=40, b=80, l=60, r=40)
+    )
+    
+    return json.dumps(fig.to_dict(), cls=NumpyEncoder)
+
+def generate_daily_expense_chart(expenses: List[Any], days: int = 30) -> str:
+    """
+    Generate a bar chart showing daily expenses for the past X days.
+    
+    Args:
+        expenses: List of Expense objects
+        days: Number of days to include in the chart
+        
+    Returns:
+        JSON string representation of the chart data
+    """
+    if not expenses:
+        return json.dumps({
+            "data": [],
+            "layout": {"title": "No data available"}
+        }, cls=NumpyEncoder)
+    
+    # Get date range
+    end_date = datetime.date.today()
+    start_date = end_date - datetime.timedelta(days=days-1)
+    
+    # Create a dataframe from expenses with safer access
+    expense_data = []
+    for expense in expenses:
+        date = _get_expense_attr(expense, "date")
+        amount = _get_expense_attr(expense, "amount", 0)
+        
+        if date and isinstance(date, (datetime.date, datetime.datetime)):
+            if start_date <= date <= end_date:
+                expense_data.append({
+                    "date": date,
+                    "amount": amount
+                })
+    
+    df = pd.DataFrame(expense_data)
+    
+    if df.empty:
+        return json.dumps({
+            "data": [],
+            "layout": {"title": f"No date information available for the past {days} days"}
+        }, cls=NumpyEncoder)
+    
+    # Group by date and sum amounts
+    daily_totals = df.groupby("date").sum().reset_index()
+    
+    # Create a bar chart
+    fig = px.bar(
+        daily_totals, 
+        x="date", 
+        y="amount",
+        title=f"Daily Expenses (Past {days} Days)",
+        labels={"date": "Date", "amount": "Total Expenses ($)"},
+        color_discrete_sequence=["#03dac6"]
+    )
+    
+    fig.update_layout(
+        xaxis=dict(tickangle=45),
+        margin=dict(t=40, b=80, l=60, r=40)
+    )
+    
+    return json.dumps(fig.to_dict(), cls=NumpyEncoder)
+
+def generate_weekly_expenses_chart(expenses: List[Any], weeks: int = 4) -> str:
+    """
+    Generate a stacked bar chart showing weekly expenses by category.
+    
+    Args:
+        expenses: List of Expense objects or dictionaries
+        weeks: Number of weeks to include in the chart
+        
+    Returns:
+        JSON string representation of the chart data
+    """
+    if not expenses:
+        return json.dumps({
+            "data": [],
+            "layout": {"title": "No data available"}
+        }, cls=NumpyEncoder)
+    
+    # Get date range
+    end_date = datetime.date.today()
+    start_date = end_date - datetime.timedelta(days=weeks*7)
+    
+    # Create a dataframe from expenses with safer access
+    expense_data = []
+    for expense in expenses:
+        date = _get_expense_attr(expense, "date")
+        amount = _get_expense_attr(expense, "amount")
+        category = _get_expense_attr(expense, "category", "Uncategorized")
+        
+        if date and isinstance(date, (datetime.date, datetime.datetime)):
+            if start_date <= date <= end_date:
+                expense_data.append({
+                    "date": date,
+                    "amount": amount, 
+                    "category": category
+                })
+    
+    df = pd.DataFrame(expense_data)
+    
+    if df.empty:
+        return json.dumps({
+            "data": [],
+            "layout": {"title": f"No date information available for the past {weeks} weeks"}
+        }, cls=NumpyEncoder)
+    
+    # Add week number - FIX FOR THE ERROR
+    df['week'] = df['date'].apply(lambda x: f"Week {((x - start_date).days // 7) + 1}")
+    
+    # Group by week and category, sum amounts
+    weekly_category_totals = df.groupby(['week', 'category']).sum().reset_index()
+    
+    # Calculate the average weekly expense for all categories combined
+    total_by_week = df.groupby('week')['amount'].sum().reset_index()
+    avg_weekly_expense = total_by_week['amount'].mean()
+    
+    # Sort by week to ensure proper order
+    weeks_order = [f"Week {i+1}" for i in range(weeks)]
+    weekly_category_totals['week'] = pd.Categorical(
+        weekly_category_totals['week'], 
+        categories=weeks_order, 
+        ordered=True
+    )
+    weekly_category_totals = weekly_category_totals.sort_values('week')
+    
+    # Get unique categories
+    categories = weekly_category_totals['category'].unique()
+    
+    # Create a stacked bar chart
+    fig = go.Figure()
+    
+    # Define a color palette for categories
+    colors = px.colors.qualitative.Bold
+    
+    # Add traces for each category
+    for i, category in enumerate(categories):
+        category_data = weekly_category_totals[weekly_category_totals['category'] == category]
+        fig.add_trace(go.Bar(
+            x=category_data['week'],
+            y=category_data['amount'],
+            name=category,
+            marker_color=colors[i % len(colors)]
+        ))
+    
+    # Update the layout
+    fig.update_layout(
+        barmode='stack',
+        title="Expenses by Week",
+        xaxis=dict(title=''),
+        yaxis=dict(
+            title='Amount ($)',
+            range=[0, total_by_week['amount'].max() * 1.1 if not total_by_week.empty else 100]  # Set max y slightly higher than data
+        ),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="center",
+            x=0.5
+        ),
+        margin=dict(t=50, b=50, l=50, r=50)
+    )
+    
+    # Create a custom annotation for average weekly expense
+    fig.add_annotation(
+        text=f"Average Weekly Expense: ${avg_weekly_expense:.2f}" if not pd.isna(avg_weekly_expense) else "No data",
+        xref="paper", yref="paper",
+        x=0.5, y=-0.15,
+        showarrow=False,
+        font=dict(size=14)
+    )
+    
+    return json.dumps({
+        "data": fig.to_dict()["data"],
+        "layout": fig.to_dict()["layout"],
+        "avg_weekly_expense": float(avg_weekly_expense) if not pd.isna(avg_weekly_expense) else 0
+    }, cls=NumpyEncoder)
+
+def generate_income_vs_expenses_chart(
+    expenses: List[Any], 
+    income: float = 0, 
+    months: int = 6
+) -> str:
+    """
+    Generate a bar chart comparing income vs expenses over time.
+    
+    Args:
+        expenses: List of Expense objects or dictionaries
+        income: Monthly income amount
+        months: Number of months to include in the chart
+        
+    Returns:
+        JSON string representation of the chart data
+    """
+    if not expenses:
+        return json.dumps({
+            "data": [],
+            "layout": {"title": "No data available"}
+        }, cls=NumpyEncoder)
+    
+    # Get date range
+    end_date = datetime.date.today()
+    start_date = end_date - datetime.timedelta(days=months*30)  # Approximate
+    
+    # Create a dataframe from expenses
+    expense_data = []
+    for expense in expenses:
+        date = _get_expense_attr(expense, "date")
+        amount = _get_expense_attr(expense, "amount", 0)
+        
+        if date and isinstance(date, (datetime.date, datetime.datetime)):
+            if start_date <= date <= end_date:
+                expense_data.append({
+                    "date": date,
+                    "amount": amount
+                })
+    
+    df = pd.DataFrame(expense_data)
+    
+    if df.empty:
+        return json.dumps({
+            "data": [],
+            "layout": {"title": f"No date information available for the past {months} months"}
+        }, cls=NumpyEncoder)
+    
+    # Add month and year
+    df['month'] = df['date'].apply(lambda x: x.strftime('%B'))
+    df['year'] = df['date'].apply(lambda x: x.year)
+    df['month_year'] = df.apply(lambda x: f"{x['month']} {x['year']}", axis=1)
+    
+    # Group by month_year, sum amounts
+    monthly_expenses = df.groupby('month_year').sum().reset_index()
+    
+    # Sort by date
+    month_to_num = {month: i for i, month in enumerate(calendar.month_name) if month}
+    monthly_expenses['sort_key'] = monthly_expenses['month_year'].apply(
+        lambda x: int(x.split()[1]) * 100 + month_to_num.get(x.split()[0], 0)
+    )
+    monthly_expenses = monthly_expenses.sort_values('sort_key')
+    
+    # Keep only the last 'months' months
+    if len(monthly_expenses) > months:
+        monthly_expenses = monthly_expenses.tail(months)
+    
+    # Create income data (assuming constant monthly income)
+    monthly_income = pd.DataFrame({
+        'month_year': monthly_expenses['month_year'],
+        'income': income
+    })
+    
+    # Create a grouped bar chart
+    fig = go.Figure()
+    
+    # Add traces for expenses and income
+    fig.add_trace(go.Bar(
+        x=monthly_expenses['month_year'],
+        y=monthly_expenses['amount'],
+        name='Expenses',
+        marker_color='#F44336'
+    ))
+    
+    if income > 0:
+        fig.add_trace(go.Bar(
+            x=monthly_income['month_year'],
+            y=monthly_income['income'],
+            name='Income',
+            marker_color='#4CAF50'
+        ))
+    
+    # Update the layout
+    fig.update_layout(
+        barmode='group',
+        title="Income vs Expenses by Month",
+        xaxis=dict(title=''),
+        yaxis=dict(title='Amount ($)'),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="center",
+            x=0.5
+        ),
+        margin=dict(t=40, b=80, l=60, r=40)
+    )
+    
+    # Calculate savings/deficit
+    total_expenses = monthly_expenses['amount'].sum()
+    total_income = income * len(monthly_expenses)
+    savings = total_income - total_expenses
+    
+    # Add annotation for total savings/deficit
+    if income > 0:
+        savings_text = f"Total Savings: ${savings:.2f}" if savings >= 0 else f"Total Deficit: ${-savings:.2f}"
+        fig.add_annotation(
+            text=savings_text,
+            xref="paper", yref="paper",
+            x=0.5, y=-0.15,
+            showarrow=False,
+            font=dict(size=14, color='#4CAF50' if savings >= 0 else '#F44336')
+        )
+    
+    return json.dumps(fig.to_dict(), cls=NumpyEncoder)
+
+def generate_expense_growth_chart(expenses: List[Any], months: int = 12) -> str:
+    """
+    Generate a line chart showing the growth or decline of expenses over time.
+    
+    Args:
+        expenses: List of Expense objects or dictionaries
+        months: Number of months to include
+        
+    Returns:
+        JSON string representation of the chart data
+    """
+    if not expenses:
+        return json.dumps({
+            "data": [],
+            "layout": {"title": "No data available"}
+        }, cls=NumpyEncoder)
+    
+    # Get date range
+    end_date = datetime.date.today()
+    start_date = end_date - datetime.timedelta(days=months*30)  # Approximate
+    
+    # Create a dataframe from expenses
+    expense_data = []
+    for expense in expenses:
+        date = _get_expense_attr(expense, "date")
+        amount = _get_expense_attr(expense, "amount", 0)
+        
+        if date and isinstance(date, (datetime.date, datetime.datetime)):
+            if start_date <= date <= end_date:
+                expense_data.append({
+                    "date": date,
+                    "amount": amount
+                })
+    
+    df = pd.DataFrame(expense_data)
+    
+    if df.empty:
+        return json.dumps({
+            "data": [],
+            "layout": {"title": f"No date information available for the past {months} months"}
+        }, cls=NumpyEncoder)
+    
+    # Add month and year
+    df['month'] = df['date'].apply(lambda x: x.strftime('%B'))
+    df['year'] = df['date'].apply(lambda x: x.year)
+    df['month_year'] = df.apply(lambda x: f"{x['month']} {x['year']}", axis=1)
+    
+    # Group by month_year, sum amounts
+    monthly_expenses = df.groupby('month_year').sum().reset_index()
+    
+    # Sort by date
+    month_to_num = {month: i for i, month in enumerate(calendar.month_name) if month}
+    monthly_expenses['sort_key'] = monthly_expenses['month_year'].apply(
+        lambda x: int(x.split()[1]) * 100 + month_to_num.get(x.split()[0], 0)
+    )
+    monthly_expenses = monthly_expenses.sort_values('sort_key')
+    
+    # Calculate month-over-month change
+    monthly_expenses['previous'] = monthly_expenses['amount'].shift(1)
+    monthly_expenses['change'] = monthly_expenses['amount'] - monthly_expenses['previous']
+    monthly_expenses['percent_change'] = (monthly_expenses['change'] / monthly_expenses['previous'] * 100).round(1)
+    
+    # Replace NaN with 0 for the first month
+    monthly_expenses['percent_change'] = monthly_expenses['percent_change'].fillna(0)
+    
+    # Create a line chart with markers and annotations
+    fig = go.Figure()
+    
+    fig.add_trace(go.Scatter(
+        x=monthly_expenses['month_year'],
+        y=monthly_expenses['amount'],
+        mode='lines+markers+text',
+        name='Monthly Expenses',
+        line=dict(color='#3F51B5', width=2),
+        marker=dict(size=8),
+        text=monthly_expenses['percent_change'].apply(
+            lambda x: f"+{x}%" if x > 0 else f"{x}%"
+        ),
+        textposition='top center',
+        textfont=dict(
+            color=monthly_expenses['percent_change'].apply(
+                lambda x: '#F44336' if x > 0 else ('#4CAF50' if x < 0 else '#757575')
+            )
+        )
+    ))
+    
+    # Calculate linear trendline
+    x = list(range(len(monthly_expenses)))
+    y = monthly_expenses['amount'].values
+    
+    if len(x) > 1:  # Need at least 2 points for a trendline
+        z = np.polyfit(x, y, 1)
+        p = np.poly1d(z)
+        trendline = p(x)
+        
+        # Add trendline
+        fig.add_trace(go.Scatter(
+            x=monthly_expenses['month_year'],
+            y=trendline,
+            mode='lines',
+            name='Trend',
+            line=dict(color='rgba(255, 87, 34, 0.5)', width=2, dash='dash')
+        ))
+    
+    # Update the layout
+    fig.update_layout(
+        title="Expense Growth Trend",
+        xaxis=dict(
+            title='',
+            tickangle=45
+        ),
+        yaxis=dict(title='Amount ($)'),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="center",
+            x=0.5
+        ),
+        margin=dict(t=40, b=80, l=60, r=40)
+    )
+    
+    # Calculate average monthly growth rate
+    avg_growth_rate = monthly_expenses['percent_change'].mean()
+    
+    # Add annotation for average growth rate
+    fig.add_annotation(
+        text=f"Average Monthly Growth Rate: {avg_growth_rate:.1f}%",
+        xref="paper", yref="paper",
+        x=0.5, y=-0.15,
+        showarrow=False,
+        font=dict(
+            size=14, 
+            color='#F44336' if avg_growth_rate > 0 else ('#4CAF50' if avg_growth_rate < 0 else '#757575')
+        )
+    )
+    
+    return json.dumps(fig.to_dict(), cls=NumpyEncoder)
+
+def generate_category_comparison_chart(
+    current_period_expenses: List[Any],
+    previous_period_expenses: List[Any],
+    period_name: str = "month"
+) -> str:
+    """
+    Generate a comparative bar chart showing category expenses between two periods.
+    
+    Args:
+        current_period_expenses: List of current period Expense objects or dictionaries
+        previous_period_expenses: List of previous period Expense objects or dictionaries
+        period_name: Name of the period being compared (e.g., "month", "year")
+        
+    Returns:
+        JSON string representation of the chart data
+    """
+    if not current_period_expenses and not previous_period_expenses:
+        return json.dumps({
+            "data": [],
+            "layout": {"title": "No data available"}
+        }, cls=NumpyEncoder)
+    
+    # Process current period expenses
+    current_df = pd.DataFrame([
+        {
+            "category": _get_expense_attr(expense, "category", "Uncategorized"),
+            "amount": _get_expense_attr(expense, "amount", 0)
+        }
+        for expense in current_period_expenses
+    ])
+    
+    # Process previous period expenses
+    previous_df = pd.DataFrame([
+        {
+            "category": _get_expense_attr(expense, "category", "Uncategorized"),
+            "amount": _get_expense_attr(expense, "amount", 0)
+        }
+        for expense in previous_period_expenses
+    ])
+    
+    # Group by category and sum amounts
+    if not current_df.empty:
+        current_totals = current_df.groupby("category").sum().reset_index()
+    else:
+        current_totals = pd.DataFrame(columns=["category", "amount"])
+    
+    if not previous_df.empty:
+        previous_totals = previous_df.groupby("category").sum().reset_index()
+    else:
+        previous_totals = pd.DataFrame(columns=["category", "amount"])
+    
+    # Get all unique categories
+    all_categories = set(current_totals["category"].tolist() + previous_totals["category"].tolist())
+    
+    # Prepare data for the chart
+    chart_data = []
+    for category in all_categories:
+        current_amount = current_totals[current_totals["category"] == category]["amount"].sum() if category in current_totals["category"].values else 0
+        previous_amount = previous_totals[previous_totals["category"] == category]["amount"].sum() if category in previous_totals["category"].values else 0
+        
+        chart_data.append({
+            "category": category,
+            "current": current_amount,
+            "previous": previous_amount,
+            "change": current_amount - previous_amount,
+            "percent_change": round((current_amount - previous_amount) / previous_amount * 100, 1) if previous_amount > 0 else 0
+        })
+    
+    # Convert to dataframe and sort by current amount
+    chart_df = pd.DataFrame(chart_data)
+    chart_df = chart_df.sort_values("current", ascending=False)
+    
+    # Create a grouped bar chart
+    fig = go.Figure()
+    
+    # Add traces for current and previous period
+    fig.add_trace(go.Bar(
+        x=chart_df["category"],
+        y=chart_df["current"],
+        name=f"This {period_name}",
+        marker_color="#3F51B5"
+    ))
+    
+    fig.add_trace(go.Bar(
+        x=chart_df["category"],
+        y=chart_df["previous"],
+        name=f"Last {period_name}",
+        marker_color="#757575"
+    ))
+    
+    # Update the layout
+    fig.update_layout(
+        barmode="group",
+        title=f"Category Comparison: This {period_name.capitalize()} vs Last {period_name.capitalize()}",
+        xaxis=dict(
+            title="",
+            tickangle=45
+        ),
+        yaxis=dict(title="Amount ($)"),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="center",
+            x=0.5
+        ),
+        margin=dict(t=40, b=100, l=60, r=40)
+    )
+    
+    # Add annotations for percent change
+    for i, row in chart_df.iterrows():
+        if row["previous"] > 0:  # Only show change if there was a previous amount
+            sign = "+" if row["change"] > 0 else ""
+            fig.add_annotation(
+                x=row["category"],
+                y=max(row["current"], row["previous"]) + 5,
+                text=f"{sign}{row['percent_change']}%",
+                showarrow=False,
+                font=dict(
+                    size=10,
+                    color="#4CAF50" if row["change"] < 0 else ("#F44336" if row["change"] > 0 else "#757575")
+                )
+            )
+    
+    return json.dumps(fig.to_dict(), cls=NumpyEncoder)
