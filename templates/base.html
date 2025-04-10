@@ -203,14 +203,15 @@
                         {% endif %}
                     </ul>
                     <ul class="navbar-nav">
+                        <!-- Theme Toggle Button - Always visible -->
+                        <li class="nav-item me-2">
+                            <button class="btn btn-light rounded-circle p-2 d-flex align-items-center justify-content-center" id="theme-toggle" style="width: 40px; height: 40px; background-color: rgba(var(--bs-primary-rgb), 0.1);">
+                                <i class="bi bi-sun-fill" id="theme-icon-light"></i>
+                                <i class="bi bi-moon-fill" id="theme-icon-dark" style="display: none;"></i>
+                            </button>
+                        </li>
+                        
                         {% if current_user.is_authenticated %}
-                            <!-- Theme Toggle -->
-                            <li class="nav-item me-2">
-                                <button class="btn btn-light rounded-circle p-2 d-flex align-items-center justify-content-center" id="theme-toggle" style="width: 40px; height: 40px; background-color: rgba(var(--bs-primary-rgb), 0.1);">
-                                    <i class="bi bi-sun-fill" id="theme-icon-light"></i>
-                                    <i class="bi bi-moon-fill" id="theme-icon-dark" style="display: none;"></i>
-                                </button>
-                            </li>
                             
                             <!-- Notification dropdown -->
                             <li class="nav-item dropdown me-2">
@@ -431,9 +432,8 @@
     <!-- Additional JavaScript -->
     {% block scripts %}{% endblock %}
 
-    {% if current_user.is_authenticated %}
     <script>
-        // Theme toggle functionality
+        // Theme toggle functionality for all users
         document.addEventListener('DOMContentLoaded', function() {
             const themeToggle = document.getElementById('theme-toggle');
             const iconLight = document.getElementById('theme-icon-light');
@@ -466,7 +466,8 @@
                     iconDark.style.display = 'none';
                 }
                 
-                // Save preference to database
+                // Save preference to database if logged in
+                {% if current_user.is_authenticated %}
                 fetch('/save_preferences', {
                     method: 'POST',
                     headers: {
@@ -479,8 +480,32 @@
                 .catch(error => {
                     console.error('Error saving theme preference:', error);
                 });
+                {% else %}
+                // Save to localStorage for non-authenticated users
+                localStorage.setItem('theme', newTheme);
+                {% endif %}
             });
+            
+            // For non-authenticated users, check localStorage on page load
+            {% if not current_user.is_authenticated %}
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-bs-theme', savedTheme);
+                if (savedTheme === 'dark') {
+                    iconLight.style.display = 'none';
+                    iconDark.style.display = 'inline-block';
+                } else {
+                    iconLight.style.display = 'inline-block';
+                    iconDark.style.display = 'none';
+                }
+            }
+            {% endif %}
         });
+    </script>
+
+    {% if current_user.is_authenticated %}
+    <script>
+        // Authenticated user functionality
         
         // Sidebar toggle functionality for mobile
         document.addEventListener('DOMContentLoaded', function() {
