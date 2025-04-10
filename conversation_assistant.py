@@ -44,40 +44,40 @@ except Exception as e:
 QUERY_PATTERNS = {
     "category_total": {
         "pattern": r"(how much|total|spent|spend|sum) .* (on|in) (?P<category>\w+)",
-        "sql_template": "SELECT SUM(amount) FROM expense WHERE category ILIKE :category AND user_id = :user_id {time_filter}"
+        "sql_template": "SELECT SUM(amount) FROM expenses WHERE category ILIKE :category AND user_id = :user_id {time_filter}"
     },
     "timeframe_total": {
         "pattern": r"(how much|total|spent|spend|sum) .* (last|this) (?P<timeframe>week|month|year)",
-        "sql_template": "SELECT SUM(amount) FROM expense WHERE user_id = :user_id {time_filter}"
+        "sql_template": "SELECT SUM(amount) FROM expenses WHERE user_id = :user_id {time_filter}"
     },
     "category_in_timeframe": {
         "pattern": r"(how much|total|spent|spend|sum) .* (on|in) (?P<category>\w+) .* (last|this) (?P<timeframe>week|month|year)",
-        "sql_template": "SELECT SUM(amount) FROM expense WHERE category ILIKE :category AND user_id = :user_id {time_filter}"
+        "sql_template": "SELECT SUM(amount) FROM expenses WHERE category ILIKE :category AND user_id = :user_id {time_filter}"
     },
     "top_expenses": {
         "pattern": r"(top|highest|largest|biggest) (?P<count>\d+)? ?expenses",
-        "sql_template": "SELECT * FROM expense WHERE user_id = :user_id {time_filter} ORDER BY amount DESC LIMIT :limit"
+        "sql_template": "SELECT * FROM expenses WHERE user_id = :user_id {time_filter} ORDER BY amount DESC LIMIT :limit"
     },
     "category_comparison": {
         "pattern": r"(compare|comparison|breakdown|distribution) .* (categories|spending)",
-        "sql_template": "SELECT category, SUM(amount) as total FROM expense WHERE user_id = :user_id {time_filter} GROUP BY category ORDER BY total DESC"
+        "sql_template": "SELECT category, SUM(amount) as total FROM expenses WHERE user_id = :user_id {time_filter} GROUP BY category ORDER BY total DESC"
     },
     "month_comparison": {
         "pattern": r"(compare|comparison|monthly|months) .* (spending|expenses)",
-        "sql_template": "SELECT EXTRACT(YEAR FROM date) as year, EXTRACT(MONTH FROM date) as month, SUM(amount) as total FROM expense WHERE user_id = :user_id GROUP BY year, month ORDER BY year, month"
+        "sql_template": "SELECT EXTRACT(YEAR FROM date) as year, EXTRACT(MONTH FROM date) as month, SUM(amount) as total FROM expenses WHERE user_id = :user_id GROUP BY year, month ORDER BY year, month"
     },
     "category_explosion": {
         "pattern": r"(which|what) category (exploded|increased|grew|rose) .* (this|last) (?P<timeframe>month|year)",
         "sql_template": """
             WITH current_period AS (
                 SELECT category, SUM(amount) as current_total 
-                FROM expense 
+                FROM expenses 
                 WHERE user_id = :user_id {current_time_filter}
                 GROUP BY category
             ),
             previous_period AS (
                 SELECT category, SUM(amount) as previous_total 
-                FROM expense 
+                FROM expenses 
                 WHERE user_id = :user_id {previous_time_filter}
                 GROUP BY category
             )
@@ -575,29 +575,27 @@ def get_expense_forecast(user_id: int, category: str = None, months_ahead: int =
     Returns:
         Dictionary with forecast data
     """
-    # Get historical expense data
-    query = Expense.query.filter_by(user_id=user_id)
+    # Get historical expense data using raw SQL to avoid table name issues
+    sql_query = """
+    SELECT EXTRACT(YEAR FROM date) as year, 
+           EXTRACT(MONTH FROM date) as month,
+           SUM(amount) as total
+    FROM expenses
+    WHERE user_id = :user_id
+    """
+    
+    params = {'user_id': user_id}
     
     if category:
-        query = query.filter_by(category=category)
+        sql_query += " AND category = :category"
+        params['category'] = category
     
-    # Group by month and get monthly totals
-    monthly_expenses = db.session.query(
-        extract('year', Expense.date).label('year'),
-        extract('month', Expense.date).label('month'),
-        func.sum(Expense.amount).label('total')
-    ).filter_by(user_id=user_id)
+    sql_query += """
+    GROUP BY EXTRACT(YEAR FROM date), EXTRACT(MONTH FROM date)
+    ORDER BY EXTRACT(YEAR FROM date), EXTRACT(MONTH FROM date)
+    """
     
-    if category:
-        monthly_expenses = monthly_expenses.filter_by(category=category)
-    
-    monthly_expenses = monthly_expenses.group_by(
-        extract('year', Expense.date),
-        extract('month', Expense.date)
-    ).order_by(
-        extract('year', Expense.date),
-        extract('month', Expense.date)
-    ).all()
+    monthly_expenses = db.session.execute(text(sql_query), params).all()
     
     # Need at least 3 months of data for meaningful forecasting
     if len(monthly_expenses) < 3:
