@@ -11,7 +11,7 @@ import io
 import os
 from werkzeug.utils import secure_filename
 from app import app, db
-from models import User, Expense, UserPreference, Budget, UserNotification, Receipt
+from models import User, Expense, UserPreference, Budget, UserNotification, Receipt, CustomBudgetCategory
 from forms import RegistrationForm, LoginForm, ExpenseForm, ReceiptUploadForm, BudgetForm
 import plaid_service
 import visualization
@@ -1540,7 +1540,7 @@ def preferences():
 @app.route('/budget/edit', methods=['GET', 'POST'])
 @login_required
 def edit_budget():
-    """Edit user's budget settings"""
+    """Edit user's budget settings and custom categories"""
     # Get the current month and year
     current_month = datetime.now().month
     current_year = datetime.now().year
@@ -1563,10 +1563,59 @@ def edit_budget():
         db.session.commit()
         flash('Created a new budget for the current month.', 'info')
     
+    # Get user's custom budget categories
+    custom_categories = CustomBudgetCategory.query.filter_by(
+        budget_id=user_budget.id
+    ).all()
+    
     # Create the form and populate it with the current budget values
     form = BudgetForm(obj=user_budget) if request.method == 'GET' else BudgetForm()
     
-    if form.validate_on_submit():
+    # Handle adding a new custom category
+    if request.method == 'POST' and 'add_custom_category' in request.form:
+        category_name = form.custom_category_name.data
+        category_amount = form.custom_category_amount.data or 0.0
+        
+        if category_name:
+            # Create a new custom category
+            new_category = CustomBudgetCategory(
+                budget_id=user_budget.id,
+                name=category_name,
+                amount=category_amount,
+                # Default icon and color, can be enhanced later
+                icon='tag',
+                color='primary'
+            )
+            db.session.add(new_category)
+            try:
+                db.session.commit()
+                flash(f'Added new category: {category_name}', 'success')
+            except Exception as e:
+                db.session.rollback()
+                logger.exception("Error adding custom category")
+                flash(f'Error adding category: {str(e)}', 'danger')
+            
+            return redirect(url_for('edit_budget'))
+    
+    # Handle deleting a custom category
+    if request.method == 'POST' and 'delete_custom_category' in request.form:
+        category_id = request.form.get('delete_category_id')
+        if category_id:
+            category = CustomBudgetCategory.query.get(category_id)
+            if category and category.budget_id == user_budget.id:  # Security check
+                try:
+                    db.session.delete(category)
+                    db.session.commit()
+                    flash(f'Deleted category: {category.name}', 'success')
+                except Exception as e:
+                    db.session.rollback()
+                    logger.exception("Error deleting custom category")
+                    flash(f'Error deleting category: {str(e)}', 'danger')
+                
+                return redirect(url_for('edit_budget'))
+    
+    # Handle main budget form submission (standard category updates)
+    if form.validate_on_submit() and 'add_custom_category' not in request.form and 'delete_custom_category' not in request.form:
         try:
             # Update the budget with form data
             user_budget.total_budget = form.total_budget.data
@@ -1577,6 +1626,17 @@ def edit_budget():
             user_budget.shopping = form.shopping.data
             user_budget.other = form.other.data
             user_budget.updated_at = datetime.utcnow()
+            
+            # Update custom category amounts
+            for category in custom_categories:
+                category_field_name = f'custom_category_{category.id}'
+                if category_field_name in request.form:
+                    try:
+                        amount = float(request.form[category_field_name])
+                        category.amount = amount
+                    except (ValueError, TypeError):
+                        # Skip if value can't be converted to float
+                        pass
             
             db.session.commit()
             flash('Budget updated successfully!', 'success')
@@ -1589,9 +1649,10 @@ def edit_budget():
     
     # For GET requests or if form validation fails
     return render_template('edit_budget.html', 
-                          title='Edit Budget',
+                          title='Budget Settings',
                           form=form,
-                          user_budget=user_budget)
+                          user_budget=user_budget,
+                          custom_categories=custom_categories)
 
 
 @app.route('/save_preferences', methods=['POST'])
