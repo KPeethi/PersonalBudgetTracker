@@ -612,6 +612,8 @@ def get_helpful_tip(query_info: Dict[str, Any], query_result: Dict[str, Any]) ->
     Returns:
         A helpful tip or empty string if no tip is applicable
     """
+    import random  # Import here to avoid global import issues
+    
     query_type = query_info['query_type']
     
     # Tips for expense queries

@@ -2201,18 +2201,17 @@ def process_ai_query():
         })
     
     try:
-        # Process the query
-        response = conversation_assistant.process_query(query)
+        # Process the query - now returns a dictionary with response and metadata
+        result = conversation_assistant.process_query(query)
         
-        return jsonify({
-            'success': True,
-            'response': response
-        })
+        # Simply return the result dictionary as JSON
+        # It already contains 'success' and 'response' keys
+        return jsonify(result)
     except Exception as e:
         logger.error(f"Error processing query: {str(e)}")
         return jsonify({
             'success': False,
-            'response': f"Error processing query: {str(e)}"
+            'response': 'Sorry, there was an error processing your query. Please try again.'
         })
 
 @app.route('/ai/process_audio', methods=['POST'])
