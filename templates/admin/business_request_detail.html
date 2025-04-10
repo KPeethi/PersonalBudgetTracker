@@ -138,6 +138,18 @@
                             </a>
                         </div>
                     </form>
+                    
+                    <div class="mt-4">
+                        <div class="alert alert-warning">
+                            <h6 class="alert-heading">Having trouble with the form?</h6>
+                            <p>If you're experiencing issues with the regular form above, you can use this alternative method:</p>
+                            <a href="{{ url_for('direct_approve_business_request', request_id=request.id) }}" 
+                               class="btn btn-warning btn-sm" 
+                               onclick="return confirm('Are you sure you want to directly approve this request?')">
+                                <i class="bi bi-lightning-fill"></i> Direct Approval Method
+                            </a>
+                        </div>
+                    </div>
                     {% else %}
                     <div class="d-flex justify-content-end">
                         <a href="{{ url_for('admin_business_requests') }}" class="btn btn-secondary">

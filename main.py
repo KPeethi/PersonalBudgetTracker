@@ -2600,6 +2600,65 @@ def migrate_business_tables():
     return redirect(url_for('dashboard'))
 
 
+@app.route('/admin/direct_approve/<int:request_id>')
+@login_required
+def direct_approve_business_request(request_id):
+    """Debug route for direct approval of business upgrade requests."""
+    if not current_user.is_admin:
+        flash('You do not have permission to access this page.', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    try:
+        # Get the business upgrade request
+        upgrade_request = BusinessUpgradeRequest.query.get_or_404(request_id)
+        logger.info(f"DIRECT APPROVAL - Request: {upgrade_request.id}, Status: {upgrade_request.status}")
+        
+        # Get the requesting user
+        user = User.query.get(upgrade_request.user_id)
+        if not user:
+            flash('User not found for this request.', 'danger')
+            return redirect(url_for('admin_business_requests'))
+            
+        logger.info(f"DIRECT APPROVAL - User: {user.username} (ID: {user.id})")
+        
+        # Update request status
+        upgrade_request.status = 'approved'
+        upgrade_request.admin_notes = 'Directly approved by admin'
+        upgrade_request.handled_by = current_user.id
+        upgrade_request.updated_at = datetime.now()
+        
+        # Update user's business status
+        user.is_business_user = True
+        logger.info(f"DIRECT APPROVAL - Set is_business_user to {user.is_business_user}")
+        
+        # Create user notification
+        notification = UserNotification(
+            user_id=user.id,
+            title='Business Upgrade Request Approved',
+            message='Your request to access business features has been approved directly. You now have access to business features.',
+            notification_type='success'
+        )
+        db.session.add(notification)
+        
+        # Commit changes
+        db.session.commit()
+        logger.info("DIRECT APPROVAL - Database commit successful")
+        
+        # Log final state
+        db.session.refresh(user)
+        db.session.refresh(upgrade_request)
+        logger.info(f"DIRECT APPROVAL - Final user business status: {user.is_business_user}")
+        logger.info(f"DIRECT APPROVAL - Final request status: {upgrade_request.status}")
+        
+        flash('Business upgrade request has been directly approved.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"DIRECT APPROVAL ERROR: {str(e)}")
+        flash(f'Error approving request: {str(e)}', 'danger')
+    
+    return redirect(url_for('admin_business_requests'))
+
+
 # Add a check for business users to the AI prediction routes
 @app.route('/ai/expense_forecast')
 @login_required
