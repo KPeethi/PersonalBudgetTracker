@@ -219,6 +219,71 @@
                             View All
                         </a>
                     </div>
+                    
+                    <!-- Search and Sort Controls -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <form method="get" action="{{ url_for('dashboard') }}" class="d-flex">
+                                {% if request.args.get('user_id') %}
+                                <input type="hidden" name="user_id" value="{{ request.args.get('user_id') }}">
+                                {% endif %}
+                                <input type="text" class="form-control form-control-sm me-2" 
+                                       name="search" placeholder="Search expenses..." 
+                                       value="{{ request.args.get('search', '') }}">
+                                <button type="submit" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </form>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-end">
+                                <div class="dropdown me-2">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                                            id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Sort By: {{ request.args.get('sort_by', 'date').capitalize() }}
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="sortDropdown">
+                                        <li><a class="dropdown-item" href="{{ url_for('dashboard', 
+                                            search=request.args.get('search', ''), 
+                                            sort_by='date', 
+                                            sort_order=request.args.get('sort_order', 'desc'),
+                                            page=request.args.get('page', 1),
+                                            user_id=request.args.get('user_id', '')) }}">Date</a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('dashboard', 
+                                            search=request.args.get('search', ''), 
+                                            sort_by='description', 
+                                            sort_order=request.args.get('sort_order', 'desc'),
+                                            page=request.args.get('page', 1),
+                                            user_id=request.args.get('user_id', '')) }}">Description</a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('dashboard', 
+                                            search=request.args.get('search', ''), 
+                                            sort_by='category', 
+                                            sort_order=request.args.get('sort_order', 'desc'),
+                                            page=request.args.get('page', 1),
+                                            user_id=request.args.get('user_id', '')) }}">Category</a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('dashboard', 
+                                            search=request.args.get('search', ''), 
+                                            sort_by='amount', 
+                                            sort_order=request.args.get('sort_order', 'desc'),
+                                            page=request.args.get('page', 1),
+                                            user_id=request.args.get('user_id', '')) }}">Amount</a></li>
+                                    </ul>
+                                </div>
+                                
+                                <!-- Order Toggle Button -->
+                                <a href="{{ url_for('dashboard', 
+                                    search=request.args.get('search', ''), 
+                                    sort_by=request.args.get('sort_by', 'date'), 
+                                    sort_order='asc' if request.args.get('sort_order', 'desc') == 'desc' else 'desc',
+                                    page=request.args.get('page', 1),
+                                    user_id=request.args.get('user_id', '')) }}" 
+                                   class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-arrow-{{ 'down' if request.args.get('sort_order', 'desc') == 'desc' else 'up' }}"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead class="table-light">
@@ -247,9 +312,64 @@
                                     <td class="text-end">${{ "%.2f"|format(expense.amount) }}</td>
                                 </tr>
                                 {% endfor %}
+                                {% if not recent_expenses %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-3">No expenses found</td>
+                                </tr>
+                                {% endif %}
                             </tbody>
                         </table>
                     </div>
+                    
+                    <!-- Pagination -->
+                    <nav aria-label="Expense pagination" class="mt-3">
+                        <ul class="pagination pagination-sm justify-content-center">
+                            <!-- Previous button -->
+                            <li class="page-item {{ 'disabled' if request.args.get('page', 1)|int == 1 else '' }}">
+                                <a class="page-link" href="{{ url_for('dashboard', 
+                                    search=request.args.get('search', ''), 
+                                    sort_by=request.args.get('sort_by', 'date'), 
+                                    sort_order=request.args.get('sort_order', 'desc'),
+                                    page=(request.args.get('page', 1)|int - 1),
+                                    user_id=request.args.get('user_id', '')) }}" 
+                                   aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            
+                            <!-- Page buttons - show 5 pages max -->
+                            {% set current_page = request.args.get('page', 1)|int %}
+                            {% set start_page = [current_page - 2, 1]|max %}
+                            {% set end_page = [start_page + 4, (total_items + per_page - 1) // per_page]|min %}
+                            {% set start_page = [end_page - 4, 1]|max %}
+                            
+                            {% for p in range(start_page, end_page + 1) %}
+                            <li class="page-item {{ 'active' if p == current_page else '' }}">
+                                <a class="page-link" href="{{ url_for('dashboard', 
+                                    search=request.args.get('search', ''), 
+                                    sort_by=request.args.get('sort_by', 'date'), 
+                                    sort_order=request.args.get('sort_order', 'desc'),
+                                    page=p,
+                                    user_id=request.args.get('user_id', '')) }}">
+                                    {{ p }}
+                                </a>
+                            </li>
+                            {% endfor %}
+                            
+                            <!-- Next button -->
+                            <li class="page-item {{ 'disabled' if current_page >= ((total_items + per_page - 1) // per_page) else '' }}">
+                                <a class="page-link" href="{{ url_for('dashboard', 
+                                    search=request.args.get('search', ''), 
+                                    sort_by=request.args.get('sort_by', 'date'), 
+                                    sort_order=request.args.get('sort_order', 'desc'),
+                                    page=(current_page + 1),
+                                    user_id=request.args.get('user_id', '')) }}" 
+                                   aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
                 </div>
             </div>
         </div>

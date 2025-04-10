@@ -555,9 +555,54 @@ def dashboard():
     comparison_chart_data = visualization.generate_category_comparison_chart(
         current_month_expenses, previous_month_expenses, "month")
 
-    # Get recent expenses for the dashboard
-    sorted_expenses = sorted(expenses, key=lambda x: x.date, reverse=True)
-    recent_expenses = sorted_expenses[:5] if len(sorted_expenses) > 5 else sorted_expenses
+    # Handle search, sorting, and pagination for expenses
+    search_query = request.args.get('search', '')
+    sort_by = request.args.get('sort_by', 'date')
+    sort_order = request.args.get('sort_order', 'desc')
+    page = request.args.get('page', 1, type=int)
+    per_page = 5  # Number of expenses per page
+    
+    # Apply search filter if provided
+    if search_query:
+        filtered_expenses = [exp for exp in expenses if 
+                           search_query.lower() in exp.description.lower() or 
+                           search_query.lower() in exp.category.lower()]
+    else:
+        filtered_expenses = expenses
+    
+    # Apply sorting
+    if sort_by == 'amount':
+        if sort_order == 'asc':
+            sorted_expenses = sorted(filtered_expenses, key=lambda x: x.amount)
+        else:
+            sorted_expenses = sorted(filtered_expenses, key=lambda x: x.amount, reverse=True)
+    elif sort_by == 'category':
+        if sort_order == 'asc':
+            sorted_expenses = sorted(filtered_expenses, key=lambda x: x.category.lower())
+        else:
+            sorted_expenses = sorted(filtered_expenses, key=lambda x: x.category.lower(), reverse=True)
+    elif sort_by == 'description':
+        if sort_order == 'asc':
+            sorted_expenses = sorted(filtered_expenses, key=lambda x: x.description.lower())
+        else:
+            sorted_expenses = sorted(filtered_expenses, key=lambda x: x.description.lower(), reverse=True)
+    else:  # default: sort by date
+        if sort_order == 'asc':
+            sorted_expenses = sorted(filtered_expenses, key=lambda x: x.date)
+        else:
+            sorted_expenses = sorted(filtered_expenses, key=lambda x: x.date, reverse=True)
+    
+    # Calculate total number of pages
+    total_items = len(sorted_expenses)
+    total_pages = (total_items + per_page - 1) // per_page  # Ceiling division
+    
+    # Apply pagination
+    start_idx = (page - 1) * per_page
+    end_idx = min(start_idx + per_page, total_items)
+    paginated_expenses = sorted_expenses[start_idx:end_idx]
+    
+    # Get all expenses for display (pagination will be applied in template)
+    recent_expenses = paginated_expenses
     
     # Create expense stats for the dashboard
     expense_stats = {
@@ -579,7 +624,11 @@ def dashboard():
         weekly_expenses_chart_data=weekly_expenses_chart_data,
         monthly_chart_data=monthly_chart_data,
         income_expense_chart_data=income_expense_chart_data,
-        comparison_chart_data=comparison_chart_data)
+        comparison_chart_data=comparison_chart_data,
+        # Pagination variables
+        total_items=total_items,
+        per_page=per_page,
+        current_page=page)
 
 
 # Admin routes
