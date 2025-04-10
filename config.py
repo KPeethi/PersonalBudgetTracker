@@ -6,12 +6,25 @@ Update these settings to match your environment.
 import os
 import logging
 
+# Try to load environment variables from .env file if python-dotenv is installed
+try:
+    from dotenv import load_dotenv
+    load_dotenv()  # Load environment variables from .env file if it exists
+    dotenv_loaded = True
+except ImportError:
+    dotenv_loaded = False
+
 # Set up logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+if dotenv_loaded:
+    logger.info("Loaded environment variables from .env file")
+else:
+    logger.info("Python-dotenv not installed, using environment variables directly")
 
 # Environment Detection
 ENVIRONMENT = os.environ.get("ENVIRONMENT", "development").lower()
