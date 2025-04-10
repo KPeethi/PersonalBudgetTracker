@@ -519,8 +519,8 @@ def dashboard():
         expenses)
     weekly_expenses_chart_data = visualization.generate_weekly_expenses_chart(
         expenses)
-    monthly_chart_data = visualization.generate_monthly_trend_chart(
-        monthly_data)
+    # Note: We're now using the simple data structure for monthly_chart_data defined above,
+    # instead of overwriting it with visualization.generate_monthly_trend_chart()
 
     # Income vs expenses chart (with a default income for now)
     income_expense_chart_data = visualization.generate_income_vs_expenses_chart(
