@@ -78,6 +78,6 @@ class ReceiptUploadForm(FlaskForm):
         FileRequired(),
         FileAllowed(['jpg', 'jpeg', 'png', 'pdf'], 'Only images (JPG, PNG) and PDF files are allowed.')
     ])
-    expense_id = SelectField('Link to Expense', coerce=int, validators=[DataRequired()])
+    expense_id = SelectField('Link to Expense (Required)', coerce=int, validators=[DataRequired()])
     description = TextAreaField('Description', validators=[Optional(), Length(max=255)])
     submit = SubmitField('Upload Receipt')

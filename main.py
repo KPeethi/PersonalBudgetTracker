@@ -1557,7 +1557,6 @@ def receipts():
     expenses = Expense.query.filter_by(user_id=current_user.id).order_by(Expense.date.desc()).all()
     form.expense_id.choices = [(expense.id, f"{expense.date.strftime('%Y-%m-%d')} - {expense.description} (${expense.amount:.2f})") 
                                for expense in expenses]
-    form.expense_id.choices.insert(0, (0, 'Select an expense (optional)'))
     
     # Get all user's receipts
     if current_user.is_admin and request.args.get('all_users') == 'true':
@@ -1577,7 +1576,6 @@ def upload_receipt():
     expenses = Expense.query.filter_by(user_id=current_user.id).order_by(Expense.date.desc()).all()
     form.expense_id.choices = [(expense.id, f"{expense.date.strftime('%Y-%m-%d')} - {expense.description} (${expense.amount:.2f})") 
                               for expense in expenses]
-    form.expense_id.choices.insert(0, (0, 'Select an expense (optional)'))
     
     if form.validate_on_submit():
         try:
@@ -1591,12 +1589,9 @@ def upload_receipt():
             # Save file
             file.save(file_path)
             
-            # Determine the expense ID (may be None if no expense was selected)
-            expense_id = form.expense_id.data if form.expense_id.data != 0 else None
-            
-            # Create receipt record
+            # Create receipt record with required expense ID
             receipt = Receipt(
-                expense_id=expense_id,
+                expense_id=form.expense_id.data,
                 user_id=current_user.id,
                 filename=filename,
                 file_path=file_path,
