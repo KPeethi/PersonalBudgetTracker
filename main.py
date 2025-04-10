@@ -9,7 +9,7 @@ import calendar
 import csv
 import io
 from app import app, db
-from models import User, Expense
+from models import User, Expense, UserPreference, Budget, UserNotification
 from forms import RegistrationForm, LoginForm, ExpenseForm
 import plaid_service
 import visualization
