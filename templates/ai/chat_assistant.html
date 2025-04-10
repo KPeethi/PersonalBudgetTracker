@@ -539,8 +539,8 @@
             formData.append('audio', audioBlob, 'recording.wav');
             
             // Show thinking indicator
-            thinkingIndicator.style.display = 'block';
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+            typingIndicator.style.display = 'block';
+            chatBody.scrollTop = chatBody.scrollHeight;
             
             fetch('/ai/process_audio', {
                 method: 'POST',
@@ -556,7 +556,7 @@
                     processUserMessage(data.text);
                 } else {
                     // Hide thinking indicator
-                    thinkingIndicator.style.display = 'none';
+                    typingIndicator.style.display = 'none';
                     
                     // Show error message
                     addMessage('Sorry, I couldn\'t understand what you said. Please try again.', 'assistant');
@@ -564,7 +564,7 @@
             })
             .catch(error => {
                 console.error('Error processing audio:', error);
-                thinkingIndicator.style.display = 'none';
+                typingIndicator.style.display = 'none';
                 addMessage('Sorry, there was an error processing your voice input.', 'assistant');
             });
         }
@@ -704,8 +704,8 @@
         
         function processUserMessage(message) {
             // Show thinking indicator
-            thinkingIndicator.style.display = 'block';
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+            typingIndicator.style.display = 'block';
+            chatBody.scrollTop = chatBody.scrollHeight;
             
             // Send to server for processing
             fetch('/ai/process_query', {
@@ -720,7 +720,7 @@
             .then(response => response.json())
             .then(data => {
                 // Hide thinking indicator
-                thinkingIndicator.style.display = 'none';
+                typingIndicator.style.display = 'none';
                 
                 if (data.success) {
                     // Add assistant's response
@@ -739,7 +739,7 @@
             })
             .catch(error => {
                 console.error('Error processing query:', error);
-                thinkingIndicator.style.display = 'none';
+                typingIndicator.style.display = 'none';
                 addMessage('Sorry, there was an error communicating with the server.', 'assistant');
             });
         }
