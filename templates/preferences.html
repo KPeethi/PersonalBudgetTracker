@@ -237,6 +237,25 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Set the initial theme radio button based on the current theme
+    const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+    
+    if (currentTheme === 'dark') {
+        document.getElementById('dark-theme').checked = true;
+    } else if (currentTheme === 'light') {
+        document.getElementById('light-theme').checked = true;
+    } else {
+        document.getElementById('system-theme').checked = true;
+    }
+    
+    // Add event listeners to theme radio buttons for live preview
+    document.querySelectorAll('input[name="theme"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            // Apply the selected theme immediately for preview
+            document.documentElement.setAttribute('data-bs-theme', this.value);
+        });
+    });
+    
     // Save preferences
     document.getElementById('save-preferences').addEventListener('click', function() {
         // Gather all preferences
