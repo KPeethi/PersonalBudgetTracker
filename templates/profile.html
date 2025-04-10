@@ -34,69 +34,31 @@
             </div>
         </div>
         
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Categories Used</h5>
-            </div>
-            <div class="card-body">
-                {% if categories %}
-                    <div class="d-flex flex-wrap gap-2">
-                        {% for category in categories %}
-                            <a href="{{ url_for('expenses_by_category', category=category) }}" class="badge rounded-pill bg-secondary text-decoration-none">
-                                {{ category }}
-                            </a>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <p class="text-muted mb-0">No categories yet.</p>
-                {% endif %}
-            </div>
+        <div class="text-center mt-4">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-primary">View All Expenses</a>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary ms-2">View Dashboard</a>
         </div>
     </div>
     
     <div class="col-md-8">
+        <!-- Empty space where Recent Expenses was previously located -->
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Recent Expenses</h5>
+                <h5 class="mb-0">Account Settings</h5>
             </div>
             <div class="card-body">
-                {% if recent_expenses %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Description</th>
-                                    <th>Category</th>
-                                    <th>Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for expense in recent_expenses %}
-                                <tr>
-                                    <td>{{ expense.date.strftime('%Y-%m-%d') }}</td>
-                                    <td>{{ expense.description }}</td>
-                                    <td>
-                                        <a href="{{ url_for('expenses_by_category', category=expense.category) }}" class="badge bg-secondary text-decoration-none">
-                                            {{ expense.category }}
-                                        </a>
-                                    </td>
-                                    <td>${{ "%.2f"|format(expense.amount) }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <div class="text-center mt-3">
-                        <a href="{{ url_for('index') }}" class="btn btn-outline-primary">View All Expenses</a>
-                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary ms-2">View Dashboard</a>
-                    </div>
-                {% else %}
-                    <div class="alert alert-info">
-                        No expenses found. <a href="{{ url_for('index') }}">Add your first expense</a>.
-                    </div>
-                {% endif %}
+                <p>You can manage your account settings and preferences here.</p>
+                
+                <div class="d-grid gap-2 d-md-flex mt-4">
+                    <a href="{{ url_for('preferences') }}" class="btn btn-primary">
+                        <i class="bi bi-gear me-1"></i> Preferences
+                    </a>
+                    {% if current_user.is_admin %}
+                    <a href="{{ url_for('admin') }}" class="btn btn-secondary">
+                        <i class="bi bi-shield-lock me-1"></i> Admin Panel
+                    </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
