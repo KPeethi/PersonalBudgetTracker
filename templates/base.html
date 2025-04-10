@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="{{ current_user.preference.theme if current_user.is_authenticated and current_user.preference else 'light' }}">
+<html lang="en" data-bs-theme="{{ current_user.preference.theme if current_user.is_authenticated and current_user.preference else 'light' }}" id="html-root">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -205,9 +205,9 @@
                     <ul class="navbar-nav">
                         <!-- Theme Toggle Button - Always visible -->
                         <li class="nav-item me-2">
-                            <button class="btn btn-light rounded-circle p-2 d-flex align-items-center justify-content-center" id="theme-toggle" style="width: 40px; height: 40px; background-color: rgba(var(--bs-primary-rgb), 0.1);">
-                                <i class="bi bi-sun-fill" id="theme-icon-light"></i>
-                                <i class="bi bi-moon-fill" id="theme-icon-dark" style="display: none;"></i>
+                            <button class="btn btn-primary rounded-circle p-2 d-flex align-items-center justify-content-center" id="theme-toggle" style="width: 40px; height: 40px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                                <i class="bi bi-sun-fill text-white" id="theme-icon-light"></i>
+                                <i class="bi bi-moon-fill text-white" id="theme-icon-dark" style="display: none;"></i>
                             </button>
                         </li>
                         
@@ -440,7 +440,7 @@
             const iconDark = document.getElementById('theme-icon-dark');
             
             // Check current theme and set the correct icon
-            const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+            const currentTheme = document.getElementById('html-root').getAttribute('data-bs-theme');
             if (currentTheme === 'dark') {
                 iconLight.style.display = 'none';
                 iconDark.style.display = 'inline-block';
@@ -451,11 +451,11 @@
             
             // Toggle theme on click
             themeToggle.addEventListener('click', function() {
-                const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+                const currentTheme = document.getElementById('html-root').getAttribute('data-bs-theme');
                 const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
                 
                 // Update HTML attribute
-                document.documentElement.setAttribute('data-bs-theme', newTheme);
+                document.getElementById('html-root').setAttribute('data-bs-theme', newTheme);
                 
                 // Toggle icons
                 if (newTheme === 'dark') {
@@ -490,7 +490,7 @@
             {% if not current_user.is_authenticated %}
             const savedTheme = localStorage.getItem('theme');
             if (savedTheme) {
-                document.documentElement.setAttribute('data-bs-theme', savedTheme);
+                document.getElementById('html-root').setAttribute('data-bs-theme', savedTheme);
                 if (savedTheme === 'dark') {
                     iconLight.style.display = 'none';
                     iconDark.style.display = 'inline-block';
