@@ -1243,8 +1243,32 @@ def ai_analysis():
 @login_required
 def preferences():
     """User preferences page"""
-    # Since we're only showing a simple message now, we don't need to pass any variables
-    return render_template('preferences.html', title='Preferences')
+    # Get user's preferences or create if they don't exist
+    user_pref = UserPreference.query.filter_by(user_id=current_user.id).first()
+    if not user_pref:
+        user_pref = UserPreference(user_id=current_user.id)
+        db.session.add(user_pref)
+        db.session.commit()
+    
+    # Get user's budget or create if it doesn't exist
+    user_budget = Budget.query.filter_by(
+        user_id=current_user.id,
+        month=datetime.utcnow().month,
+        year=datetime.utcnow().year
+    ).first()
+    if not user_budget:
+        user_budget = Budget(
+            user_id=current_user.id,
+            month=datetime.utcnow().month,
+            year=datetime.utcnow().year
+        )
+        db.session.add(user_budget)
+        db.session.commit()
+    
+    return render_template('preferences.html', 
+                           title='Preferences',
+                           user_pref=user_pref,
+                           user_budget=user_budget)
 
 
 @app.route('/save_preferences', methods=['POST'])
@@ -1260,11 +1284,61 @@ def save_preferences():
             user_pref = UserPreference(user_id=current_user.id)
             db.session.add(user_pref)
         
-        # Update theme settings (this is the only setting we support now)
+        # Update theme settings (this can be sent alone from the theme toggle)
         if 'theme' in data:
             user_pref.theme = data.get('theme')
         
+        # Only process these fields if they're in the request (from preferences page)
+        if 'notifications' in data:
+            # Update notification settings
+            notifications = data.get('notifications', {})
+            user_pref.email_notifications = notifications.get('email', True)
+            user_pref.push_notifications = notifications.get('push', True)
+            user_pref.weekly_reports = notifications.get('weeklyReports', True)
+            user_pref.monthly_reports = notifications.get('monthlyReports', True)
+        
+        if 'alerts' in data:
+            # Update alert settings
+            alerts = data.get('alerts', {})
+            user_pref.alerts_enabled = alerts.get('enabled', True)
+            user_pref.alert_large_transactions = alerts.get('largeTransactions', True)
+            user_pref.alert_low_balance = alerts.get('lowBalance', True)
+            user_pref.alert_upcoming_bills = alerts.get('upcomingBills', True)
+            user_pref.alert_saving_goal_progress = alerts.get('savingGoalProgress', True)
+            user_pref.alert_budget_exceeded = alerts.get('budgetLimitExceeded', True)
+        
+        # Only update budget settings if provided in the request
+        if 'budgets' in data:
+            budgets = data.get('budgets', {})
+            
+            # Get current month's budget or create new one
+            user_budget = Budget.query.filter_by(
+                user_id=current_user.id,
+                month=datetime.utcnow().month,
+                year=datetime.utcnow().year
+            ).first()
+            if not user_budget:
+                user_budget = Budget(
+                    user_id=current_user.id,
+                    month=datetime.utcnow().month,
+                    year=datetime.utcnow().year
+                )
+                db.session.add(user_budget)
+            
+            # Update budget values
+            user_budget.total_budget = float(budgets.get('totalMonthly', 3000))
+            user_budget.food = float(budgets.get('food', 500))
+            user_budget.transportation = float(budgets.get('transportation', 300))
+            user_budget.entertainment = float(budgets.get('entertainment', 200))
+            user_budget.bills = float(budgets.get('bills', 800))
+            user_budget.shopping = float(budgets.get('shopping', 400))
+            user_budget.other = float(budgets.get('other', 800))
+        
         db.session.commit()
+        
+        # Check if any budgets are exceeded and create notifications
+        check_budget_limits(current_user.id)
+        
         return jsonify({'success': True})
     except Exception as e:
         logger.exception("Error saving preferences")
