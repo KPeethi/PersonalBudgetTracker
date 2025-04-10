@@ -728,6 +728,86 @@ def dashboard():
         'total_count': total_count
     }
     
+    # Get user's budget data
+    user_id_for_budget = request.args.get('user_id') if current_user.is_admin and request.args.get('user_id') else current_user.id
+    current_month = datetime.now().month
+    current_year = datetime.now().year
+    
+    # Get the current month's budget or create a default one if it doesn't exist
+    user_budget = Budget.query.filter_by(
+        user_id=user_id_for_budget,
+        month=current_month,
+        year=current_year
+    ).first()
+    
+    if not user_budget:
+        user_budget = Budget(
+            user_id=user_id_for_budget,
+            month=current_month,
+            year=current_year
+        )
+        db.session.add(user_budget)
+        db.session.commit()
+    
+    # Calculate category spending
+    category_spending = {}
+    
+    # Map common expense categories to budget categories
+    category_map = {
+        'food': ['groceries', 'restaurant', 'dining', 'food', 'meal', 'breakfast', 'lunch', 'dinner'],
+        'transportation': ['gas', 'fuel', 'car', 'transport', 'uber', 'lyft', 'taxi', 'bus', 'train', 'subway', 'transit'],
+        'entertainment': ['movie', 'game', 'entertain', 'concert', 'theater', 'theatre', 'netflix', 'subscription', 'streaming'],
+        'bills': ['utility', 'utilities', 'electric', 'water', 'internet', 'phone', 'bill', 'insurance', 'rent', 'mortgage'],
+        'shopping': ['shop', 'clothing', 'clothes', 'amazon', 'online', 'mall', 'retail', 'electronics'],
+        'other': []  # Catch-all for anything not matching above
+    }
+    
+    # Initialize category totals
+    for category in category_map.keys():
+        category_spending[category] = 0
+    
+    # Calculate spending in each category
+    current_month_expenses = [expense for expense in expenses if expense.date.month == current_month and expense.date.year == current_year]
+    
+    for expense in current_month_expenses:
+        # Find which budget category this expense belongs to
+        assigned = False
+        expense_category = expense.category.lower()
+        
+        for budget_cat, keywords in category_map.items():
+            if any(keyword in expense_category for keyword in keywords):
+                category_spending[budget_cat] += expense.amount
+                assigned = True
+                break
+        
+        # If not assigned to any specific category, put in "other"
+        if not assigned:
+            category_spending['other'] += expense.amount
+    
+    # Calculate percentage of budget used for each category
+    budget_usage = {
+        'food': {
+            'spent': category_spending['food'],
+            'budget': user_budget.food,
+            'percentage': min(round((category_spending['food'] / user_budget.food * 100) if user_budget.food > 0 else 0), 100)
+        },
+        'transportation': {
+            'spent': category_spending['transportation'],
+            'budget': user_budget.transportation,
+            'percentage': min(round((category_spending['transportation'] / user_budget.transportation * 100) if user_budget.transportation > 0 else 0), 100)
+        },
+        'entertainment': {
+            'spent': category_spending['entertainment'],
+            'budget': user_budget.entertainment,
+            'percentage': min(round((category_spending['entertainment'] / user_budget.entertainment * 100) if user_budget.entertainment > 0 else 0), 100)
+        },
+        'total': {
+            'spent': total_expenses,
+            'budget': user_budget.total_budget,
+            'percentage': min(round((total_expenses / user_budget.total_budget * 100) if user_budget.total_budget > 0 else 0), 100)
+        }
+    }
+    
     # Use the new dashboard template
     return render_template(
         'dashboard_new.html',
@@ -741,6 +821,9 @@ def dashboard():
         monthly_chart_data=monthly_chart_data,
         income_expense_chart_data=income_expense_chart_data,
         comparison_chart_data=comparison_chart_data,
+        # Budget data
+        user_budget=user_budget,
+        budget_usage=budget_usage,
         # Pagination variables
         total_items=total_items,
         per_page=per_page,
