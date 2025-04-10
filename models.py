@@ -243,6 +243,7 @@ class BusinessUpgradeRequest(db.Model):
     
     # Relationships - Use different backref name to avoid conflicts
     admin = db.relationship('User', foreign_keys=[handled_by], backref='handled_upgrade_requests')
+    user = db.relationship('User', foreign_keys=[user_id], backref='upgrade_requests')
     
     def __repr__(self):
         """String representation of a business upgrade request."""

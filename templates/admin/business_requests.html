@@ -1,197 +1,169 @@
 {% extends "base.html" %}
 
-{% block title %}Manage Business Upgrade Requests{% endblock %}
+{% block title %}Business Upgrade Requests - Admin{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Manage Business Upgrade Requests</h2>
-    
-    <div class="card">
-        <div class="card-header">
-            <ul class="nav nav-tabs card-header-tabs">
-                <li class="nav-item">
-                    <a class="nav-link active" href="#pending" data-bs-toggle="tab">Pending</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#approved" data-bs-toggle="tab">Approved</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#rejected" data-bs-toggle="tab">Rejected</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#all" data-bs-toggle="tab">All Requests</a>
-                </li>
-            </ul>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Business Upgrade Requests</h2>
+        <a href="{{ url_for('admin_panel') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Admin Panel
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Manage Business Upgrade Requests</h4>
+            <span class="badge bg-light text-dark rounded-pill">{{ requests|length }} requests</span>
+        </div>
+        <div class="card-body p-0">
+            {% if requests %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>User</th>
+                                <th>Company</th>
+                                <th>Industry</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for request in requests %}
+                                <tr>
+                                    <td>#{{ request.id }}</td>
+                                    <td>
+                                        {% set user = request.user if hasattr(request, 'user') else none %}
+                                        {% if user %}
+                                            {{ user.username }}
+                                        {% else %}
+                                            <span class="text-muted">User #{{ request.user_id }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ request.company_name }}</td>
+                                    <td>{{ request.industry }}</td>
+                                    <td>{{ request.created_at.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        {% if request.status == 'pending' %}
+                                            <span class="badge bg-warning text-dark">Pending</span>
+                                        {% elif request.status == 'approved' %}
+                                            <span class="badge bg-success">Approved</span>
+                                        {% elif request.status == 'rejected' %}
+                                            <span class="badge bg-danger">Rejected</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('admin_business_request_detail', request_id=request.id) }}" class="btn btn-outline-primary">
+                                                <i class="bi bi-eye"></i> View
+                                            </a>
+                                            {% if request.status == 'pending' %}
+                                                <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#approveModal{{ request.id }}">
+                                                    <i class="bi bi-check-lg"></i> Approve
+                                                </button>
+                                                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectModal{{ request.id }}">
+                                                    <i class="bi bi-x-lg"></i> Reject
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <!-- Approve Modal -->
+                                        <div class="modal fade" id="approveModal{{ request.id }}" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Approve Request #{{ request.id }}</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>Are you sure you want to approve the business upgrade request from {{ request.company_name }}?</p>
+                                                        <p>This will grant business user privileges to the user.</p>
+                                                        
+                                                        <form action="{{ url_for('admin_business_request_detail', request_id=request.id) }}" method="POST">
+                                                            <div class="mb-3">
+                                                                <label for="adminNotes{{ request.id }}" class="form-label">Admin Notes (Optional)</label>
+                                                                <textarea id="adminNotes{{ request.id }}" name="admin_notes" class="form-control" rows="3" placeholder="Enter any notes about this approval..."></textarea>
+                                                            </div>
+                                                            <div class="d-flex justify-content-end">
+                                                                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+                                                                <button type="submit" name="action" value="approve" class="btn btn-success">Approve Request</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Reject Modal -->
+                                        <div class="modal fade" id="rejectModal{{ request.id }}" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Reject Request #{{ request.id }}</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>Are you sure you want to reject the business upgrade request from {{ request.company_name }}?</p>
+                                                        
+                                                        <form action="{{ url_for('admin_business_request_detail', request_id=request.id) }}" method="POST">
+                                                            <div class="mb-3">
+                                                                <label for="rejectNotes{{ request.id }}" class="form-label">Rejection Reason (Recommended)</label>
+                                                                <textarea id="rejectNotes{{ request.id }}" name="admin_notes" class="form-control" rows="3" placeholder="Enter a reason for rejecting this request..."></textarea>
+                                                                <div class="form-text">This will be visible to the user.</div>
+                                                            </div>
+                                                            <div class="d-flex justify-content-end">
+                                                                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+                                                                <button type="submit" name="action" value="reject" class="btn btn-danger">Reject Request</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info m-3">
+                    <i class="bi bi-info-circle me-2"></i> There are no business upgrade requests at this time.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card mt-4 shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Business Feature Management</h5>
         </div>
         <div class="card-body">
-            <div class="tab-content">
-                <!-- Pending Requests -->
-                <div class="tab-pane fade show active" id="pending">
-                    {% set pending_requests = requests|selectattr('status', 'eq', 'pending')|list %}
-                    {% if pending_requests %}
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>User</th>
-                                        <th>Company</th>
-                                        <th>Industry</th>
-                                        <th>Date Requested</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for request in pending_requests %}
-                                    <tr>
-                                        <td>{{ request.id }}</td>
-                                        <td>{{ request.user.username }}</td>
-                                        <td>{{ request.company_name }}</td>
-                                        <td>{{ request.industry }}</td>
-                                        <td>{{ request.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                                        <td>
-                                            <a href="{{ url_for('admin_business_request_detail', request_id=request.id) }}" class="btn btn-primary btn-sm">
-                                                <i class="bi bi-eye"></i> View
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Current Business Users</h5>
+                            <p class="card-text">
+                                Review and manage users who currently have business features enabled.
+                            </p>
+                            <a href="#" class="btn btn-outline-primary">Manage Business Users</a>
                         </div>
-                    {% else %}
-                        <div class="alert alert-info">No pending requests.</div>
-                    {% endif %}
+                    </div>
                 </div>
-                
-                <!-- Approved Requests -->
-                <div class="tab-pane fade" id="approved">
-                    {% set approved_requests = requests|selectattr('status', 'eq', 'approved')|list %}
-                    {% if approved_requests %}
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>User</th>
-                                        <th>Company</th>
-                                        <th>Industry</th>
-                                        <th>Date Approved</th>
-                                        <th>Approved By</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for request in approved_requests %}
-                                    <tr>
-                                        <td>{{ request.id }}</td>
-                                        <td>{{ request.user.username }}</td>
-                                        <td>{{ request.company_name }}</td>
-                                        <td>{{ request.industry }}</td>
-                                        <td>{{ request.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                                        <td>{{ request.admin.username if request.admin else 'N/A' }}</td>
-                                        <td>
-                                            <a href="{{ url_for('admin_business_request_detail', request_id=request.id) }}" class="btn btn-secondary btn-sm">
-                                                <i class="bi bi-eye"></i> View
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Excel Import Logs</h5>
+                            <p class="card-text">
+                                View logs of Excel imports by business users to track usage and troubleshoot issues.
+                            </p>
+                            <a href="#" class="btn btn-outline-primary">View Import Logs</a>
                         </div>
-                    {% else %}
-                        <div class="alert alert-info">No approved requests.</div>
-                    {% endif %}
-                </div>
-                
-                <!-- Rejected Requests -->
-                <div class="tab-pane fade" id="rejected">
-                    {% set rejected_requests = requests|selectattr('status', 'eq', 'rejected')|list %}
-                    {% if rejected_requests %}
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>User</th>
-                                        <th>Company</th>
-                                        <th>Industry</th>
-                                        <th>Date Rejected</th>
-                                        <th>Rejected By</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for request in rejected_requests %}
-                                    <tr>
-                                        <td>{{ request.id }}</td>
-                                        <td>{{ request.user.username }}</td>
-                                        <td>{{ request.company_name }}</td>
-                                        <td>{{ request.industry }}</td>
-                                        <td>{{ request.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                                        <td>{{ request.admin.username if request.admin else 'N/A' }}</td>
-                                        <td>
-                                            <a href="{{ url_for('admin_business_request_detail', request_id=request.id) }}" class="btn btn-secondary btn-sm">
-                                                <i class="bi bi-eye"></i> View
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="alert alert-info">No rejected requests.</div>
-                    {% endif %}
-                </div>
-                
-                <!-- All Requests -->
-                <div class="tab-pane fade" id="all">
-                    {% if requests %}
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>User</th>
-                                        <th>Company</th>
-                                        <th>Industry</th>
-                                        <th>Status</th>
-                                        <th>Date</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for request in requests %}
-                                    <tr>
-                                        <td>{{ request.id }}</td>
-                                        <td>{{ request.user.username }}</td>
-                                        <td>{{ request.company_name }}</td>
-                                        <td>{{ request.industry }}</td>
-                                        <td>
-                                            {% if request.status == 'pending' %}
-                                                <span class="badge bg-warning text-dark">Pending</span>
-                                            {% elif request.status == 'approved' %}
-                                                <span class="badge bg-success">Approved</span>
-                                            {% else %}
-                                                <span class="badge bg-danger">Rejected</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>{{ request.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                                        <td>
-                                            <a href="{{ url_for('admin_business_request_detail', request_id=request.id) }}" class="btn btn-secondary btn-sm">
-                                                <i class="bi bi-eye"></i> View
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="alert alert-info">No requests found.</div>
-                    {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
