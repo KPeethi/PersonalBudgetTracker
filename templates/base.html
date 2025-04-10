@@ -204,6 +204,14 @@
                     </ul>
                     <ul class="navbar-nav">
                         {% if current_user.is_authenticated %}
+                            <!-- Theme Toggle -->
+                            <li class="nav-item me-2">
+                                <button class="btn btn-light rounded-circle p-2 d-flex align-items-center justify-content-center" id="theme-toggle" style="width: 40px; height: 40px; background-color: rgba(var(--bs-primary-rgb), 0.1);">
+                                    <i class="bi bi-sun-fill" id="theme-icon-light"></i>
+                                    <i class="bi bi-moon-fill" id="theme-icon-dark" style="display: none;"></i>
+                                </button>
+                            </li>
+                            
                             <!-- Notification dropdown -->
                             <li class="nav-item dropdown me-2">
                                 <a class="nav-link position-relative" href="#" id="notificationDropdown" role="button"
@@ -425,6 +433,55 @@
 
     {% if current_user.is_authenticated %}
     <script>
+        // Theme toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const iconLight = document.getElementById('theme-icon-light');
+            const iconDark = document.getElementById('theme-icon-dark');
+            
+            // Check current theme and set the correct icon
+            const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+            if (currentTheme === 'dark') {
+                iconLight.style.display = 'none';
+                iconDark.style.display = 'inline-block';
+            } else {
+                iconLight.style.display = 'inline-block';
+                iconDark.style.display = 'none';
+            }
+            
+            // Toggle theme on click
+            themeToggle.addEventListener('click', function() {
+                const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                // Update HTML attribute
+                document.documentElement.setAttribute('data-bs-theme', newTheme);
+                
+                // Toggle icons
+                if (newTheme === 'dark') {
+                    iconLight.style.display = 'none';
+                    iconDark.style.display = 'inline-block';
+                } else {
+                    iconLight.style.display = 'inline-block';
+                    iconDark.style.display = 'none';
+                }
+                
+                // Save preference to database
+                fetch('/save_preferences', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        theme: newTheme
+                    })
+                })
+                .catch(error => {
+                    console.error('Error saving theme preference:', error);
+                });
+            });
+        });
+        
         // Sidebar toggle functionality for mobile
         document.addEventListener('DOMContentLoaded', function() {
             const navbarToggler = document.querySelector('.navbar-toggler');
