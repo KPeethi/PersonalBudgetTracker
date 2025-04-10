@@ -1,268 +1,439 @@
 {% extends "base.html" %}
 
-{% block title %}Conversational Assistant{% endblock %}
+{% block title %}Chat with Financial Assistant{% endblock %}
 
 {% block styles %}
 <style>
-    .chat-container {
-        height: 60vh;
+    body {
+        background-color: #f5f5f5;
+    }
+    
+    .chat-app-container {
+        height: calc(100vh - 120px);
+        margin-top: -20px;
+        display: flex;
+        flex-direction: column;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    }
+    
+    .chat-header {
+        padding: 15px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .agent-info {
+        display: flex;
+        align-items: center;
+    }
+    
+    .agent-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        color: white;
+        font-size: 20px;
+    }
+    
+    .agent-status {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: #28a745;
+        margin-left: 5px;
+    }
+    
+    .chat-body {
+        flex: 1;
         overflow-y: auto;
-        border-radius: 0.5rem;
+        padding: 20px;
+        background-color: #f9f9f9;
         display: flex;
         flex-direction: column;
     }
     
-    .chat-message {
-        max-width: 80%;
-        margin-bottom: 1rem;
-        border-radius: 1rem;
-        padding: 0.75rem 1rem;
+    .message {
+        max-width: 75%;
+        margin-bottom: 15px;
+        padding: 12px 16px;
+        border-radius: 18px;
         position: relative;
+        animation: fadeIn 0.3s ease-in-out;
+        line-height: 1.5;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
     }
     
     .user-message {
         background-color: #0d6efd;
         color: white;
-        border-top-right-radius: 0.25rem;
         align-self: flex-end;
+        border-bottom-right-radius: 5px;
+    }
+    
+    .user-message-container {
+        align-self: flex-end;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        margin-bottom: 20px;
     }
     
     .assistant-message {
-        background-color: #f8f9fa;
-        border: 1px solid #e9ecef;
-        border-top-left-radius: 0.25rem;
+        background-color: white;
+        color: #212529;
         align-self: flex-start;
+        border-bottom-left-radius: 5px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     }
     
-    .thinking-indicator {
+    .assistant-message-container {
+        align-self: flex-start;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        max-width: 80%;
+    }
+    
+    .message-time {
+        font-size: 11px;
+        color: #6c757d;
+        margin-top: 5px;
+        margin-left: 10px;
+        margin-right: 10px;
+    }
+    
+    .message-sender {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+    
+    .sender-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 8px;
+        font-size: 14px;
+    }
+    
+    .sender-name {
+        font-weight: 600;
+        font-size: 13px;
+    }
+    
+    .chat-footer {
+        padding: 15px 20px;
+        background-color: white;
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .chat-input-container {
+        display: flex;
+        align-items: center;
+    }
+    
+    .chat-input {
+        flex: 1;
+        padding: 12px 15px;
+        border: 1px solid #ced4da;
+        border-radius: 24px;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+    
+    .chat-input:focus {
+        outline: none;
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+    }
+    
+    .chat-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        margin-left: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+    
+    .typing-indicator {
         display: none;
         align-self: flex-start;
-        background-color: #f8f9fa;
-        border: 1px solid #e9ecef;
-        border-radius: 1rem;
-        padding: 0.75rem 1rem;
-        margin-bottom: 1rem;
+        background-color: white;
+        padding: 12px 16px;
+        border-radius: 18px;
+        border-bottom-left-radius: 5px;
+        margin-bottom: 15px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+    
+    .typing-dots {
+        display: flex;
     }
     
     .typing-dots span {
-        display: inline-block;
         width: 8px;
         height: 8px;
         border-radius: 50%;
         background-color: #6c757d;
-        animation: typingDots 1.4s infinite ease-in-out both;
         margin-right: 4px;
+        animation: bounce 1.4s infinite ease-in-out both;
     }
     
-    .typing-dots span:nth-child(1) {
-        animation-delay: 0s;
+    .typing-dots span:nth-child(1) { animation-delay: 0s; }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    
+    @keyframes bounce {
+        0%, 80%, 100% { transform: scale(0.6); }
+        40% { transform: scale(1.0); }
     }
     
-    .typing-dots span:nth-child(2) {
-        animation-delay: 0.2s;
-    }
-    
-    .typing-dots span:nth-child(3) {
-        animation-delay: 0.4s;
-    }
-    
-    @keyframes typingDots {
-        0%, 80%, 100% { 
-            transform: scale(0.6);
-        } 
-        40% { 
-            transform: scale(1.0);
-        }
+    .quick-suggestions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
     }
     
     .suggestion-chip {
+        padding: 8px 12px;
+        background-color: rgba(13, 110, 253, 0.1);
+        border-radius: 16px;
+        font-size: 13px;
         cursor: pointer;
         transition: all 0.2s;
+        white-space: nowrap;
+        color: #0d6efd;
     }
     
     .suggestion-chip:hover {
-        background-color: #0d6efd !important;
-        color: white !important;
+        background-color: rgba(13, 110, 253, 0.2);
     }
     
-    /* Voice recording styles */
-    .voice-record-btn {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        padding: 0;
+    .follow-up-container {
         display: flex;
-        align-items: center;
-        justify-content: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
     }
     
-    .voice-record-btn.recording {
+    .follow-up-chip {
+        padding: 8px 12px;
+        background-color: rgba(13, 110, 253, 0.1);
+        border-radius: 16px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+        color: #0d6efd;
+    }
+    
+    .follow-up-chip:hover {
+        background-color: rgba(13, 110, 253, 0.2);
+    }
+    
+    /* Voice recording animation */
+    .voice-recording {
         animation: pulse 1.5s infinite;
     }
     
     @keyframes pulse {
-        0% {
-            box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
-        }
-        70% {
-            box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
-        }
-        100% {
-            box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
-        }
+        0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
+    
+    /* Dark mode support */
+    [data-bs-theme="dark"] body {
+        background-color: #212529;
+    }
+    
+    [data-bs-theme="dark"] .chat-app-container {
+        background-color: #2c3034;
+    }
+    
+    [data-bs-theme="dark"] .chat-body {
+        background-color: #212529;
     }
     
     [data-bs-theme="dark"] .assistant-message {
         background-color: #343a40;
-        border-color: #495057;
+        color: #f8f9fa;
     }
     
-    [data-bs-theme="dark"] .thinking-indicator {
+    [data-bs-theme="dark"] .typing-indicator {
         background-color: #343a40;
-        border-color: #495057;
+    }
+    
+    [data-bs-theme="dark"] .chat-footer {
+        background-color: #2c3034;
+    }
+    
+    [data-bs-theme="dark"] .suggestion-chip {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: #6ea8fe;
+    }
+    
+    [data-bs-theme="dark"] .suggestion-chip:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    [data-bs-theme="dark"] .follow-up-chip {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: #6ea8fe;
+    }
+    
+    [data-bs-theme="dark"] .follow-up-chip:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .chat-app-container {
+            height: calc(100vh - 90px);
+            margin-top: -10px;
+            border-radius: 0;
+        }
+        
+        .message {
+            max-width: 85%;
+        }
+    }
+    
+    #forecastContainer {
+        margin-top: 30px;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="row mb-4">
-        <div class="col">
-            <h1 class="mb-3 d-flex align-items-center">
-                <i class="bi bi-chat-dots-fill text-primary me-3"></i> 
-                Conversational Assistant
-            </h1>
-            <p class="lead text-muted">Ask natural language questions about your expenses. Try questions like "How much did I spend on food last month?" or "Which category increased the most this month?"</p>
-        </div>
-    </div>
-    
-    <div class="row">
-        <div class="col-md-8">
-            <!-- Chat interface -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Chat with your financial assistant</h5>
+<div class="container mt-4">
+    <div class="chat-app-container">
+        <!-- Chat Header -->
+        <div class="chat-header bg-primary text-white">
+            <div class="agent-info">
+                <div class="agent-avatar bg-white text-primary">
+                    <i class="bi bi-robot"></i>
                 </div>
-                <div class="card-body p-0">
-                    <div class="chat-container p-3" id="chatContainer">
-                        <!-- Welcome message -->
-                        <div class="chat-message assistant-message">
-                            <div class="d-flex align-items-center mb-2">
-                                <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px;">
-                                    <i class="bi bi-robot"></i>
-                                </div>
-                                <div>
-                                    <strong>Financial Assistant</strong>
-                                    <div class="text-muted" style="font-size: 0.75rem;">Just now</div>
-                                </div>
-                            </div>
-                            <p class="mb-2">👋 Hi there! I'm your financial assistant. I can help you understand your expenses, analyze spending patterns, and provide insights to improve your financial health.</p>
-                            <p class="mb-3">What would you like to know about your finances today?</p>
-                            
-                            <hr>
-                            <div class="follow-up-container d-flex flex-wrap gap-2">
-                                <div class="follow-up-chip bg-light text-dark p-2 rounded" style="font-size: 0.85rem; cursor: pointer;" onclick="document.getElementById('userInput').value = 'What were my top 5 expenses?'; document.getElementById('chatForm').dispatchEvent(new Event('submit'));">
-                                    What were my top 5 expenses?
-                                </div>
-                                <div class="follow-up-chip bg-light text-dark p-2 rounded" style="font-size: 0.85rem; cursor: pointer;" onclick="document.getElementById('userInput').value = 'How much did I spend this month?'; document.getElementById('chatForm').dispatchEvent(new Event('submit'));">
-                                    How much did I spend this month?
-                                </div>
-                                <div class="follow-up-chip bg-light text-dark p-2 rounded" style="font-size: 0.85rem; cursor: pointer;" onclick="document.getElementById('userInput').value = 'Which category had the biggest increase?'; document.getElementById('chatForm').dispatchEvent(new Event('submit'));">
-                                    Which category had the biggest increase?
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Messages will be added here dynamically -->
-                        
-                        <!-- Thinking indicator -->
-                        <div class="thinking-indicator" id="thinkingIndicator">
-                            <div class="typing-dots">
-                                <span></span>
-                                <span></span>
-                                <span></span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="input-container p-3 border-top">
-                        <form id="chatForm" class="d-flex">
-                            <input type="text" class="form-control" id="userInput" placeholder="Type your question here..." autocomplete="off">
-                            <button type="button" class="btn btn-danger voice-record-btn ms-2" id="voiceButton">
-                                <i class="bi bi-mic-fill"></i>
-                            </button>
-                            <button type="submit" class="btn btn-primary ms-2">
-                                <i class="bi bi-send-fill"></i>
-                            </button>
-                        </form>
+                <div>
+                    <h5 class="mb-0">Financial Assistant</h5>
+                    <div class="d-flex align-items-center">
+                        <small>Online</small>
+                        <span class="agent-status ms-1"></span>
                     </div>
                 </div>
             </div>
-            
-            <!-- Expense forecast -->
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="card-title mb-0">Expense Forecast</h5>
-                </div>
-                <div class="card-body">
-                    <div id="forecastChart" style="height: 300px;"></div>
-                    <div id="forecastMessage" class="mt-3"></div>
-                </div>
+            <div>
+                <button class="btn btn-sm btn-outline-light" data-bs-toggle="collapse" data-bs-target="#forecastContainer">
+                    <i class="bi bi-graph-up me-1"></i> View Forecast
+                </button>
             </div>
         </div>
         
-        <div class="col-md-4">
-            <!-- Quick query suggestions -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="card-title mb-0">Try asking</h5>
+        <!-- Chat Body -->
+        <div class="chat-body" id="chatBody">
+            <!-- Welcome message -->
+            <div class="assistant-message-container">
+                <div class="message-sender">
+                    <div class="sender-avatar bg-primary text-white">
+                        <i class="bi bi-robot"></i>
+                    </div>
+                    <span class="sender-name">Financial Assistant</span>
                 </div>
-                <div class="card-body">
-                    <div class="suggestions">
-                        <div class="suggestion-chip bg-light text-dark p-2 rounded mb-2" data-query="How much did I spend on food last month?">
-                            <i class="bi bi-question-circle me-2"></i> How much did I spend on food last month?
-                        </div>
-                        <div class="suggestion-chip bg-light text-dark p-2 rounded mb-2" data-query="What were my top 5 expenses?">
-                            <i class="bi bi-question-circle me-2"></i> What were my top 5 expenses?
-                        </div>
-                        <div class="suggestion-chip bg-light text-dark p-2 rounded mb-2" data-query="How much did I spend this month?">
-                            <i class="bi bi-question-circle me-2"></i> How much did I spend this month?
-                        </div>
-                        <div class="suggestion-chip bg-light text-dark p-2 rounded mb-2" data-query="Compare my spending across categories">
-                            <i class="bi bi-question-circle me-2"></i> Compare my spending across categories
-                        </div>
-                        <div class="suggestion-chip bg-light text-dark p-2 rounded mb-2" data-query="Which category exploded this month?">
-                            <i class="bi bi-question-circle me-2"></i> Which category exploded this month?
-                        </div>
+                <div class="message assistant-message">
+                    <p class="mb-1">👋 Hi there! I'm your AI financial assistant.</p>
+                    <p class="mb-0">I can help you analyze your expenses, track spending patterns, and provide personalized financial insights. What would you like to know about your finances today?</p>
+                </div>
+                <div class="message-time">Just now</div>
+                
+                <div class="follow-up-container">
+                    <div class="follow-up-chip" onclick="document.getElementById('chatInput').value = 'What were my top 5 expenses?'; document.getElementById('chatForm').dispatchEvent(new Event('submit'));">
+                        What were my top 5 expenses?
+                    </div>
+                    <div class="follow-up-chip" onclick="document.getElementById('chatInput').value = 'How much did I spend this month?'; document.getElementById('chatForm').dispatchEvent(new Event('submit'));">
+                        How much did I spend this month?
+                    </div>
+                    <div class="follow-up-chip" onclick="document.getElementById('chatInput').value = 'Which category increased the most?'; document.getElementById('chatForm').dispatchEvent(new Event('submit'));">
+                        Which category increased the most?
                     </div>
                 </div>
             </div>
             
-            <!-- How it works -->
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="card-title mb-0">How it works</h5>
+            <!-- Typing indicator -->
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
                 </div>
-                <div class="card-body">
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item px-0">
-                            <i class="bi bi-chat-text text-primary me-2"></i>
-                            Ask questions in natural language about your spending
-                        </li>
-                        <li class="list-group-item px-0">
-                            <i class="bi bi-mic text-danger me-2"></i>
-                            Use voice input to ask questions hands-free
-                        </li>
-                        <li class="list-group-item px-0">
-                            <i class="bi bi-database text-success me-2"></i>
-                            Pulls data directly from your transaction history
-                        </li>
-                        <li class="list-group-item px-0">
-                            <i class="bi bi-graph-up-arrow text-warning me-2"></i>
-                            Provides spending forecasts based on your patterns
-                        </li>
-                    </ul>
+            </div>
+            
+            <!-- Messages will be added here dynamically -->
+        </div>
+        
+        <!-- Chat Footer -->
+        <div class="chat-footer">
+            <form id="chatForm">
+                <div class="chat-input-container">
+                    <input type="text" id="chatInput" class="chat-input" placeholder="Ask about your finances..." autocomplete="off">
+                    <button type="button" id="voiceButton" class="chat-btn btn btn-outline-danger">
+                        <i class="bi bi-mic-fill"></i>
+                    </button>
+                    <button type="submit" class="chat-btn btn btn-primary">
+                        <i class="bi bi-send-fill"></i>
+                    </button>
                 </div>
+            </form>
+            
+            <div class="quick-suggestions mt-3">
+                <div class="suggestion-chip" data-query="How much did I spend on food?">
+                    Food expenses
+                </div>
+                <div class="suggestion-chip" data-query="Show my monthly trend">
+                    Monthly trend
+                </div>
+                <div class="suggestion-chip" data-query="What are my top spending categories?">
+                    Top categories
+                </div>
+                <div class="suggestion-chip" data-query="Find unusual expenses">
+                    Unusual expenses
+                </div>
+                <div class="suggestion-chip" data-query="Compare to last month">
+                    Month comparison
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Collapsible Forecast Section -->
+    <div class="collapse mt-4" id="forecastContainer">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Expense Forecast</h5>
+                <button type="button" class="btn-close btn-close-white float-end" data-bs-toggle="collapse" data-bs-target="#forecastContainer" aria-label="Close"></button>
+            </div>
+            <div class="card-body">
+                <div id="forecastChart" style="height: 300px;"></div>
+                <div id="forecastMessage" class="mt-3"></div>
             </div>
         </div>
     </div>
@@ -273,11 +444,11 @@
 <script src="https://cdn.jsdelivr.net/npm/plotly.js@2.18.2/dist/plotly.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const chatContainer = document.getElementById('chatContainer');
+        const chatBody = document.getElementById('chatBody');
         const chatForm = document.getElementById('chatForm');
-        const userInput = document.getElementById('userInput');
+        const chatInput = document.getElementById('chatInput');
         const voiceButton = document.getElementById('voiceButton');
-        const thinkingIndicator = document.getElementById('thinkingIndicator');
+        const typingIndicator = document.getElementById('typingIndicator');
         const suggestionChips = document.querySelectorAll('.suggestion-chip');
         
         let isRecording = false;
@@ -291,11 +462,11 @@
         chatForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const message = userInput.value.trim();
+            const message = chatInput.value.trim();
             if (message) {
                 addMessage(message, 'user');
                 processUserMessage(message);
-                userInput.value = '';
+                chatInput.value = '';
             }
         });
         
@@ -303,7 +474,7 @@
         suggestionChips.forEach(chip => {
             chip.addEventListener('click', function() {
                 const query = this.getAttribute('data-query');
-                userInput.value = query;
+                chatInput.value = query;
                 chatForm.dispatchEvent(new Event('submit'));
             });
         });
@@ -399,46 +570,101 @@
         }
         
         function addMessage(message, sender, includeFollowups = true) {
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('chat-message');
-            messageDiv.classList.add(sender + '-message');
+            const now = new Date();
+            const timeStr = now.getHours().toString().padStart(2, '0') + ':' + 
+                           now.getMinutes().toString().padStart(2, '0');
             
-            // Format message with newlines if needed
-            const formattedMessage = message.replace(/\n/g, '<br>');
-            messageDiv.innerHTML = `<p class="mb-0">${formattedMessage}</p>`;
+            // Create message container based on sender
+            const messageContainer = document.createElement('div');
             
-            // Add follow-up suggestion chips if this is an assistant message
-            if (sender === 'assistant' && includeFollowups) {
-                let followupContainer = document.createElement('div');
-                followupContainer.className = 'follow-up-container mt-2 d-flex flex-wrap gap-2';
+            if (sender === 'user') {
+                // User message
+                messageContainer.className = 'user-message-container';
                 
-                // Generate follow-up suggestions based on the current message
-                let suggestions = generateFollowupSuggestions(message);
+                // Message bubble
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message user-message';
                 
-                suggestions.forEach(suggestion => {
-                    let chip = document.createElement('div');
-                    chip.className = 'follow-up-chip bg-light text-dark p-2 rounded';
-                    chip.style.fontSize = '0.85rem';
-                    chip.style.cursor = 'pointer';
-                    chip.textContent = suggestion;
-                    chip.addEventListener('click', function() {
-                        userInput.value = suggestion;
-                        chatForm.dispatchEvent(new Event('submit'));
-                    });
-                    followupContainer.appendChild(chip);
-                });
+                // Format message with newlines if needed
+                const formattedMessage = message.replace(/\n/g, '<br>');
+                messageDiv.innerHTML = `<p class="mb-0">${formattedMessage}</p>`;
                 
-                if (suggestions.length > 0) {
-                    messageDiv.appendChild(document.createElement('hr'));
-                    messageDiv.appendChild(followupContainer);
+                // Time indicator
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'message-time';
+                timeDiv.textContent = timeStr;
+                
+                // Add elements to container
+                messageContainer.appendChild(messageDiv);
+                messageContainer.appendChild(timeDiv);
+            } else {
+                // Assistant message
+                messageContainer.className = 'assistant-message-container';
+                
+                // Sender info
+                const senderDiv = document.createElement('div');
+                senderDiv.className = 'message-sender';
+                senderDiv.innerHTML = `
+                    <div class="sender-avatar bg-primary text-white">
+                        <i class="bi bi-robot"></i>
+                    </div>
+                    <span class="sender-name">Financial Assistant</span>
+                `;
+                
+                // Message bubble
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message assistant-message';
+                
+                // Format message with newlines if needed
+                const formattedMessage = message.replace(/\n/g, '<br>');
+                messageDiv.innerHTML = `<p class="mb-0">${formattedMessage}</p>`;
+                
+                // Time indicator
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'message-time';
+                timeDiv.textContent = timeStr;
+                
+                // Add follow-up suggestion chips if requested
+                if (includeFollowups) {
+                    // Generate follow-up suggestions based on the current message
+                    let suggestions = generateFollowupSuggestions(message);
+                    
+                    if (suggestions.length > 0) {
+                        let followupContainer = document.createElement('div');
+                        followupContainer.className = 'follow-up-container';
+                        
+                        suggestions.forEach(suggestion => {
+                            let chip = document.createElement('div');
+                            chip.className = 'follow-up-chip';
+                            chip.textContent = suggestion;
+                            chip.addEventListener('click', function() {
+                                chatInput.value = suggestion;
+                                chatForm.dispatchEvent(new Event('submit'));
+                            });
+                            followupContainer.appendChild(chip);
+                        });
+                        
+                        messageContainer.appendChild(senderDiv);
+                        messageContainer.appendChild(messageDiv);
+                        messageContainer.appendChild(timeDiv);
+                        messageContainer.appendChild(followupContainer);
+                    } else {
+                        messageContainer.appendChild(senderDiv);
+                        messageContainer.appendChild(messageDiv);
+                        messageContainer.appendChild(timeDiv);
+                    }
+                } else {
+                    messageContainer.appendChild(senderDiv);
+                    messageContainer.appendChild(messageDiv);
+                    messageContainer.appendChild(timeDiv);
                 }
             }
             
-            // Insert before the thinking indicator
-            chatContainer.insertBefore(messageDiv, thinkingIndicator);
+            // Add to chat body before typing indicator
+            chatBody.insertBefore(messageContainer, typingIndicator);
             
             // Scroll to bottom
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+            chatBody.scrollTop = chatBody.scrollHeight;
         }
         
         function generateFollowupSuggestions(message) {
