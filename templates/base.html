@@ -211,7 +211,7 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if request.path == url_for('import_plaid_data') %}active-nav-item{% endif %}" href="{{ url_for('import_plaid_data') }}">
-                                    <i class="bi bi-cloud-download me-1"></i> Import Data
+                                    <i class="bi bi-bank me-1"></i> Connect Bank
                                 </a>
                             </li>
                             <li class="nav-item">
@@ -347,8 +347,8 @@
         </a>
         
         <a href="{{ url_for('import_plaid_data') }}" class="sidebar-link {% if request.path == url_for('import_plaid_data') %}active{% endif %}">
-            <i class="bi bi-cloud-download"></i>
-            <span>Import Data</span>
+            <i class="bi bi-bank"></i>
+            <span>Connect Bank</span>
         </a>
         
         <!-- Assistance & Settings -->
