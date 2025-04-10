@@ -24,12 +24,15 @@ try:
     else:
         openai_client = None
         logger.warning("OpenAI API key not configured")
+        OPENAI_MODEL = "gpt-4"  # Default model if not in config
 except ImportError:
     openai_client = None
     logger.warning("OpenAI package not available")
+    OPENAI_MODEL = "gpt-4"  # Default model if not in config
 except Exception as e:
     openai_client = None
     logger.error(f"Error initializing OpenAI: {str(e)}")
+    OPENAI_MODEL = "gpt-4"  # Default model if not in config
 
 # Analysis options
 ANALYSIS_OPTIONS = {
@@ -114,7 +117,7 @@ def format_expense_data_for_ai(expenses: List[Dict[str, Any]],
         # Sort expenses by date (newest first) and take the most recent 10
         recent_expenses = sorted(
             [exp for exp in expenses if exp.get('date')], 
-            key=lambda x: x.get('date'), 
+            key=lambda x: x.get('date') if x.get('date') is not None else datetime.min, 
             reverse=True
         )[:10]
         
@@ -301,15 +304,19 @@ def generate_ai_analysis(analysis_type: str,
             """
         
         # Generate response from OpenAI
-        response = openai_client.chat.completions.create(
-            model=OPENAI_MODEL,
-            messages=[
-                {"role": "system", "content": "You are a helpful financial advisor specializing in personal expense analysis."},
-                {"role": "user", "content": prompt}
-            ]
-        )
-        
-        return response.choices[0].message.content
+        try:
+            response = openai_client.chat.completions.create(
+                model=OPENAI_MODEL,
+                messages=[
+                    {"role": "system", "content": "You are a helpful financial advisor specializing in personal expense analysis."},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            
+            return response.choices[0].message.content
+        except Exception as e:
+            logger.error(f"Error generating AI analysis with OpenAI API: {str(e)}")
+            return f"Error generating analysis with OpenAI API: {str(e)}"
     
     except Exception as e:
         logger.exception(f"Error generating AI analysis: {e}")
@@ -334,25 +341,39 @@ def get_expense_insights(expenses: List[Dict[str, Any]],
     filtered_expenses = expenses
     period_description = "all recorded expenses"
     
-    if time_period == 'month':
-        today = datetime.now()
-        start_date = datetime(today.year, today.month, 1)
-        if today.month == 12:
-            end_date = datetime(today.year + 1, 1, 1) - timedelta(days=1)
-        else:
-            end_date = datetime(today.year, today.month + 1, 1) - timedelta(days=1)
-        filtered_expenses = [e for e in expenses if isinstance(e.get('date'), datetime) and start_date <= e.get('date') <= end_date]
-        period_description = f"expenses in {today.strftime('%B %Y')}"
-        
-    elif time_period == 'year':
-        today = datetime.now()
-        start_date = datetime(today.year, 1, 1)
-        end_date = datetime(today.year, 12, 31)
-        filtered_expenses = [e for e in expenses if isinstance(e.get('date'), datetime) and start_date <= e.get('date') <= end_date]
-        period_description = f"expenses in {today.year}"
+    try:
+        if time_period == 'month':
+            today = datetime.now()
+            start_date = datetime(today.year, today.month, 1)
+            if today.month == 12:
+                end_date = datetime(today.year + 1, 1, 1) - timedelta(days=1)
+            else:
+                end_date = datetime(today.year, today.month + 1, 1) - timedelta(days=1)
+            filtered_expenses = [e for e in expenses if isinstance(e.get('date'), datetime) and 
+                                 e.get('date') is not None and 
+                                 start_date <= e.get('date') <= end_date]
+            period_description = f"expenses in {today.strftime('%B %Y')}"
+            
+        elif time_period == 'year':
+            today = datetime.now()
+            start_date = datetime(today.year, 1, 1)
+            end_date = datetime(today.year, 12, 31)
+            filtered_expenses = [e for e in expenses if isinstance(e.get('date'), datetime) and 
+                                 e.get('date') is not None and 
+                                 start_date <= e.get('date') <= end_date]
+            period_description = f"expenses in {today.year}"
+    except Exception as e:
+        logger.error(f"Error filtering expenses by time period: {str(e)}")
+        # Fall back to all expenses if there's an error
+        filtered_expenses = expenses
+        period_description = "all recorded expenses"
     
     # Format expense data
-    expense_data = format_expense_data_for_ai(filtered_expenses)
+    try:
+        expense_data = format_expense_data_for_ai(filtered_expenses)
+    except Exception as e:
+        logger.error(f"Error formatting expense data: {str(e)}")
+        return f"Error formatting expense data: {str(e)}"
     
     # Create prompt for general insights
     prompt = f"""
