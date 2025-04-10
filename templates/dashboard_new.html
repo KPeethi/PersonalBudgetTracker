@@ -286,31 +286,32 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Monthly Trend Chart
-    fetch('{{ url_for("monthly_summary") }}?json=true')
-        .then(response => response.json())
-        .then(data => {
-            const months = data.map(item => item.month + ' ' + item.year);
-            const amounts = data.map(item => item.total_amount);
-            
-            const ctx = document.createElement('canvas');
-            document.getElementById('monthlyTrendChart').appendChild(ctx);
-            
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: months,
-                    datasets: [{
-                        label: 'Monthly Expenses',
-                        data: amounts,
-                        borderColor: '#0d6efd',
-                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
-                        tension: 0.3,
-                        fill: true,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#0d6efd'
-                    }]
-                },
+    // Monthly Trend Chart - Use the data passed from the server
+    const monthlyData = {{ monthly_chart_data.data | tojson | safe }};
+    
+    // Check if we have data
+    if (monthlyData && monthlyData.length > 0) {
+        const months = monthlyData.map(item => item.label);
+        const amounts = monthlyData.map(item => item.value);
+        
+        const ctx = document.createElement('canvas');
+        document.getElementById('monthlyTrendChart').appendChild(ctx);
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: months,
+                datasets: [{
+                    label: 'Monthly Expenses',
+                    data: amounts,
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#0d6efd'
+                }]
+            },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
