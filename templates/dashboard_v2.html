@@ -86,14 +86,14 @@
                     </div>
                     <h2 class="fw-bold mb-0">${{ "%.2f"|format(expense_stats.largest_expense.amount) }}</h2>
                     <p class="card-text text-muted small mb-2">
-                        {{ expense_stats.largest_expense.category|default('Uncategorized', true) }}
+                        {{ expense_stats.largest_expense.category if expense_stats.largest_expense.category else 'Uncategorized' }}
                     </p>
                     <div class="d-flex align-items-center mt-3">
                         <div class="flex-shrink-0">
                             <i class="bi bi-calendar3 text-muted"></i>
                         </div>
                         <div class="flex-grow-1 ms-2">
-                            <p class="card-text text-muted small mb-0">{{ expense_stats.largest_expense.date|default('', true)|date }}</p>
+                            <p class="card-text text-muted small mb-0">{{ expense_stats.largest_expense.date.strftime('%b %d, %Y') if expense_stats.largest_expense.date else '' }}</p>
                         </div>
                     </div>
                 </div>
