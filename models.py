@@ -27,8 +27,6 @@ class User(UserMixin, db.Model):
     
     # Relationship with expenses
     expenses = db.relationship('Expense', backref='user', lazy=True)
-    # Relationship with upgrade requests
-    upgrade_requests = db.relationship('BusinessUpgradeRequest', backref='user', lazy=True)
     
     def set_password(self, password):
         """Generate password hash."""
@@ -241,9 +239,9 @@ class BusinessUpgradeRequest(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships - Use different backref names and explicit foreign_keys to avoid conflicts
+    # Relationships with clear foreign_keys
     admin = db.relationship('User', foreign_keys=[handled_by], backref='handled_upgrade_requests')
-    user = db.relationship('User', foreign_keys=[user_id], backref='upgrade_requests', overlaps="admin")
+    # Don't define an explicit relationship to the user - we'll access it directly
     
     def __repr__(self):
         """String representation of a business upgrade request."""

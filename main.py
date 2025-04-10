@@ -2366,7 +2366,18 @@ def admin_business_requests():
     # Get all business upgrade requests, newest first
     requests = BusinessUpgradeRequest.query.order_by(BusinessUpgradeRequest.created_at.desc()).all()
     
-    return render_template('admin/business_requests.html', requests=requests)
+    # Manually add user info to requests to avoid relationship issues
+    requests_with_users = []
+    for req in requests:
+        user = User.query.get(req.user_id)
+        if user:
+            # Add username attribute to request object
+            req.username = user.username
+        else:
+            req.username = f"User #{req.user_id}"
+        requests_with_users.append(req)
+    
+    return render_template('admin/business_requests.html', requests=requests_with_users)
 
 
 @app.route('/admin/business_request/<int:request_id>', methods=['GET', 'POST'])

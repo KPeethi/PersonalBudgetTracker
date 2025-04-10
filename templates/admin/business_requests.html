@@ -36,12 +36,7 @@
                                 <tr>
                                     <td>#{{ request.id }}</td>
                                     <td>
-                                        {% set user = request.user if hasattr(request, 'user') else none %}
-                                        {% if user %}
-                                            {{ user.username }}
-                                        {% else %}
-                                            <span class="text-muted">User #{{ request.user_id }}</span>
-                                        {% endif %}
+                                        <span>{{ request.username }}</span>
                                     </td>
                                     <td>{{ request.company_name }}</td>
                                     <td>{{ request.industry }}</td>
