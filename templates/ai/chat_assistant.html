@@ -1,0 +1,582 @@
+{% extends "base.html" %}
+
+{% block title %}Conversational Assistant{% endblock %}
+
+{% block styles %}
+<style>
+    .chat-container {
+        height: 60vh;
+        overflow-y: auto;
+        border-radius: 0.5rem;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .chat-message {
+        max-width: 80%;
+        margin-bottom: 1rem;
+        border-radius: 1rem;
+        padding: 0.75rem 1rem;
+        position: relative;
+    }
+    
+    .user-message {
+        background-color: #0d6efd;
+        color: white;
+        border-top-right-radius: 0.25rem;
+        align-self: flex-end;
+    }
+    
+    .assistant-message {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-top-left-radius: 0.25rem;
+        align-self: flex-start;
+    }
+    
+    .thinking-indicator {
+        display: none;
+        align-self: flex-start;
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 1rem;
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .typing-dots span {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #6c757d;
+        animation: typingDots 1.4s infinite ease-in-out both;
+        margin-right: 4px;
+    }
+    
+    .typing-dots span:nth-child(1) {
+        animation-delay: 0s;
+    }
+    
+    .typing-dots span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+    
+    .typing-dots span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+    
+    @keyframes typingDots {
+        0%, 80%, 100% { 
+            transform: scale(0.6);
+        } 
+        40% { 
+            transform: scale(1.0);
+        }
+    }
+    
+    .suggestion-chip {
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .suggestion-chip:hover {
+        background-color: #0d6efd !important;
+        color: white !important;
+    }
+    
+    /* Voice recording styles */
+    .voice-record-btn {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .voice-record-btn.recording {
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+        }
+        70% {
+            box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+        }
+    }
+    
+    [data-bs-theme="dark"] .assistant-message {
+        background-color: #343a40;
+        border-color: #495057;
+    }
+    
+    [data-bs-theme="dark"] .thinking-indicator {
+        background-color: #343a40;
+        border-color: #495057;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="mb-3 d-flex align-items-center">
+                <i class="bi bi-chat-dots-fill text-primary me-3"></i> 
+                Conversational Assistant
+            </h1>
+            <p class="lead text-muted">Ask natural language questions about your expenses. Try questions like "How much did I spend on food last month?" or "Which category increased the most this month?"</p>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Chat interface -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Chat with your financial assistant</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="chat-container p-3" id="chatContainer">
+                        <!-- Welcome message -->
+                        <div class="chat-message assistant-message">
+                            <p class="mb-0">Hi there! I'm your financial assistant. How can I help you understand your expenses today?</p>
+                        </div>
+                        
+                        <!-- Messages will be added here dynamically -->
+                        
+                        <!-- Thinking indicator -->
+                        <div class="thinking-indicator" id="thinkingIndicator">
+                            <div class="typing-dots">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="input-container p-3 border-top">
+                        <form id="chatForm" class="d-flex">
+                            <input type="text" class="form-control" id="userInput" placeholder="Type your question here..." autocomplete="off">
+                            <button type="button" class="btn btn-danger voice-record-btn ms-2" id="voiceButton">
+                                <i class="bi bi-mic-fill"></i>
+                            </button>
+                            <button type="submit" class="btn btn-primary ms-2">
+                                <i class="bi bi-send-fill"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Expense forecast -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Expense Forecast</h5>
+                </div>
+                <div class="card-body">
+                    <div id="forecastChart" style="height: 300px;"></div>
+                    <div id="forecastMessage" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Quick query suggestions -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Try asking</h5>
+                </div>
+                <div class="card-body">
+                    <div class="suggestions">
+                        <div class="suggestion-chip bg-light text-dark p-2 rounded mb-2" data-query="How much did I spend on food last month?">
+                            <i class="bi bi-question-circle me-2"></i> How much did I spend on food last month?
+                        </div>
+                        <div class="suggestion-chip bg-light text-dark p-2 rounded mb-2" data-query="What were my top 5 expenses?">
+                            <i class="bi bi-question-circle me-2"></i> What were my top 5 expenses?
+                        </div>
+                        <div class="suggestion-chip bg-light text-dark p-2 rounded mb-2" data-query="How much did I spend this month?">
+                            <i class="bi bi-question-circle me-2"></i> How much did I spend this month?
+                        </div>
+                        <div class="suggestion-chip bg-light text-dark p-2 rounded mb-2" data-query="Compare my spending across categories">
+                            <i class="bi bi-question-circle me-2"></i> Compare my spending across categories
+                        </div>
+                        <div class="suggestion-chip bg-light text-dark p-2 rounded mb-2" data-query="Which category exploded this month?">
+                            <i class="bi bi-question-circle me-2"></i> Which category exploded this month?
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- How it works -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">How it works</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item px-0">
+                            <i class="bi bi-chat-text text-primary me-2"></i>
+                            Ask questions in natural language about your spending
+                        </li>
+                        <li class="list-group-item px-0">
+                            <i class="bi bi-mic text-danger me-2"></i>
+                            Use voice input to ask questions hands-free
+                        </li>
+                        <li class="list-group-item px-0">
+                            <i class="bi bi-database text-success me-2"></i>
+                            Pulls data directly from your transaction history
+                        </li>
+                        <li class="list-group-item px-0">
+                            <i class="bi bi-graph-up-arrow text-warning me-2"></i>
+                            Provides spending forecasts based on your patterns
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/plotly.js@2.18.2/dist/plotly.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const chatContainer = document.getElementById('chatContainer');
+        const chatForm = document.getElementById('chatForm');
+        const userInput = document.getElementById('userInput');
+        const voiceButton = document.getElementById('voiceButton');
+        const thinkingIndicator = document.getElementById('thinkingIndicator');
+        const suggestionChips = document.querySelectorAll('.suggestion-chip');
+        
+        let isRecording = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        
+        // Load forecast data on page load
+        fetchForecastData();
+        
+        // Form submission
+        chatForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const message = userInput.value.trim();
+            if (message) {
+                addMessage(message, 'user');
+                processUserMessage(message);
+                userInput.value = '';
+            }
+        });
+        
+        // Click on suggestion chips
+        suggestionChips.forEach(chip => {
+            chip.addEventListener('click', function() {
+                const query = this.getAttribute('data-query');
+                userInput.value = query;
+                chatForm.dispatchEvent(new Event('submit'));
+            });
+        });
+        
+        // Voice input handling
+        voiceButton.addEventListener('click', toggleRecording);
+        
+        function toggleRecording() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        }
+        
+        function startRecording() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(function(stream) {
+                    isRecording = true;
+                    voiceButton.classList.add('recording');
+                    voiceButton.innerHTML = '<i class="bi bi-stop-fill"></i>';
+                    
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    
+                    mediaRecorder.addEventListener('dataavailable', function(event) {
+                        audioChunks.push(event.data);
+                    });
+                    
+                    mediaRecorder.addEventListener('stop', function() {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        sendAudioToServer(audioBlob);
+                    });
+                    
+                    mediaRecorder.start();
+                })
+                .catch(function(err) {
+                    console.error('Error accessing microphone:', err);
+                    alert('Could not access your microphone. Please check your permissions.');
+                });
+            } else {
+                alert('Voice input is not supported in your browser.');
+            }
+        }
+        
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                isRecording = false;
+                voiceButton.classList.remove('recording');
+                voiceButton.innerHTML = '<i class="bi bi-mic-fill"></i>';
+                
+                mediaRecorder.stop();
+                
+                // Stop all audio tracks
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+        }
+        
+        function sendAudioToServer(audioBlob) {
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'recording.wav');
+            
+            // Show thinking indicator
+            thinkingIndicator.style.display = 'block';
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            fetch('/ai/process_audio', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Add the transcribed text as a user message
+                    addMessage(data.text, 'user');
+                    
+                    // Process the transcribed message
+                    processUserMessage(data.text);
+                } else {
+                    // Hide thinking indicator
+                    thinkingIndicator.style.display = 'none';
+                    
+                    // Show error message
+                    addMessage('Sorry, I couldn\'t understand what you said. Please try again.', 'assistant');
+                }
+            })
+            .catch(error => {
+                console.error('Error processing audio:', error);
+                thinkingIndicator.style.display = 'none';
+                addMessage('Sorry, there was an error processing your voice input.', 'assistant');
+            });
+        }
+        
+        function addMessage(message, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('chat-message');
+            messageDiv.classList.add(sender + '-message');
+            
+            // Format message with newlines if needed
+            const formattedMessage = message.replace(/\n/g, '<br>');
+            messageDiv.innerHTML = `<p class="mb-0">${formattedMessage}</p>`;
+            
+            // Insert before the thinking indicator
+            chatContainer.insertBefore(messageDiv, thinkingIndicator);
+            
+            // Scroll to bottom
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        function processUserMessage(message) {
+            // Show thinking indicator
+            thinkingIndicator.style.display = 'block';
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // Send to server for processing
+            fetch('/ai/process_query', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    query: message
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide thinking indicator
+                thinkingIndicator.style.display = 'none';
+                
+                if (data.success) {
+                    // Add assistant's response
+                    addMessage(data.response, 'assistant');
+                    
+                    // Refresh forecast if query mentions future or prediction
+                    if (message.toLowerCase().includes('forecast') || 
+                        message.toLowerCase().includes('predict') || 
+                        message.toLowerCase().includes('future')) {
+                        fetchForecastData();
+                    }
+                } else {
+                    // Show error message
+                    addMessage('Sorry, there was an error processing your question. Please try again.', 'assistant');
+                }
+            })
+            .catch(error => {
+                console.error('Error processing query:', error);
+                thinkingIndicator.style.display = 'none';
+                addMessage('Sorry, there was an error communicating with the server.', 'assistant');
+            });
+        }
+        
+        function fetchForecastData() {
+            fetch('/ai/expense_forecast')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    renderForecastChart(data.data);
+                    updateForecastMessage(data.data);
+                } else {
+                    document.getElementById('forecastChart').innerHTML = 
+                        `<div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            ${data.message}
+                        </div>`;
+                    document.getElementById('forecastMessage').innerHTML = '';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching forecast data:', error);
+                document.getElementById('forecastChart').innerHTML = 
+                    `<div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Error fetching forecast data. Please try again later.
+                    </div>`;
+            });
+        }
+        
+        function renderForecastChart(data) {
+            // Combine historical and forecast data
+            const dates = [...data.historical.map(d => d.date), ...data.forecast.map(d => d.date)];
+            const amounts = [...data.historical.map(d => d.total), ...data.forecast.map(d => d.total)];
+            
+            // Create markers for each point
+            const historicalLen = data.historical.length;
+            const totalLen = dates.length;
+            
+            const historicalMarkers = Array(historicalLen).fill('circle');
+            const forecastMarkers = Array(totalLen - historicalLen).fill('diamond');
+            
+            const trace = {
+                x: dates,
+                y: amounts,
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Monthly Expenses',
+                line: {
+                    shape: 'spline',
+                    width: 3,
+                    color: '#0d6efd'
+                },
+                marker: {
+                    size: 8,
+                    symbol: [...historicalMarkers, ...forecastMarkers],
+                    color: Array(totalLen).fill('#0d6efd').map((c, i) => i >= historicalLen ? '#dc3545' : c)
+                }
+            };
+            
+            const forecastStart = data.historical[data.historical.length - 1].date;
+            
+            const layout = {
+                title: 'Monthly Expense Forecast',
+                xaxis: {
+                    title: 'Month',
+                    showgrid: true,
+                    zeroline: false
+                },
+                yaxis: {
+                    title: 'Total Expenses ($)',
+                    showgrid: true,
+                    zeroline: false
+                },
+                shapes: [{
+                    type: 'line',
+                    x0: forecastStart,
+                    y0: 0,
+                    x1: forecastStart,
+                    y1: 1,
+                    yref: 'paper',
+                    line: {
+                        color: 'gray',
+                        width: 2,
+                        dash: 'dash'
+                    }
+                }],
+                annotations: [{
+                    x: forecastStart,
+                    y: 1,
+                    yref: 'paper',
+                    text: 'Forecast Start',
+                    showarrow: true,
+                    arrowhead: 2,
+                    arrowsize: 1,
+                    arrowwidth: 2,
+                    ax: 40,
+                    ay: -30
+                }],
+                margin: {
+                    l: 50,
+                    r: 50,
+                    b: 50,
+                    t: 50,
+                    pad: 4
+                }
+            };
+            
+            const config = {
+                responsive: true
+            };
+            
+            Plotly.newPlot('forecastChart', [trace], layout, config);
+        }
+        
+        function updateForecastMessage(data) {
+            const messageContainer = document.getElementById('forecastMessage');
+            let message = '';
+            
+            // Average monthly change
+            const avgChange = data.avg_monthly_change;
+            if (avgChange > 0) {
+                message += `<div class="alert alert-warning">
+                    <i class="bi bi-graph-up-arrow me-2"></i>
+                    Your expenses are increasing by approximately <strong>${avgChange.toFixed(1)}%</strong> each month.
+                </div>`;
+            } else if (avgChange < 0) {
+                message += `<div class="alert alert-success">
+                    <i class="bi bi-graph-down-arrow me-2"></i>
+                    Your expenses are decreasing by approximately <strong>${Math.abs(avgChange).toFixed(1)}%</strong> each month.
+                </div>`;
+            } else {
+                message += `<div class="alert alert-info">
+                    <i class="bi bi-graph-up me-2"></i>
+                    Your monthly expenses are relatively stable.
+                </div>`;
+            }
+            
+            // Depletion warning if applicable
+            if (data.depletion) {
+                message += `<div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>Warning:</strong> If this spending trend continues, your savings could be depleted by <strong>${data.depletion.date}</strong> (in about ${data.depletion.months} months).
+                </div>`;
+            }
+            
+            messageContainer.innerHTML = message;
+        }
+    });
+</script>
+{% endblock %}

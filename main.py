@@ -17,6 +17,7 @@ import plaid_service
 import visualization
 import suggestions
 import ai_assistant
+import conversation_assistant
 
 # Directory for storing uploaded receipts
 UPLOAD_FOLDER = 'static/uploads/receipts'
@@ -2173,6 +2174,129 @@ def delete_receipt(receipt_id):
     
     return redirect(url_for('receipts'))
 
+
+# Conversational AI Assistant routes
+@app.route('/ai/conversational')
+@login_required
+def chat_assistant():
+    """Show conversational AI assistant interface"""
+    logger.debug(f"Accessing conversational assistant, user: {current_user.username}")
+    
+    return render_template('ai/chat_assistant.html', title='Conversational Assistant')
+
+@app.route('/ai/process_query', methods=['POST'])
+@login_required
+def process_ai_query():
+    """Process a natural language query and return response"""
+    logger.debug(f"Processing AI query, user: {current_user.username}")
+    
+    # Get query from request
+    data = request.json
+    query = data.get('query', '')
+    
+    if not query:
+        return jsonify({
+            'success': False,
+            'response': 'Empty query provided'
+        })
+    
+    try:
+        # Process the query
+        response = conversation_assistant.process_query(query)
+        
+        return jsonify({
+            'success': True,
+            'response': response
+        })
+    except Exception as e:
+        logger.error(f"Error processing query: {str(e)}")
+        return jsonify({
+            'success': False,
+            'response': f"Error processing query: {str(e)}"
+        })
+
+@app.route('/ai/process_audio', methods=['POST'])
+@login_required
+def process_audio():
+    """Process audio recording and convert to text"""
+    logger.debug(f"Processing audio recording, user: {current_user.username}")
+    
+    if 'audio' not in request.files:
+        return jsonify({
+            'success': False,
+            'error': 'No audio file provided'
+        })
+    
+    audio_file = request.files['audio']
+    
+    if not audio_file:
+        return jsonify({
+            'success': False,
+            'error': 'Empty audio file'
+        })
+    
+    try:
+        # Save the audio file temporarily
+        temp_filename = os.path.join(UPLOAD_FOLDER, f"temp_audio_{current_user.id}.wav")
+        audio_file.save(temp_filename)
+        
+        # Use OpenAI Whisper API to transcribe the audio
+        if not conversation_assistant.openai_client:
+            return jsonify({
+                'success': False,
+                'error': 'OpenAI API not configured'
+            })
+        
+        with open(temp_filename, "rb") as audio_file:
+            transcript = conversation_assistant.openai_client.audio.transcriptions.create(
+                model="whisper-1", 
+                file=audio_file
+            )
+            
+        # Clean up the temporary file
+        os.remove(temp_filename)
+        
+        return jsonify({
+            'success': True,
+            'text': transcript.text
+        })
+    except Exception as e:
+        logger.error(f"Error processing audio: {str(e)}")
+        # Clean up the temporary file if it exists
+        if os.path.exists(temp_filename):
+            os.remove(temp_filename)
+            
+        return jsonify({
+            'success': False,
+            'error': f"Error processing audio: {str(e)}"
+        })
+
+@app.route('/ai/expense_forecast')
+@login_required
+def expense_forecast():
+    """Generate and return expense forecast data"""
+    logger.debug(f"Generating expense forecast, user: {current_user.username}")
+    
+    # Get optional category parameter
+    category = request.args.get('category')
+    months_ahead = request.args.get('months', 3, type=int)
+    
+    try:
+        # Generate the forecast
+        forecast_data = conversation_assistant.get_expense_forecast(
+            user_id=current_user.id,
+            category=category,
+            months_ahead=months_ahead
+        )
+        
+        return jsonify(forecast_data)
+    except Exception as e:
+        logger.error(f"Error generating expense forecast: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f"Error generating forecast: {str(e)}",
+            'data': None
+        })
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
