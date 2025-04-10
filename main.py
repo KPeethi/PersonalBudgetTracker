@@ -9,10 +9,17 @@ import calendar
 import csv
 import io
 import os
+import sys
 from werkzeug.utils import secure_filename
 from app import app, db
-from models import User, Expense, UserPreference, Budget, UserNotification, Receipt, CustomBudgetCategory
-from forms import RegistrationForm, LoginForm, ExpenseForm, ReceiptUploadForm, BudgetForm
+from models import (
+    User, Expense, UserPreference, Budget, UserNotification, 
+    Receipt, CustomBudgetCategory, BusinessUpgradeRequest, ExcelImport
+)
+from forms import (
+    RegistrationForm, LoginForm, ExpenseForm, ReceiptUploadForm, 
+    BudgetForm, BusinessUpgradeRequestForm, ExcelImportForm
+)
 import plaid_service
 import visualization
 import suggestions
@@ -2321,6 +2328,301 @@ def last_month_predictions():
             'message': f"Error generating predictions: {str(e)}",
             'data': None
         })
+
+# Business Features Routes
+@app.route('/business/request_upgrade', methods=['GET', 'POST'])
+@login_required
+def request_business_upgrade():
+    """Request an upgrade to business features."""
+    # Check if user already has business access
+    if current_user.is_business_user:
+        flash('You already have access to business features.', 'info')
+        return redirect(url_for('dashboard'))
+    
+    # Check if user already has a pending request
+    existing_request = BusinessUpgradeRequest.query.filter_by(
+        user_id=current_user.id, 
+        status='pending'
+    ).first()
+    
+    if existing_request:
+        flash('You already have a pending business upgrade request.', 'info')
+        return redirect(url_for('dashboard'))
+    
+    form = BusinessUpgradeRequestForm()
+    
+    if form.validate_on_submit():
+        # Create new business upgrade request
+        upgrade_request = BusinessUpgradeRequest(
+            user_id=current_user.id,
+            company_name=form.company_name.data,
+            industry=form.industry.data,
+            business_email=form.business_email.data,
+            phone_number=form.phone_number.data,
+            reason=form.reason.data
+        )
+        
+        try:
+            db.session.add(upgrade_request)
+            db.session.commit()
+            
+            # Notify user
+            flash('Your business upgrade request has been submitted and is pending review.', 'success')
+            
+            # Create a notification for the user
+            notification = UserNotification(
+                user_id=current_user.id,
+                title='Business Upgrade Request Submitted',
+                message='Your request to access business features has been submitted and is pending review.',
+                notification_type='info'
+            )
+            db.session.add(notification)
+            
+            # Create a notification for admins
+            admins = User.query.filter_by(is_admin=True).all()
+            for admin in admins:
+                admin_notification = UserNotification(
+                    user_id=admin.id,
+                    title='New Business Upgrade Request',
+                    message=f'User {current_user.username} has requested access to business features.',
+                    notification_type='info',
+                    related_id=upgrade_request.id,
+                    related_type='business_upgrade_request'
+                )
+                db.session.add(admin_notification)
+            
+            db.session.commit()
+            
+            return redirect(url_for('dashboard'))
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error submitting business upgrade request: {str(e)}")
+            flash('An error occurred while submitting your request. Please try again.', 'danger')
+    
+    return render_template('business/upgrade_request.html', form=form)
+
+
+@app.route('/admin/business_requests')
+@login_required
+def admin_business_requests():
+    """Admin view for managing business upgrade requests."""
+    if not current_user.is_admin:
+        flash('You do not have permission to access this page.', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    # Get all business upgrade requests, newest first
+    requests = BusinessUpgradeRequest.query.order_by(BusinessUpgradeRequest.created_at.desc()).all()
+    
+    return render_template('admin/business_requests.html', requests=requests)
+
+
+@app.route('/admin/business_request/<int:request_id>', methods=['GET', 'POST'])
+@login_required
+def admin_business_request_detail(request_id):
+    """View and process a specific business upgrade request."""
+    if not current_user.is_admin:
+        flash('You do not have permission to access this page.', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    # Get the business upgrade request
+    upgrade_request = BusinessUpgradeRequest.query.get_or_404(request_id)
+    
+    # Get the requesting user
+    user = User.query.get(upgrade_request.user_id)
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        admin_notes = request.form.get('admin_notes', '')
+        
+        # Update the request
+        upgrade_request.admin_notes = admin_notes
+        upgrade_request.handled_by = current_user.id
+        
+        if action == 'approve':
+            # Approve the request
+            upgrade_request.status = 'approved'
+            
+            # Update user's business status
+            user.is_business_user = True
+            
+            # Create user notification
+            notification = UserNotification(
+                user_id=user.id,
+                title='Business Upgrade Request Approved',
+                message='Your request to access business features has been approved. You now have access to business features.',
+                notification_type='success'
+            )
+            db.session.add(notification)
+            
+        elif action == 'reject':
+            # Reject the request
+            upgrade_request.status = 'rejected'
+            
+            # Create user notification
+            notification = UserNotification(
+                user_id=user.id,
+                title='Business Upgrade Request Rejected',
+                message='Your request to access business features has been rejected. Please check the admin notes for more information.',
+                notification_type='warning'
+            )
+            db.session.add(notification)
+        
+        try:
+            db.session.commit()
+            flash(f'Business upgrade request has been {upgrade_request.status}.', 'success')
+            return redirect(url_for('admin_business_requests'))
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error processing business upgrade request: {str(e)}")
+            flash('An error occurred while processing the request. Please try again.', 'danger')
+    
+    return render_template('admin/business_request_detail.html', request=upgrade_request, user=user)
+
+
+@app.route('/business/excel_import', methods=['GET', 'POST'])
+@login_required
+def business_excel_import():
+    """Excel import for business users."""
+    # Check if user has business access
+    if not current_user.is_business_user and not current_user.is_admin:
+        flash('You need business user access to import Excel files.', 'warning')
+        return redirect(url_for('request_business_upgrade'))
+    
+    form = ExcelImportForm()
+    
+    if form.validate_on_submit():
+        # Handle file upload
+        file = form.excel_file.data
+        filename = secure_filename(file.filename)
+        
+        # Create uploads directory if it doesn't exist
+        upload_dir = os.path.join(app.root_path, 'uploads', 'excel')
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # Save the file
+        file_path = os.path.join(upload_dir, filename)
+        file.save(file_path)
+        
+        # Create Excel import record
+        excel_import = ExcelImport(
+            user_id=current_user.id,
+            filename=filename,
+            file_path=file_path,
+            file_size=os.path.getsize(file_path),
+            description=form.description.data,
+            status='pending'
+        )
+        
+        try:
+            db.session.add(excel_import)
+            db.session.commit()
+            
+            # Process the file (this could be done in a background job)
+            # For now, we'll just update the status
+            flash('Excel file uploaded successfully. It will be processed shortly.', 'success')
+            return redirect(url_for('business_excel_import'))
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error creating Excel import record: {str(e)}")
+            flash('An error occurred while uploading your file. Please try again.', 'danger')
+    
+    # Get user's previous imports
+    previous_imports = ExcelImport.query.filter_by(user_id=current_user.id).order_by(ExcelImport.upload_date.desc()).all()
+    
+    return render_template('business/excel_import.html', form=form, imports=previous_imports)
+
+
+@app.route('/migrate/business_tables')
+@login_required
+def migrate_business_tables():
+    """Run business tables migration."""
+    if not current_user.is_admin:
+        flash('You do not have permission to run migrations.', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    try:
+        # Import the migration script
+        import migrate_business_tables
+        
+        # Run the migration
+        success = migrate_business_tables.main()
+        
+        if success:
+            flash('Business tables migration completed successfully.', 'success')
+        else:
+            flash('Business tables migration failed. Check the logs for details.', 'danger')
+    except Exception as e:
+        logger.error(f"Error running business tables migration: {str(e)}")
+        flash(f'An error occurred during migration: {str(e)}', 'danger')
+    
+    return redirect(url_for('dashboard'))
+
+
+# Add a check for business users to the AI prediction routes
+@app.route('/ai/expense_forecast')
+@login_required
+def expense_forecast():
+    """Generate expense forecast for authenticated user."""
+    # Check if AI predictions require business user access and user does not have access
+    if not current_user.is_business_user and not current_user.is_admin:
+        logger.warning(f"Non-business user {current_user.username} tried to access AI predictions")
+        return jsonify({
+            'success': False,
+            'message': "This feature requires business user access. Please request an upgrade.",
+            'data': None
+        })
+    
+    try:
+        # Generate the forecast
+        forecast = conversation_assistant.get_expense_forecast(
+            user_id=current_user.id,
+            months_ahead=3
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': "Forecast generated successfully",
+            'data': forecast
+        })
+    except Exception as e:
+        logger.error(f"Error generating expense forecast: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f"Error generating forecast: {str(e)}",
+            'data': None
+        })
+
+
+@app.route('/ai/last_month_predictions')
+@login_required
+def last_month_predictions():
+    """Generate and return predictions based on last month's expenses"""
+    # Check if AI predictions require business user access and user does not have access
+    if not current_user.is_business_user and not current_user.is_admin:
+        logger.warning(f"Non-business user {current_user.username} tried to access AI predictions")
+        return jsonify({
+            'success': False,
+            'message': "This feature requires business user access. Please request an upgrade.",
+            'data': None
+        })
+    
+    logger.debug(f"Generating last month predictions, user: {current_user.username}")
+    
+    try:
+        # Generate the predictions
+        predictions = conversation_assistant.get_last_month_predictions(
+            user_id=current_user.id
+        )
+        
+        return jsonify(predictions)
+    except Exception as e:
+        logger.error(f"Error generating last month predictions: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f"Error generating predictions: {str(e)}",
+            'data': None
+        })
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True)

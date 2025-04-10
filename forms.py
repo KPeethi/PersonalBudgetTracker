@@ -9,6 +9,40 @@ from wtforms import StringField, PasswordField, SubmitField, BooleanField, Float
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, NumberRange, Optional
 from models import User
 
+# List of industry options for the business upgrade form
+INDUSTRY_CHOICES = [
+    ('', 'Select Industry'),
+    ('accounting', 'Accounting'),
+    ('advertising', 'Advertising'),
+    ('agriculture', 'Agriculture'),
+    ('architecture', 'Architecture'),
+    ('automotive', 'Automotive'),
+    ('banking', 'Banking'),
+    ('construction', 'Construction'),
+    ('consulting', 'Consulting'),
+    ('education', 'Education'),
+    ('energy', 'Energy'),
+    ('entertainment', 'Entertainment'),
+    ('financial_services', 'Financial Services'),
+    ('food', 'Food & Beverage'),
+    ('government', 'Government'),
+    ('healthcare', 'Healthcare'),
+    ('hospitality', 'Hospitality'),
+    ('insurance', 'Insurance'),
+    ('legal', 'Legal Services'),
+    ('manufacturing', 'Manufacturing'),
+    ('media', 'Media'),
+    ('non_profit', 'Non-Profit'),
+    ('real_estate', 'Real Estate'),
+    ('retail', 'Retail'),
+    ('shipping', 'Shipping & Logistics'),
+    ('software', 'Software & Technology'),
+    ('telecommunications', 'Telecommunications'),
+    ('transportation', 'Transportation'),
+    ('travel', 'Travel'),
+    ('other', 'Other')
+]
+
 class RegistrationForm(FlaskForm):
     """Form for user registration."""
     username = StringField('Username', validators=[
@@ -137,3 +171,40 @@ class BudgetForm(FlaskForm):
     ])
     
     submit = SubmitField('Save Budget')
+
+
+class BusinessUpgradeRequestForm(FlaskForm):
+    """Form for requesting a business user upgrade."""
+    company_name = StringField('Company Name', validators=[
+        DataRequired(),
+        Length(min=2, max=100)
+    ])
+    industry = SelectField('Industry', choices=INDUSTRY_CHOICES, validators=[
+        DataRequired()
+    ])
+    business_email = StringField('Business Email', validators=[
+        Optional(),
+        Email()
+    ])
+    phone_number = StringField('Phone Number', validators=[
+        Optional(),
+        Length(min=6, max=20)
+    ])
+    reason = TextAreaField('Why do you need business features?', validators=[
+        DataRequired(),
+        Length(min=20, max=2000)
+    ])
+    submit = SubmitField('Submit Request')
+
+
+class ExcelImportForm(FlaskForm):
+    """Form for business users to import Excel files."""
+    excel_file = FileField('Excel File', validators=[
+        FileRequired(),
+        FileAllowed(['xlsx', 'xls', 'csv'], 'Only Excel (XLSX, XLS) and CSV files are allowed.')
+    ])
+    description = TextAreaField('Import Description (optional)', validators=[
+        Optional(),
+        Length(max=255)
+    ])
+    submit = SubmitField('Upload and Process')

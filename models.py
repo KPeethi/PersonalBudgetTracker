@@ -19,6 +19,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_admin = db.Column(db.Boolean, default=False)
+    is_business_user = db.Column(db.Boolean, default=False)
     last_login = db.Column(db.DateTime)
     is_active = db.Column(db.Boolean, default=True)
     is_suspended = db.Column(db.Boolean, default=False)
@@ -26,6 +27,8 @@ class User(UserMixin, db.Model):
     
     # Relationship with expenses
     expenses = db.relationship('Expense', backref='user', lazy=True)
+    # Relationship with upgrade requests
+    upgrade_requests = db.relationship('BusinessUpgradeRequest', backref='user', lazy=True)
     
     def set_password(self, password):
         """Generate password hash."""
@@ -213,3 +216,63 @@ class Receipt(db.Model):
     def __repr__(self):
         """String representation of a receipt."""
         return f"Receipt(id={self.id}, expense_id={self.expense_id}, filename={self.filename})"
+
+
+class BusinessUpgradeRequest(db.Model):
+    """Represents a request from a user to be upgraded to a business user."""
+    __tablename__ = 'business_upgrade_requests'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
+    
+    # Business information
+    company_name = db.Column(db.String(100), nullable=False)
+    industry = db.Column(db.String(100), nullable=True)
+    business_email = db.Column(db.String(120), nullable=True)
+    phone_number = db.Column(db.String(20), nullable=True)
+    reason = db.Column(db.Text, nullable=True)
+    
+    # Admin response
+    admin_notes = db.Column(db.Text, nullable=True)
+    handled_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    
+    # Date fields
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships - Use different backref name to avoid conflicts
+    admin = db.relationship('User', foreign_keys=[handled_by], backref='handled_upgrade_requests')
+    
+    def __repr__(self):
+        """String representation of a business upgrade request."""
+        return f"BusinessUpgradeRequest(user_id={self.user_id}, status={self.status}, company={self.company_name})"
+
+
+class ExcelImport(db.Model):
+    """Represents an Excel file import for business users."""
+    __tablename__ = 'excel_imports'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    # File information
+    filename = db.Column(db.String(255), nullable=False)
+    file_path = db.Column(db.String(512), nullable=False)
+    file_size = db.Column(db.Integer, nullable=False)  # Size in bytes
+    num_rows = db.Column(db.Integer, nullable=True)  # Number of rows imported
+    
+    # Import status
+    status = db.Column(db.String(20), default='pending')  # pending, processing, completed, failed
+    error_message = db.Column(db.Text, nullable=True)
+    
+    # Date fields
+    upload_date = db.Column(db.DateTime, default=datetime.utcnow)
+    processed_date = db.Column(db.DateTime, nullable=True)
+    
+    # Relationships
+    user = db.relationship('User', backref=db.backref('excel_imports', lazy=True))
+    
+    def __repr__(self):
+        """String representation of an Excel import."""
+        return f"ExcelImport(id={self.id}, user_id={self.user_id}, status={self.status}, filename={self.filename})"

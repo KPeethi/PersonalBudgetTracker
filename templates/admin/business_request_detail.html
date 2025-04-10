@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Business Upgrade Request Detail{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin_business_requests') }}">Business Requests</a></li>
+                    <li class="breadcrumb-item active">Request #{{ request.id }}</li>
+                </ol>
+            </nav>
+            
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+                    <h4 class="mb-0">Business Upgrade Request #{{ request.id }}</h4>
+                    <span class="badge rounded-pill 
+                        {% if request.status == 'pending' %}bg-warning text-dark{% endif %}
+                        {% if request.status == 'approved' %}bg-success{% endif %}
+                        {% if request.status == 'rejected' %}bg-danger{% endif %}
+                    ">
+                        {{ request.status|capitalize }}
+                    </span>
+                </div>
+                
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>User Information</h5>
+                            <dl class="row">
+                                <dt class="col-sm-4">Username</dt>
+                                <dd class="col-sm-8">{{ user.username }}</dd>
+                                
+                                <dt class="col-sm-4">Email</dt>
+                                <dd class="col-sm-8">{{ user.email }}</dd>
+                                
+                                <dt class="col-sm-4">Registered</dt>
+                                <dd class="col-sm-8">{{ user.created_at.strftime('%Y-%m-%d') }}</dd>
+                                
+                                <dt class="col-sm-4">Last Login</dt>
+                                <dd class="col-sm-8">{{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else 'Never' }}</dd>
+                            </dl>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5>Request Information</h5>
+                            <dl class="row">
+                                <dt class="col-sm-5">Requested On</dt>
+                                <dd class="col-sm-7">{{ request.created_at.strftime('%Y-%m-%d %H:%M') }}</dd>
+                                
+                                <dt class="col-sm-5">Status</dt>
+                                <dd class="col-sm-7">
+                                    <span class="badge rounded-pill 
+                                        {% if request.status == 'pending' %}bg-warning text-dark{% endif %}
+                                        {% if request.status == 'approved' %}bg-success{% endif %}
+                                        {% if request.status == 'rejected' %}bg-danger{% endif %}
+                                    ">
+                                        {{ request.status|capitalize }}
+                                    </span>
+                                </dd>
+                                
+                                {% if request.status != 'pending' %}
+                                <dt class="col-sm-5">Last Updated</dt>
+                                <dd class="col-sm-7">{{ request.updated_at.strftime('%Y-%m-%d %H:%M') }}</dd>
+                                
+                                <dt class="col-sm-5">Handled By</dt>
+                                <dd class="col-sm-7">{{ request.admin.username if request.admin else 'N/A' }}</dd>
+                                {% endif %}
+                            </dl>
+                        </div>
+                    </div>
+                    
+                    <h5>Business Information</h5>
+                    <div class="table-responsive mb-4">
+                        <table class="table table-bordered">
+                            <tbody>
+                                <tr>
+                                    <th style="width: 20%">Company Name</th>
+                                    <td>{{ request.company_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Industry</th>
+                                    <td>{{ request.industry }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Business Email</th>
+                                    <td>{{ request.business_email or 'Not provided' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Phone Number</th>
+                                    <td>{{ request.phone_number or 'Not provided' }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <h5>Request Reason</h5>
+                    <div class="mb-4">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                {{ request.reason|nl2br }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if request.admin_notes %}
+                    <h5>Admin Notes</h5>
+                    <div class="mb-4">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                {{ request.admin_notes|nl2br }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if request.status == 'pending' %}
+                    <h5>Process Request</h5>
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="admin_notes" class="form-label">Admin Notes</label>
+                            <textarea name="admin_notes" id="admin_notes" class="form-control" rows="4">{{ request.admin_notes }}</textarea>
+                            <small class="text-muted">These notes will be visible to the user.</small>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" name="action" value="approve" class="btn btn-success">
+                                <i class="bi bi-check-lg"></i> Approve Request
+                            </button>
+                            <button type="submit" name="action" value="reject" class="btn btn-danger">
+                                <i class="bi bi-x-lg"></i> Reject Request
+                            </button>
+                            <a href="{{ url_for('admin_business_requests') }}" class="btn btn-secondary ms-auto">
+                                <i class="bi bi-arrow-left"></i> Back to List
+                            </a>
+                        </div>
+                    </form>
+                    {% else %}
+                    <div class="d-flex justify-content-end">
+                        <a href="{{ url_for('admin_business_requests') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to List
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

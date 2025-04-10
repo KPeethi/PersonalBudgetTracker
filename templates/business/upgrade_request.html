@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Request Business Features{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Request Business Features Access</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5 class="alert-heading"><i class="bi bi-briefcase-fill me-2"></i>Business Features Include:</h5>
+                        <ul class="mb-0">
+                            <li>Excel expense data imports for bulk operations</li>
+                            <li>Advanced expense prediction and analysis</li>
+                            <li>Business-level reporting and insights</li>
+                            <li>Multiple user roles for team expense management</li>
+                            <li>Export data with enhanced analytics</li>
+                        </ul>
+                    </div>
+                    
+                    <p class="mb-4">Please fill out the form below to request access to business features. Your request will be reviewed by our administrators, typically within 1-2 business days.</p>
+                    
+                    <form method="POST" class="needs-validation" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.company_name.label(class="form-label") }}
+                            {{ form.company_name(class="form-control", placeholder="Enter your company name") }}
+                            {% if form.company_name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.company_name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.industry.label(class="form-label") }}
+                            {{ form.industry(class="form-select") }}
+                            {% if form.industry.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.industry.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.business_email.label(class="form-label") }}
+                                    {{ form.business_email(class="form-control", placeholder="company@example.com") }}
+                                    {% if form.business_email.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.business_email.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.phone_number.label(class="form-label") }}
+                                    {{ form.phone_number(class="form-control", placeholder="Enter phone number") }}
+                                    {% if form.phone_number.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.phone_number.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            {{ form.reason.label(class="form-label") }}
+                            {{ form.reason(class="form-control", rows=5, placeholder="Please explain how you plan to use our business features...") }}
+                            {% if form.reason.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.reason.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="text-muted">Please provide detailed information about your business needs to help us evaluate your request.</small>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

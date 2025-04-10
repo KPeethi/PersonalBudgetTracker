@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Business Upgrade Requests{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Manage Business Upgrade Requests</h2>
+    
+    <div class="card">
+        <div class="card-header">
+            <ul class="nav nav-tabs card-header-tabs">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#pending" data-bs-toggle="tab">Pending</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#approved" data-bs-toggle="tab">Approved</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#rejected" data-bs-toggle="tab">Rejected</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#all" data-bs-toggle="tab">All Requests</a>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content">
+                <!-- Pending Requests -->
+                <div class="tab-pane fade show active" id="pending">
+                    {% set pending_requests = requests|selectattr('status', 'eq', 'pending')|list %}
+                    {% if pending_requests %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>User</th>
+                                        <th>Company</th>
+                                        <th>Industry</th>
+                                        <th>Date Requested</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for request in pending_requests %}
+                                    <tr>
+                                        <td>{{ request.id }}</td>
+                                        <td>{{ request.user.username }}</td>
+                                        <td>{{ request.company_name }}</td>
+                                        <td>{{ request.industry }}</td>
+                                        <td>{{ request.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            <a href="{{ url_for('admin_business_request_detail', request_id=request.id) }}" class="btn btn-primary btn-sm">
+                                                <i class="bi bi-eye"></i> View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">No pending requests.</div>
+                    {% endif %}
+                </div>
+                
+                <!-- Approved Requests -->
+                <div class="tab-pane fade" id="approved">
+                    {% set approved_requests = requests|selectattr('status', 'eq', 'approved')|list %}
+                    {% if approved_requests %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>User</th>
+                                        <th>Company</th>
+                                        <th>Industry</th>
+                                        <th>Date Approved</th>
+                                        <th>Approved By</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for request in approved_requests %}
+                                    <tr>
+                                        <td>{{ request.id }}</td>
+                                        <td>{{ request.user.username }}</td>
+                                        <td>{{ request.company_name }}</td>
+                                        <td>{{ request.industry }}</td>
+                                        <td>{{ request.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>{{ request.admin.username if request.admin else 'N/A' }}</td>
+                                        <td>
+                                            <a href="{{ url_for('admin_business_request_detail', request_id=request.id) }}" class="btn btn-secondary btn-sm">
+                                                <i class="bi bi-eye"></i> View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">No approved requests.</div>
+                    {% endif %}
+                </div>
+                
+                <!-- Rejected Requests -->
+                <div class="tab-pane fade" id="rejected">
+                    {% set rejected_requests = requests|selectattr('status', 'eq', 'rejected')|list %}
+                    {% if rejected_requests %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>User</th>
+                                        <th>Company</th>
+                                        <th>Industry</th>
+                                        <th>Date Rejected</th>
+                                        <th>Rejected By</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for request in rejected_requests %}
+                                    <tr>
+                                        <td>{{ request.id }}</td>
+                                        <td>{{ request.user.username }}</td>
+                                        <td>{{ request.company_name }}</td>
+                                        <td>{{ request.industry }}</td>
+                                        <td>{{ request.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>{{ request.admin.username if request.admin else 'N/A' }}</td>
+                                        <td>
+                                            <a href="{{ url_for('admin_business_request_detail', request_id=request.id) }}" class="btn btn-secondary btn-sm">
+                                                <i class="bi bi-eye"></i> View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">No rejected requests.</div>
+                    {% endif %}
+                </div>
+                
+                <!-- All Requests -->
+                <div class="tab-pane fade" id="all">
+                    {% if requests %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>User</th>
+                                        <th>Company</th>
+                                        <th>Industry</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for request in requests %}
+                                    <tr>
+                                        <td>{{ request.id }}</td>
+                                        <td>{{ request.user.username }}</td>
+                                        <td>{{ request.company_name }}</td>
+                                        <td>{{ request.industry }}</td>
+                                        <td>
+                                            {% if request.status == 'pending' %}
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                            {% elif request.status == 'approved' %}
+                                                <span class="badge bg-success">Approved</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Rejected</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ request.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            <a href="{{ url_for('admin_business_request_detail', request_id=request.id) }}" class="btn btn-secondary btn-sm">
+                                                <i class="bi bi-eye"></i> View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">No requests found.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
