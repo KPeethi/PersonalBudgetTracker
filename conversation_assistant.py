@@ -466,9 +466,33 @@ def generate_ai_response(query_text: str, user_id: int) -> str:
     Returns:
         AI-generated response string
     """
-    if not openai_client:
-        return "I'm sorry, but I don't understand that question. The AI assistant is not configured."
+    # Handle common general questions without using OpenAI
+    query_lower = query_text.lower().strip()
     
+    # Basic FAQ responses
+    if "what is your name" in query_lower or "who are you" in query_lower:
+        return "I'm your financial assistant. I'm designed to help you understand your expenses and spending patterns."
+    
+    if "hello" in query_lower or "hi " in query_lower or query_lower == "hi":
+        return "Hello! I'm your financial assistant. You can ask me about your expenses, spending patterns, or get insights on your financial data."
+    
+    if "how are you" in query_lower:
+        return "I'm functioning well, thank you! I'm here to help you with your financial questions. Feel free to ask about your expenses or spending habits."
+    
+    if "help" in query_lower or "what can you do" in query_lower:
+        return "I can help you understand your spending patterns, track expenses by category, compare monthly spending, identify unusual expenses, and forecast future spending. Try asking questions like 'How much did I spend on food last month?' or 'What were my top 5 expenses?'"
+    
+    if "thank" in query_lower:
+        return "You're welcome! I'm happy to assist with your financial questions. Is there anything else you'd like to know about your expenses?"
+    
+    if "bye" in query_lower or "goodbye" in query_lower:
+        return "Goodbye! Feel free to come back anytime you need insights on your finances."
+    
+    # If OpenAI API is not available or we have no client
+    if not openai_client:
+        return "I'm designed to answer questions about your financial data. For questions about your expenses, try something like 'How much did I spend on food?' or 'What were my top expenses?'"
+    
+    # If it's a more complex or non-financial question, try to use OpenAI if available
     try:
         # Get some recent expenses to provide context
         expenses = Expense.query.filter_by(user_id=user_id).order_by(Expense.date.desc()).limit(20).all()
@@ -532,7 +556,7 @@ def generate_ai_response(query_text: str, user_id: int) -> str:
     
     except Exception as e:
         logger.error(f"Error generating AI response: {e}")
-        return f"I'm sorry, but I had trouble processing your question. Please try again or ask a different question."
+        return "I'm designed to answer financial questions about your expenses. Try asking something like 'How much did I spend on food last month?' or 'What were my top expenses?'"
 
 def process_query(query_text: str) -> str:
     """
