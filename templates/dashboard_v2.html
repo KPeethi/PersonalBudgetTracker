@@ -60,9 +60,9 @@
                         <h6 class="card-title text-muted">Daily Average</h6>
                         <i class="bi bi-calendar-date text-success"></i>
                     </div>
-                    <h2 class="fw-bold mb-0">${{ "%.2f"|format(expense_stats.daily_avg) }}</h2>
+                    <h2 class="fw-bold mb-0">${{ "%.2f"|format(expense_stats.avg_amount) }}</h2>
                     <p class="card-text text-muted small mb-2">
-                        Average daily spending
+                        Average expense amount
                     </p>
                     <div class="d-flex align-items-center mt-3">
                         <div class="flex-shrink-0">
@@ -84,16 +84,16 @@
                         <h6 class="card-title text-muted">Largest Expense</h6>
                         <i class="bi bi-arrow-up-circle text-danger"></i>
                     </div>
-                    <h2 class="fw-bold mb-0">${{ "%.2f"|format(expense_stats.largest_expense.amount) }}</h2>
+                    <h2 class="fw-bold mb-0">${{ "%.2f"|format(expense_stats.max_amount) }}</h2>
                     <p class="card-text text-muted small mb-2">
-                        {{ expense_stats.largest_expense.category if expense_stats.largest_expense.category else 'Uncategorized' }}
+                        Largest expense amount
                     </p>
                     <div class="d-flex align-items-center mt-3">
                         <div class="flex-shrink-0">
-                            <i class="bi bi-calendar3 text-muted"></i>
+                            <i class="bi bi-info-circle text-muted"></i>
                         </div>
                         <div class="flex-grow-1 ms-2">
-                            <p class="card-text text-muted small mb-0">{{ expense_stats.largest_expense.date.strftime('%b %d, %Y') if expense_stats.largest_expense.date else '' }}</p>
+                            <p class="card-text text-muted small mb-0">Maximum single expense</p>
                         </div>
                     </div>
                 </div>
