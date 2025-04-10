@@ -91,6 +91,16 @@
                                     <i class="bi bi-cloud-download me-1"></i> Import Data
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.path == url_for('ai_assistant_home') %}active-nav-item{% endif %}" href="{{ url_for('ai_assistant_home') }}">
+                                    <i class="bi bi-robot me-1"></i> AI Assistant
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.path == url_for('preferences') %}active-nav-item{% endif %}" href="{{ url_for('preferences') }}">
+                                    <i class="bi bi-gear me-1"></i> Preferences
+                                </a>
+                            </li>
                             {% if current_user.is_admin %}
                                 <li class="nav-item">
                                     <a class="nav-link {% if request.path == url_for('admin_panel') %}active-nav-item{% endif %}" href="{{ url_for('admin_panel') }}">
@@ -102,6 +112,33 @@
                     </ul>
                     <ul class="navbar-nav">
                         {% if current_user.is_authenticated %}
+                            <!-- Notification dropdown -->
+                            <li class="nav-item dropdown me-2">
+                                <a class="nav-link position-relative" href="#" id="notificationDropdown" role="button"
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-bell fs-5"></i>
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge" style="display: none;">
+                                        <span class="notification-count">0</span>
+                                        <span class="visually-hidden">unread notifications</span>
+                                    </span>
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-end shadow-sm notification-dropdown p-0" style="width: 320px; max-height: 480px; overflow-y: auto;" aria-labelledby="notificationDropdown">
+                                    <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">Notifications</h6>
+                                        <button type="button" class="btn btn-sm btn-outline-primary mark-all-read" style="display: none;">Mark all as read</button>
+                                    </div>
+                                    <div class="notifications-container">
+                                        <div class="notification-placeholder p-4 text-center text-muted">
+                                            <i class="bi bi-bell-slash fs-4 d-block mb-2"></i>
+                                            <p class="mb-0">No new notifications</p>
+                                        </div>
+                                    </div>
+                                    <div class="p-3 border-top">
+                                        <a href="{{ url_for('all_notifications_page') }}" class="text-decoration-none small d-block text-center view-all-notifications">View all notifications</a>
+                                    </div>
+                                </div>
+                            </li>
+                            <!-- User dropdown -->
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button"
                                    data-bs-toggle="dropdown" aria-expanded="false">
@@ -115,6 +152,11 @@
                                     <li>
                                         <a class="dropdown-item d-flex align-items-center" href="{{ url_for('profile') }}">
                                             <i class="bi bi-person me-2"></i> Profile
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center" href="{{ url_for('preferences') }}">
+                                            <i class="bi bi-gear me-2"></i> Preferences
                                         </a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
@@ -190,5 +232,211 @@
     
     <!-- Additional JavaScript -->
     {% block scripts %}{% endblock %}
+
+    {% if current_user.is_authenticated %}
+    <script>
+        // Notification system
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fetch notifications on page load
+            fetchNotifications();
+
+            // Set up periodic fetch every 60 seconds
+            setInterval(fetchNotifications, 60000);
+
+            // Handle mark as read for individual notifications
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('mark-read') || e.target.closest('.mark-read')) {
+                    const button = e.target.classList.contains('mark-read') ? e.target : e.target.closest('.mark-read');
+                    const notificationId = button.getAttribute('data-id');
+                    markAsRead(notificationId);
+                }
+            });
+
+            // Handle mark all as read
+            document.querySelector('.mark-all-read').addEventListener('click', function() {
+                const unreadNotifications = document.querySelectorAll('.notification-item[data-read="false"]');
+                unreadNotifications.forEach(item => {
+                    const notificationId = item.getAttribute('data-id');
+                    markAsRead(notificationId);
+                });
+            });
+
+            // Function to fetch notifications
+            function fetchNotifications() {
+                fetch('/notifications')
+                    .then(response => response.json())
+                    .then(data => {
+                        updateNotifications(data);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching notifications:', error);
+                    });
+            }
+
+            // Function to mark notification as read
+            function markAsRead(notificationId) {
+                fetch(`/mark_notification_read/${notificationId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update UI
+                        const notificationItem = document.querySelector(`.notification-item[data-id="${notificationId}"]`);
+                        if (notificationItem) {
+                            notificationItem.setAttribute('data-read', 'true');
+                            notificationItem.querySelector('.notification-dot').style.display = 'none';
+                            
+                            // Recalculate unread count
+                            const unreadCount = document.querySelectorAll('.notification-item[data-read="false"]').length;
+                            updateNotificationBadge(unreadCount);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error marking notification as read:', error);
+                });
+            }
+
+            // Function to update notification UI
+            function updateNotifications(data) {
+                const notificationsContainer = document.querySelector('.notifications-container');
+                const placeholder = document.querySelector('.notification-placeholder');
+                const notificationBadge = document.querySelector('.notification-badge');
+                const markAllReadBtn = document.querySelector('.mark-all-read');
+                
+                // Clear current notifications
+                notificationsContainer.innerHTML = '';
+                
+                // Handle unread notifications
+                if (data.unread.length > 0) {
+                    // Update badge and show it
+                    updateNotificationBadge(data.unread.length);
+                    
+                    // Show mark all as read button
+                    markAllReadBtn.style.display = 'block';
+                    
+                    // Add unread notifications to container
+                    data.unread.forEach(notification => {
+                        const notificationElement = createNotificationElement(notification, false);
+                        notificationsContainer.appendChild(notificationElement);
+                    });
+                    
+                    // Add read notifications if there are any
+                    if (data.read.length > 0) {
+                        // Add divider
+                        const divider = document.createElement('div');
+                        divider.className = 'border-top py-2 px-3 bg-light text-muted small';
+                        divider.textContent = 'Earlier';
+                        notificationsContainer.appendChild(divider);
+                        
+                        // Add read notifications
+                        data.read.forEach(notification => {
+                            const notificationElement = createNotificationElement(notification, true);
+                            notificationsContainer.appendChild(notificationElement);
+                        });
+                    }
+                } else {
+                    // Hide badge and mark all read button
+                    notificationBadge.style.display = 'none';
+                    markAllReadBtn.style.display = 'none';
+                    
+                    if (data.read.length > 0) {
+                        // Add read notifications
+                        data.read.forEach(notification => {
+                            const notificationElement = createNotificationElement(notification, true);
+                            notificationsContainer.appendChild(notificationElement);
+                        });
+                    } else {
+                        // Show placeholder
+                        notificationsContainer.appendChild(placeholder.cloneNode(true));
+                    }
+                }
+            }
+
+            // Function to create notification element
+            function createNotificationElement(notification, isRead) {
+                const element = document.createElement('div');
+                element.className = 'notification-item p-3 border-bottom';
+                element.setAttribute('data-id', notification.id);
+                element.setAttribute('data-read', isRead ? 'true' : 'false');
+                
+                // Set background color based on read status
+                if (!isRead) {
+                    element.style.backgroundColor = 'rgba(13, 110, 253, 0.05)';
+                }
+                
+                // Create icon based on notification type
+                let iconClass = 'bi-info-circle';
+                if (notification.type === 'warning') {
+                    iconClass = 'bi-exclamation-triangle';
+                } else if (notification.type === 'success') {
+                    iconClass = 'bi-check-circle';
+                } else if (notification.type === 'danger') {
+                    iconClass = 'bi-x-circle';
+                }
+                
+                element.innerHTML = `
+                    <div class="d-flex align-items-start">
+                        <div class="me-3">
+                            <i class="bi ${iconClass} fs-5 text-${notification.type === 'info' ? 'primary' : notification.type}"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <h6 class="mb-0">${notification.title}</h6>
+                                <div class="d-flex align-items-center">
+                                    <span class="notification-dot bg-primary rounded-circle me-2" style="width: 8px; height: 8px; display: ${isRead ? 'none' : 'block'}"></span>
+                                    <small class="text-muted">${formatDate(notification.created_at)}</small>
+                                </div>
+                            </div>
+                            <p class="mb-1 small">${notification.message}</p>
+                            ${!isRead ? `<button class="btn btn-sm btn-link p-0 mark-read" data-id="${notification.id}">Mark as read</button>` : ''}
+                        </div>
+                    </div>
+                `;
+                
+                return element;
+            }
+
+            // Function to update notification badge
+            function updateNotificationBadge(count) {
+                const badge = document.querySelector('.notification-badge');
+                const countElement = document.querySelector('.notification-count');
+                
+                if (count > 0) {
+                    countElement.textContent = count > 9 ? '9+' : count;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+
+            // Helper function to format date
+            function formatDate(dateString) {
+                const date = new Date(dateString);
+                const now = new Date();
+                const diff = Math.floor((now - date) / 1000);
+                
+                if (diff < 60) {
+                    return 'Just now';
+                } else if (diff < 3600) {
+                    const mins = Math.floor(diff / 60);
+                    return `${mins} min${mins > 1 ? 's' : ''} ago`;
+                } else if (diff < 86400) {
+                    const hours = Math.floor(diff / 3600);
+                    return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+                } else if (diff < 2592000) {
+                    const days = Math.floor(diff / 86400);
+                    return `${days} day${days > 1 ? 's' : ''} ago`;
+                } else {
+                    return date.toLocaleDateString();
+                }
+            }
+        });
+    </script>
+    {% endif %}
 </body>
 </html>

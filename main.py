@@ -1229,5 +1229,313 @@ def ai_analysis():
                            time_period=time_period)
 
 
+# User Preferences Routes
+@app.route('/preferences')
+@login_required
+def preferences():
+    """User preferences page"""
+    # Get user's preferences or create if they don't exist
+    user_pref = UserPreference.query.filter_by(user_id=current_user.id).first()
+    if not user_pref:
+        user_pref = UserPreference(user_id=current_user.id)
+        db.session.add(user_pref)
+        db.session.commit()
+    
+    # Get user's budget or create if it doesn't exist
+    user_budget = Budget.query.filter_by(
+        user_id=current_user.id,
+        month=datetime.utcnow().month,
+        year=datetime.utcnow().year
+    ).first()
+    if not user_budget:
+        user_budget = Budget(user_id=current_user.id)
+        db.session.add(user_budget)
+        db.session.commit()
+    
+    return render_template('preferences.html', 
+                           title='Preferences',
+                           user_pref=user_pref,
+                           user_budget=user_budget)
+
+
+@app.route('/save_preferences', methods=['POST'])
+@login_required
+def save_preferences():
+    """Save user preferences"""
+    try:
+        data = request.get_json()
+        
+        # Get or create user preferences
+        user_pref = UserPreference.query.filter_by(user_id=current_user.id).first()
+        if not user_pref:
+            user_pref = UserPreference(user_id=current_user.id)
+            db.session.add(user_pref)
+        
+        # Update theme settings
+        user_pref.theme = data.get('theme', 'light')
+        
+        # Update notification settings
+        notifications = data.get('notifications', {})
+        user_pref.email_notifications = notifications.get('email', True)
+        user_pref.push_notifications = notifications.get('push', True)
+        user_pref.weekly_reports = notifications.get('weeklyReports', True)
+        user_pref.monthly_reports = notifications.get('monthlyReports', True)
+        
+        # Update alert settings
+        alerts = data.get('alerts', {})
+        user_pref.alerts_enabled = alerts.get('enabled', True)
+        user_pref.alert_large_transactions = alerts.get('largeTransactions', True)
+        user_pref.alert_low_balance = alerts.get('lowBalance', True)
+        user_pref.alert_upcoming_bills = alerts.get('upcomingBills', True)
+        user_pref.alert_saving_goal_progress = alerts.get('savingGoalProgress', True)
+        user_pref.alert_budget_exceeded = alerts.get('budgetLimitExceeded', True)
+        
+        # Update budget settings
+        budgets = data.get('budgets', {})
+        
+        # Get current month's budget or create new one
+        user_budget = Budget.query.filter_by(
+            user_id=current_user.id,
+            month=datetime.utcnow().month,
+            year=datetime.utcnow().year
+        ).first()
+        if not user_budget:
+            user_budget = Budget(
+                user_id=current_user.id,
+                month=datetime.utcnow().month,
+                year=datetime.utcnow().year
+            )
+            db.session.add(user_budget)
+        
+        # Update budget values
+        user_budget.total_budget = float(budgets.get('totalMonthly', 3000))
+        user_budget.food = float(budgets.get('food', 500))
+        user_budget.transportation = float(budgets.get('transportation', 300))
+        user_budget.entertainment = float(budgets.get('entertainment', 200))
+        user_budget.bills = float(budgets.get('bills', 800))
+        user_budget.shopping = float(budgets.get('shopping', 400))
+        user_budget.other = float(budgets.get('other', 800))
+        
+        db.session.commit()
+        
+        # Check if any budgets are exceeded and create notifications
+        check_budget_limits(current_user.id)
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.exception("Error saving preferences")
+        return jsonify({'success': False, 'error': str(e)})
+
+
+def check_budget_limits(user_id):
+    """Check if user has exceeded any budget limits and create notifications"""
+    try:
+        # Get current month's budget
+        current_month = datetime.utcnow().month
+        current_year = datetime.utcnow().year
+        user_budget = Budget.query.filter_by(
+            user_id=user_id,
+            month=current_month,
+            year=current_year
+        ).first()
+        
+        if not user_budget:
+            return
+        
+        # Get user's preferences to check if alerts are enabled
+        user_pref = UserPreference.query.filter_by(user_id=user_id).first()
+        if not user_pref or not user_pref.alerts_enabled or not user_pref.alert_budget_exceeded:
+            return
+        
+        # Get all expenses for the current month
+        start_date = datetime(current_year, current_month, 1)
+        if current_month == 12:
+            end_date = datetime(current_year + 1, 1, 1)
+        else:
+            end_date = datetime(current_year, current_month + 1, 1)
+        
+        expenses = Expense.query.filter(
+            Expense.user_id == user_id,
+            Expense.date >= start_date,
+            Expense.date < end_date
+        ).all()
+        
+        # Calculate totals by category
+        category_totals = {}
+        for expense in expenses:
+            category_totals[expense.category] = category_totals.get(expense.category, 0) + expense.amount
+        
+        # Check for exceeded budgets
+        total_spent = sum(expense.amount for expense in expenses)
+        
+        # Check total budget
+        if total_spent > user_budget.total_budget:
+            create_budget_notification(
+                user_id, 
+                'Total Budget Exceeded', 
+                f'You have spent ${total_spent:.2f} out of your ${user_budget.total_budget:.2f} monthly budget.'
+            )
+        
+        # Check category budgets - we'll map common categories to our budget fields
+        category_map = {
+            'food': ['Food', 'Dining', 'Groceries', 'Restaurant'],
+            'transportation': ['Transportation', 'Gas', 'Fuel', 'Car', 'Bus', 'Train', 'Taxi', 'Uber', 'Lyft'],
+            'entertainment': ['Entertainment', 'Movies', 'Music', 'Games', 'Events', 'Concert'],
+            'bills': ['Bills', 'Utilities', 'Rent', 'Mortgage', 'Electricity', 'Water', 'Internet', 'Phone'],
+            'shopping': ['Shopping', 'Clothes', 'Electronics', 'Amazon']
+        }
+        
+        # Calculate category totals based on our mapping
+        mapped_totals = {
+            'food': 0,
+            'transportation': 0,
+            'entertainment': 0,
+            'bills': 0,
+            'shopping': 0,
+            'other': 0
+        }
+        
+        for expense in expenses:
+            category = expense.category
+            mapped = False
+            
+            for budget_cat, keywords in category_map.items():
+                if any(keyword.lower() in category.lower() for keyword in keywords):
+                    mapped_totals[budget_cat] += expense.amount
+                    mapped = True
+                    break
+            
+            if not mapped:
+                mapped_totals['other'] += expense.amount
+        
+        # Check if any category budgets are exceeded
+        if mapped_totals['food'] > user_budget.food:
+            create_budget_notification(
+                user_id,
+                'Food Budget Exceeded',
+                f'You have spent ${mapped_totals["food"]:.2f} out of your ${user_budget.food:.2f} food budget this month.'
+            )
+        
+        if mapped_totals['transportation'] > user_budget.transportation:
+            create_budget_notification(
+                user_id,
+                'Transportation Budget Exceeded',
+                f'You have spent ${mapped_totals["transportation"]:.2f} out of your ${user_budget.transportation:.2f} transportation budget this month.'
+            )
+        
+        if mapped_totals['entertainment'] > user_budget.entertainment:
+            create_budget_notification(
+                user_id,
+                'Entertainment Budget Exceeded',
+                f'You have spent ${mapped_totals["entertainment"]:.2f} out of your ${user_budget.entertainment:.2f} entertainment budget this month.'
+            )
+        
+        if mapped_totals['bills'] > user_budget.bills:
+            create_budget_notification(
+                user_id,
+                'Bills Budget Exceeded',
+                f'You have spent ${mapped_totals["bills"]:.2f} out of your ${user_budget.bills:.2f} bills budget this month.'
+            )
+        
+        if mapped_totals['shopping'] > user_budget.shopping:
+            create_budget_notification(
+                user_id,
+                'Shopping Budget Exceeded',
+                f'You have spent ${mapped_totals["shopping"]:.2f} out of your ${user_budget.shopping:.2f} shopping budget this month.'
+            )
+        
+        if mapped_totals['other'] > user_budget.other:
+            create_budget_notification(
+                user_id,
+                'Other Budget Exceeded',
+                f'You have spent ${mapped_totals["other"]:.2f} out of your ${user_budget.other:.2f} budget for other expenses this month.'
+            )
+    
+    except Exception as e:
+        logger.exception(f"Error checking budget limits for user {user_id}: {str(e)}")
+
+
+def create_budget_notification(user_id, title, message):
+    """Create a budget notification for the user"""
+    # Check if a similar notification already exists from today
+    today = datetime.utcnow().date()
+    existing = UserNotification.query.filter(
+        UserNotification.user_id == user_id,
+        UserNotification.title == title,
+        db.func.date(UserNotification.created_at) == today
+    ).first()
+    
+    if not existing:
+        notification = UserNotification(
+            user_id=user_id,
+            title=title,
+            message=message,
+            notification_type='warning'
+        )
+        db.session.add(notification)
+        db.session.commit()
+
+
+@app.route('/notifications')
+@login_required
+def notifications():
+    """API endpoint for user notifications"""
+    # Get unread notifications
+    unread = UserNotification.query.filter_by(
+        user_id=current_user.id,
+        is_read=False
+    ).order_by(UserNotification.created_at.desc()).all()
+    
+    # Get read notifications (limit to 20)
+    read = UserNotification.query.filter_by(
+        user_id=current_user.id,
+        is_read=True
+    ).order_by(UserNotification.created_at.desc()).limit(20).all()
+    
+    return jsonify({
+        'unread': [
+            {
+                'id': n.id,
+                'title': n.title,
+                'message': n.message,
+                'type': n.notification_type,
+                'created_at': n.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            } for n in unread
+        ],
+        'read': [
+            {
+                'id': n.id,
+                'title': n.title,
+                'message': n.message,
+                'type': n.notification_type,
+                'created_at': n.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            } for n in read
+        ]
+    })
+
+
+@app.route('/all-notifications')
+@login_required
+def all_notifications_page():
+    """Page to view all notifications"""
+    return render_template('notifications.html', title='Notifications')
+
+
+@app.route('/mark_notification_read/<int:notification_id>', methods=['POST'])
+@login_required
+def mark_notification_read(notification_id):
+    """Mark a notification as read"""
+    notification = UserNotification.query.get_or_404(notification_id)
+    
+    # Make sure the user owns this notification
+    if notification.user_id != current_user.id:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+    
+    notification.is_read = True
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

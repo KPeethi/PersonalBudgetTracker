@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications - Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3 mb-0">Notifications</h1>
+            <p class="text-muted">View and manage your notifications.</p>
+        </div>
+        <div class="col-auto">
+            <button id="mark-all-read-btn" class="btn btn-outline-primary">Mark All as Read</button>
+        </div>
+    </div>
+
+    <!-- Notification filters -->
+    <div class="mb-4">
+        <div class="btn-group" role="group" aria-label="Notification filters">
+            <button type="button" class="btn btn-outline-primary active" data-filter="all">All</button>
+            <button type="button" class="btn btn-outline-primary" data-filter="unread">Unread</button>
+            <button type="button" class="btn btn-outline-primary" data-filter="read">Read</button>
+        </div>
+    </div>
+
+    <!-- Notifications container -->
+    <div class="notifications-list">
+        <div class="card border-0 shadow-sm mb-3 notification-placeholder text-center p-5" style="display: none;">
+            <div class="card-body">
+                <i class="bi bi-bell-slash fs-1 text-muted mb-3"></i>
+                <h5>No notifications</h5>
+                <p class="text-muted">When you receive notifications, they will appear here.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading spinner -->
+    <div class="text-center py-5 loading-spinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading notifications...</span>
+        </div>
+        <p class="mt-2 text-muted">Loading notifications...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const notificationsList = document.querySelector('.notifications-list');
+        const loadingSpinner = document.querySelector('.loading-spinner');
+        const placeholder = document.querySelector('.notification-placeholder');
+        const markAllReadBtn = document.getElementById('mark-all-read-btn');
+        let currentFilter = 'all';
+        let notifications = {
+            unread: [],
+            read: []
+        };
+
+        // Initial load
+        fetchNotifications();
+
+        // Set up filter buttons
+        document.querySelectorAll('[data-filter]').forEach(button => {
+            button.addEventListener('click', function() {
+                // Update active button
+                document.querySelectorAll('[data-filter]').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                this.classList.add('active');
+
+                // Apply filter
+                currentFilter = this.getAttribute('data-filter');
+                renderNotifications();
+            });
+        });
+
+        // Mark all as read
+        markAllReadBtn.addEventListener('click', function() {
+            const unreadItems = document.querySelectorAll('.notification-item[data-read="false"]');
+            if (unreadItems.length === 0) return;
+
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+
+            // Process each notification
+            let processed = 0;
+            unreadItems.forEach(item => {
+                const notificationId = item.getAttribute('data-id');
+                
+                fetch(`/mark_notification_read/${notificationId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        processed++;
+                        
+                        // Check if all have been processed
+                        if (processed === unreadItems.length) {
+                            // Refresh data
+                            fetchNotifications();
+                            
+                            // Reset button
+                            markAllReadBtn.disabled = false;
+                            markAllReadBtn.textContent = 'Mark All as Read';
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error marking notification as read:', error);
+                    markAllReadBtn.disabled = false;
+                    markAllReadBtn.textContent = 'Mark All as Read';
+                });
+            });
+        });
+
+        // Click handler for individual mark as read buttons
+        notificationsList.addEventListener('click', function(e) {
+            if (e.target.classList.contains('mark-read-btn')) {
+                const notificationId = e.target.getAttribute('data-id');
+                e.target.disabled = true;
+                e.target.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+                
+                markAsRead(notificationId, e.target);
+            }
+        });
+
+        // Function to fetch notifications
+        function fetchNotifications() {
+            loadingSpinner.style.display = 'block';
+            notificationsList.innerHTML = '';
+            
+            fetch('/notifications')
+                .then(response => response.json())
+                .then(data => {
+                    notifications = data;
+                    renderNotifications();
+                    loadingSpinner.style.display = 'none';
+                })
+                .catch(error => {
+                    console.error('Error fetching notifications:', error);
+                    loadingSpinner.style.display = 'none';
+                    notificationsList.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Error loading notifications. Please try again later.
+                        </div>
+                    `;
+                });
+        }
+
+        // Function to render notifications based on filter
+        function renderNotifications() {
+            notificationsList.innerHTML = '';
+            
+            let filteredNotifications = [];
+            if (currentFilter === 'all') {
+                filteredNotifications = [...notifications.unread, ...notifications.read];
+            } else if (currentFilter === 'unread') {
+                filteredNotifications = notifications.unread;
+            } else if (currentFilter === 'read') {
+                filteredNotifications = notifications.read;
+            }
+            
+            if (filteredNotifications.length === 0) {
+                // Show placeholder
+                const placeholderClone = placeholder.cloneNode(true);
+                placeholderClone.style.display = 'block';
+                notificationsList.appendChild(placeholderClone);
+                return;
+            }
+            
+            // Render notifications
+            filteredNotifications.forEach(notification => {
+                const isRead = notifications.read.some(n => n.id === notification.id);
+                notificationsList.appendChild(createNotificationElement(notification, isRead));
+            });
+        }
+
+        // Function to create notification element
+        function createNotificationElement(notification, isRead) {
+            const card = document.createElement('div');
+            card.className = 'card border-0 shadow-sm mb-3 notification-item';
+            card.setAttribute('data-id', notification.id);
+            card.setAttribute('data-read', isRead ? 'true' : 'false');
+            
+            // Add subtle background color for unread notifications
+            if (!isRead) {
+                card.style.backgroundColor = 'rgba(13, 110, 253, 0.05)';
+            }
+            
+            // Determine icon based on notification type
+            let iconClass = 'bi-info-circle';
+            let textColorClass = 'text-primary';
+            
+            if (notification.type === 'warning') {
+                iconClass = 'bi-exclamation-triangle';
+                textColorClass = 'text-warning';
+            } else if (notification.type === 'success') {
+                iconClass = 'bi-check-circle';
+                textColorClass = 'text-success';
+            } else if (notification.type === 'danger') {
+                iconClass = 'bi-x-circle';
+                textColorClass = 'text-danger';
+            }
+            
+            card.innerHTML = `
+                <div class="card-body">
+                    <div class="d-flex">
+                        <div class="me-3">
+                            <i class="bi ${iconClass} fs-3 ${textColorClass}"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h5 class="card-title mb-0">${notification.title}</h5>
+                                    <p class="text-muted small mb-0">${formatDate(notification.created_at)}</p>
+                                </div>
+                                ${!isRead ? `<span class="badge bg-primary">New</span>` : ''}
+                            </div>
+                            <p class="card-text">${notification.message}</p>
+                            ${!isRead ? `
+                                <button class="btn btn-sm btn-outline-primary mark-read-btn" data-id="${notification.id}">
+                                    Mark as read
+                                </button>` : ''
+                            }
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Function to mark a notification as read
+        function markAsRead(notificationId, button) {
+            fetch(`/mark_notification_read/${notificationId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Refresh the notification list
+                    fetchNotifications();
+                } else {
+                    button.disabled = false;
+                    button.textContent = 'Mark as read';
+                    alert('Error marking notification as read. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error marking notification as read:', error);
+                button.disabled = false;
+                button.textContent = 'Mark as read';
+                alert('Error marking notification as read. Please try again.');
+            });
+        }
+
+        // Helper function to format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const yesterday = new Date(now);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            // Format dates
+            const options = { 
+                hour: 'numeric', 
+                minute: 'numeric', 
+                hour12: true 
+            };
+            
+            // Today
+            if (date.toDateString() === now.toDateString()) {
+                return 'Today at ' + date.toLocaleTimeString(undefined, options);
+            }
+            
+            // Yesterday
+            if (date.toDateString() === yesterday.toDateString()) {
+                return 'Yesterday at ' + date.toLocaleTimeString(undefined, options);
+            }
+            
+            // This week (within last 7 days)
+            const daysDiff = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+            if (daysDiff < 7) {
+                return date.toLocaleDateString(undefined, { weekday: 'long' }) + ' at ' + date.toLocaleTimeString(undefined, options);
+            }
+            
+            // Older dates
+            return date.toLocaleDateString(undefined, { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric',
+                hour12: true
+            });
+        }
+    });
+</script>
+{% endblock %}
