@@ -18,6 +18,13 @@ import visualization
 import suggestions
 import ai_assistant
 
+# Directory for storing uploaded receipts
+UPLOAD_FOLDER = 'static/uploads/receipts'
+# Ensure the upload directory exists
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+# Maximum upload file size (5MB)
+MAX_CONTENT_LENGTH = 5 * 1024 * 1024
+
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -1537,6 +1544,130 @@ def mark_notification_read(notification_id):
     db.session.commit()
     
     return jsonify({'success': True})
+
+
+# Receipt Upload and Management Routes
+@app.route('/receipts', methods=['GET'])
+@login_required
+def receipts():
+    """View all receipts and upload form"""
+    form = ReceiptUploadForm()
+    
+    # Get all user's expenses for dropdown selection
+    expenses = Expense.query.filter_by(user_id=current_user.id).order_by(Expense.date.desc()).all()
+    form.expense_id.choices = [(expense.id, f"{expense.date.strftime('%Y-%m-%d')} - {expense.description} (${expense.amount:.2f})") 
+                               for expense in expenses]
+    form.expense_id.choices.insert(0, (0, 'Select an expense (optional)'))
+    
+    # Get all user's receipts
+    if current_user.is_admin and request.args.get('all_users') == 'true':
+        receipts = Receipt.query.order_by(Receipt.upload_date.desc()).all()
+    else:
+        receipts = Receipt.query.filter_by(user_id=current_user.id).order_by(Receipt.upload_date.desc()).all()
+    
+    return render_template('receipts.html', title='Receipt Management', form=form, receipts=receipts, is_admin=current_user.is_admin)
+
+@app.route('/upload_receipt', methods=['POST'])
+@login_required
+def upload_receipt():
+    """Handle receipt upload"""
+    form = ReceiptUploadForm()
+    
+    # Get all user's expenses for dropdown selection (in case of validation error)
+    expenses = Expense.query.filter_by(user_id=current_user.id).order_by(Expense.date.desc()).all()
+    form.expense_id.choices = [(expense.id, f"{expense.date.strftime('%Y-%m-%d')} - {expense.description} (${expense.amount:.2f})") 
+                              for expense in expenses]
+    form.expense_id.choices.insert(0, (0, 'Select an expense (optional)'))
+    
+    if form.validate_on_submit():
+        try:
+            file = form.receipt_file.data
+            filename = secure_filename(file.filename)
+            
+            # Generate unique filename to avoid collisions
+            unique_filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{current_user.id}_{filename}"
+            file_path = os.path.join(UPLOAD_FOLDER, unique_filename)
+            
+            # Save file
+            file.save(file_path)
+            
+            # Determine the expense ID (may be None if no expense was selected)
+            expense_id = form.expense_id.data if form.expense_id.data != 0 else None
+            
+            # Create receipt record
+            receipt = Receipt(
+                expense_id=expense_id,
+                user_id=current_user.id,
+                filename=filename,
+                file_path=file_path,
+                file_size=os.path.getsize(file_path),
+                file_type=file.content_type,
+                description=form.description.data
+            )
+            
+            db.session.add(receipt)
+            db.session.commit()
+            
+            flash('Receipt uploaded successfully!', 'success')
+            return redirect(url_for('receipts'))
+            
+        except Exception as e:
+            logger.exception("Error uploading receipt")
+            flash(f'Error uploading receipt: {str(e)}', 'danger')
+            db.session.rollback()
+    else:
+        # Handle form validation errors
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f"{getattr(form, field).label.text}: {error}", 'danger')
+    
+    # On validation failure, return to the receipts page with the form
+    receipts = Receipt.query.filter_by(user_id=current_user.id).order_by(Receipt.upload_date.desc()).all()
+    return render_template('receipts.html', title='Receipt Management', form=form, receipts=receipts, is_admin=current_user.is_admin)
+
+@app.route('/view_receipt/<int:receipt_id>')
+@login_required
+def view_receipt(receipt_id):
+    """View a specific receipt"""
+    receipt = Receipt.query.get_or_404(receipt_id)
+    
+    # Check if the user has permission to view this receipt
+    if receipt.user_id != current_user.id and not current_user.is_admin:
+        flash('You do not have permission to view this receipt.', 'danger')
+        return redirect(url_for('receipts'))
+    
+    # Send the file from the server
+    return send_file(receipt.file_path, 
+                    download_name=receipt.filename,
+                    as_attachment=False)
+
+@app.route('/delete_receipt/<int:receipt_id>', methods=['POST'])
+@login_required
+def delete_receipt(receipt_id):
+    """Delete a receipt"""
+    receipt = Receipt.query.get_or_404(receipt_id)
+    
+    # Check if the user has permission to delete this receipt
+    if receipt.user_id != current_user.id and not current_user.is_admin:
+        flash('You do not have permission to delete this receipt.', 'danger')
+        return redirect(url_for('receipts'))
+    
+    try:
+        # Delete the file from the filesystem
+        if os.path.exists(receipt.file_path):
+            os.remove(receipt.file_path)
+        
+        # Delete the record from the database
+        db.session.delete(receipt)
+        db.session.commit()
+        
+        flash('Receipt deleted successfully!', 'success')
+    except Exception as e:
+        logger.exception("Error deleting receipt")
+        flash(f'Error deleting receipt: {str(e)}', 'danger')
+        db.session.rollback()
+    
+    return redirect(url_for('receipts'))
 
 
 if __name__ == "__main__":
