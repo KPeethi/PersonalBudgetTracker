@@ -93,6 +93,155 @@ QUERY_PATTERNS = {
     }
 }
 
+
+def get_last_month_predictions(user_id: int) -> Dict[str, Any]:
+    """
+    Generate detailed predictions based specifically on last month's expenses.
+    
+    This function provides a detailed breakdown of last month's expenses by category
+    and predicts spending for the current month based on recent patterns.
+    
+    Args:
+        user_id: User ID
+        
+    Returns:
+        Dictionary with last month analysis and predictions
+    """
+    # Get current date and determine last month
+    today = datetime.date.today()
+    
+    # Last month date range
+    if today.month == 1:
+        last_month = 12
+        last_month_year = today.year - 1
+    else:
+        last_month = today.month - 1
+        last_month_year = today.year
+    
+    last_month_start = datetime.date(last_month_year, last_month, 1)
+    if last_month == 12:
+        last_month_end = datetime.date(last_month_year + 1, 1, 1) - datetime.timedelta(days=1)
+    else:
+        last_month_end = datetime.date(last_month_year, last_month + 1, 1) - datetime.timedelta(days=1)
+    
+    # Get user's budget settings
+    user = User.query.get(user_id)
+    monthly_budget = user.monthly_budget if user else 0
+    
+    # Get last month's expenses by category
+    sql_query = """
+    SELECT category, SUM(amount) as total 
+    FROM expenses
+    WHERE user_id = :user_id 
+        AND date BETWEEN :start_date AND :end_date
+    GROUP BY category
+    ORDER BY total DESC
+    """
+    
+    params = {
+        'user_id': user_id,
+        'start_date': last_month_start,
+        'end_date': last_month_end
+    }
+    
+    category_totals = db.session.execute(text(sql_query), params).all()
+    
+    # Get custom budget categories if they exist
+    custom_budgets = {}
+    try:
+        budget_categories = CustomBudgetCategory.query.filter_by(user_id=user_id).all()
+        for category in budget_categories:
+            custom_budgets[category.category_name] = category.monthly_limit
+    except Exception as e:
+        logger.error(f"Error fetching custom budgets: {str(e)}")
+    
+    # Analyze last month's expenses
+    categories = []
+    total_spent = 0
+    potential_alerts = []
+    
+    for entry in category_totals:
+        category_name = entry.category
+        category_total = float(entry.total)
+        total_spent += category_total
+        
+        # Check if category has a budget limit
+        budget_limit = custom_budgets.get(category_name, 0)
+        
+        # Calculate projected spending for current month based on last month
+        # Using a simple projection (this could be enhanced with more sophisticated prediction)
+        projected_spending = category_total * 1.05  # 5% increase projection
+        
+        # Check if category might exceed budget
+        budget_alert = None
+        if budget_limit > 0 and projected_spending > budget_limit:
+            exceeds_by = projected_spending - budget_limit
+            exceeds_by_percent = (exceeds_by / budget_limit) * 100
+            budget_alert = {
+                "message": f"Projected to exceed budget by ${exceeds_by:.2f} ({exceeds_by_percent:.1f}%)",
+                "severity": "high" if exceeds_by_percent > 20 else "medium"
+            }
+            
+            # Add to overall alerts if significant
+            if exceeds_by_percent > 15:
+                potential_alerts.append({
+                    "category": category_name,
+                    "projected": projected_spending,
+                    "budget": budget_limit,
+                    "exceeds_by": exceeds_by,
+                    "exceeds_by_percent": exceeds_by_percent
+                })
+        
+        categories.append({
+            "name": category_name,
+            "last_month_total": category_total,
+            "projected": projected_spending,
+            "budget_limit": budget_limit,
+            "budget_alert": budget_alert
+        })
+    
+    # Overall budget analysis
+    overall_budget_status = "good"
+    budget_message = "Your spending is within your overall budget."
+    
+    if monthly_budget > 0:
+        projected_total = total_spent * 1.05  # Simple 5% increase projection
+        budget_percent = (projected_total / monthly_budget) * 100
+        
+        if budget_percent > 95:
+            overall_budget_status = "warning"
+            budget_message = f"Your projected spending is at {budget_percent:.1f}% of your monthly budget."
+        
+        if budget_percent > 100:
+            overall_budget_status = "danger"
+            budget_message = f"Your projected spending exceeds your monthly budget by ${(projected_total - monthly_budget):.2f}."
+    
+    # Generate savings suggestions based on potential alerts
+    savings_suggestions = []
+    if potential_alerts:
+        for alert in potential_alerts:
+            suggestion = {
+                "category": alert["category"],
+                "message": f"Consider reducing spending in {alert['category']} by ${alert['exceeds_by']:.2f} to stay within budget."
+            }
+            savings_suggestions.append(suggestion)
+    
+    return {
+        "success": True,
+        "message": "Predictions generated successfully",
+        "data": {
+            "month_analyzed": last_month_start.strftime("%B %Y"),
+            "current_month": today.strftime("%B %Y"),
+            "total_spent_last_month": total_spent,
+            "monthly_budget": monthly_budget,
+            "projected_total": total_spent * 1.05,
+            "overall_budget_status": overall_budget_status,
+            "budget_message": budget_message,
+            "categories": categories,
+            "savings_suggestions": savings_suggestions
+        }
+    }
+
 def get_time_filter(timeframe: str, ref_date: datetime.date = None) -> Tuple[str, Dict[str, Any]]:
     """Generate SQL time filter based on timeframe."""
     if not ref_date:
