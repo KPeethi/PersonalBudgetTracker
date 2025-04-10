@@ -1,6 +1,7 @@
 from flask import render_template, request, redirect, url_for, flash, jsonify, session, Response, send_file, make_response
 from markupsafe import Markup
 from flask_login import login_user, current_user, logout_user, login_required
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 from datetime import datetime, timedelta
 from functools import wraps
 import logging
@@ -12,6 +13,9 @@ import os
 import sys
 from werkzeug.utils import secure_filename
 from app import app, db
+
+# Initialize CSRF protection
+csrf = CSRFProtect(app)
 from models import (
     User, Expense, UserPreference, Budget, UserNotification, 
     Receipt, CustomBudgetCategory, BusinessUpgradeRequest, ExcelImport
@@ -2395,79 +2399,124 @@ def admin_business_request_detail(request_id):
     logger.info(f"Request method: {request.method}")
     logger.info(f"Current user: {current_user.username} (ID: {current_user.id}, Admin: {current_user.is_admin})")
     
+    # Check form data for POST requests
+    if request.method == 'POST':
+        logger.info("POST FIELDS:")
+        for key, value in request.form.items():
+            logger.info(f"- {key}: {value}")
+        
+        # Check for CSRF token specifically
+        csrf_token = request.form.get('csrf_token')
+        logger.info(f"CSRF Token present: {csrf_token is not None}")
+    
     if not current_user.is_admin:
         logger.warning(f"Non-admin user tried to access business request: {current_user.username}")
         flash('You do not have permission to access this page.', 'danger')
         return redirect(url_for('dashboard'))
     
-    # Get the business upgrade request
-    upgrade_request = BusinessUpgradeRequest.query.get_or_404(request_id)
-    logger.info(f"Found upgrade request: ID {upgrade_request.id}, Status: {upgrade_request.status}, User ID: {upgrade_request.user_id}")
-    
-    # Get the requesting user
-    user = User.query.get(upgrade_request.user_id)
-    if user:
-        logger.info(f"Found requesting user: {user.username} (ID: {user.id}, Currently business: {user.is_business_user})")
-    else:
-        logger.error(f"Could not find user with ID: {upgrade_request.user_id}")
-    
-    if request.method == 'POST':
-        logger.info("Processing POST request")
-        logger.info(f"Form data: {request.form}")
+    try:
+        # Get the business upgrade request
+        upgrade_request = BusinessUpgradeRequest.query.get_or_404(request_id)
+        logger.info(f"Found upgrade request: ID {upgrade_request.id}, Status: {upgrade_request.status}, User ID: {upgrade_request.user_id}")
         
-        action = request.form.get('action')
-        admin_notes = request.form.get('admin_notes', '')
-        
-        logger.info(f"Action: {action}, Notes: {admin_notes}")
-        
-        # Update the request
-        upgrade_request.admin_notes = admin_notes
-        upgrade_request.handled_by = current_user.id
-        
-        if action == 'approve':
-            logger.info("Approving request")
-            # Approve the request
-            upgrade_request.status = 'approved'
-            
-            # Update user's business status
-            user.is_business_user = True
-            logger.info(f"Set user.is_business_user to {user.is_business_user}")
-            
-            # Create user notification
-            notification = UserNotification(
-                user_id=user.id,
-                title='Business Upgrade Request Approved',
-                message='Your request to access business features has been approved. You now have access to business features.',
-                notification_type='success'
-            )
-            db.session.add(notification)
-            logger.info(f"Created approval notification for user {user.id}")
-            
-        elif action == 'reject':
-            logger.info("Rejecting request")
-            # Reject the request
-            upgrade_request.status = 'rejected'
-            
-            # Create user notification
-            notification = UserNotification(
-                user_id=user.id,
-                title='Business Upgrade Request Rejected',
-                message='Your request to access business features has been rejected. Please check the admin notes for more information.',
-                notification_type='warning'
-            )
-            db.session.add(notification)
-            logger.info(f"Created rejection notification for user {user.id}")
-        
-        try:
-            logger.info("Committing changes to database")
-            db.session.commit()
-            logger.info("Database commit successful")
-            flash(f'Business upgrade request has been {upgrade_request.status}.', 'success')
+        # Get the requesting user
+        user = User.query.get(upgrade_request.user_id)
+        if user:
+            logger.info(f"Found requesting user: {user.username} (ID: {user.id}, Currently business: {user.is_business_user})")
+        else:
+            logger.error(f"Could not find user with ID: {upgrade_request.user_id}")
+            flash('Could not find the user associated with this request.', 'danger')
             return redirect(url_for('admin_business_requests'))
-        except Exception as e:
-            db.session.rollback()
-            logger.error(f"Error processing business upgrade request: {str(e)}")
-            flash('An error occurred while processing the request. Please try again.', 'danger')
+        
+        if request.method == 'POST':
+            logger.info("Processing POST request")
+            try:
+                # Validate CSRF token first
+                csrf_token = request.form.get('csrf_token')
+                if not csrf_token:
+                    logger.error("CSRF token missing from request")
+                    flash('CSRF token missing. Please try again.', 'danger')
+                    return render_template('admin/business_request_detail.html', request=upgrade_request, user=user)
+                
+                action = request.form.get('action')
+                admin_notes = request.form.get('admin_notes', '')
+                
+                logger.info(f"Action: {action}, Notes: {admin_notes}")
+                
+                # Update the request
+                upgrade_request.admin_notes = admin_notes
+                upgrade_request.handled_by = current_user.id
+                upgrade_request.updated_at = datetime.now()
+                
+                if action == 'approve':
+                    logger.info("Approving request")
+                    # Approve the request
+                    upgrade_request.status = 'approved'
+                    
+                    # Update user's business status
+                    user.is_business_user = True
+                    logger.info(f"Set user.is_business_user to {user.is_business_user}")
+                    
+                    # Create user notification
+                    notification = UserNotification(
+                        user_id=user.id,
+                        title='Business Upgrade Request Approved',
+                        message='Your request to access business features has been approved. You now have access to business features.',
+                        notification_type='success'
+                    )
+                    db.session.add(notification)
+                    logger.info(f"Created approval notification for user {user.id}")
+                    
+                elif action == 'reject':
+                    logger.info("Rejecting request")
+                    # Reject the request
+                    upgrade_request.status = 'rejected'
+                    
+                    # Create user notification
+                    notification = UserNotification(
+                        user_id=user.id,
+                        title='Business Upgrade Request Rejected',
+                        message='Your request to access business features has been rejected. Please check the admin notes for more information.',
+                        notification_type='warning'
+                    )
+                    db.session.add(notification)
+                    logger.info(f"Created rejection notification for user {user.id}")
+                else:
+                    logger.error(f"Invalid action: {action}")
+                    flash('Invalid action. Please try again.', 'danger')
+                    return render_template('admin/business_request_detail.html', request=upgrade_request, user=user)
+                
+                try:
+                    logger.info("Committing changes to database")
+                    db.session.commit()
+                    logger.info("Database commit successful")
+                    flash(f'Business upgrade request has been {upgrade_request.status}.', 'success')
+                    
+                    # Force refresh to ensure we get the updated data
+                    db.session.refresh(user)
+                    db.session.refresh(upgrade_request)
+                    
+                    logger.info(f"After commit - User business status: {user.is_business_user}")
+                    logger.info(f"After commit - Request status: {upgrade_request.status}")
+                    
+                    return redirect(url_for('admin_business_requests'))
+                except Exception as e:
+                    db.session.rollback()
+                    logger.error(f"Database commit error: {str(e)}")
+                    logger.error(f"Error details: {type(e).__name__}")
+                    flash(f'Database error: {str(e)}', 'danger')
+                    return render_template('admin/business_request_detail.html', request=upgrade_request, user=user)
+            except Exception as e:
+                logger.error(f"Error processing form: {str(e)}")
+                logger.error(f"Error details: {type(e).__name__}")
+                flash(f'Error processing form: {str(e)}', 'danger')
+                return render_template('admin/business_request_detail.html', request=upgrade_request, user=user)
+    
+    except Exception as e:
+        logger.error(f"General error in route: {str(e)}")
+        logger.error(f"Error details: {type(e).__name__}")
+        flash(f'An error occurred: {str(e)}', 'danger')
+        return redirect(url_for('admin_business_requests'))
     
     return render_template('admin/business_request_detail.html', request=upgrade_request, user=user)
 

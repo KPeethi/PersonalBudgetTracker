@@ -241,7 +241,7 @@ class BusinessUpgradeRequest(db.Model):
     
     # Relationships with clear foreign_keys
     admin = db.relationship('User', foreign_keys=[handled_by], backref='handled_upgrade_requests')
-    # Don't define an explicit relationship to the user - we'll access it directly
+    user = db.relationship('User', foreign_keys=[user_id], backref='upgrade_requests')
     
     def __repr__(self):
         """String representation of a business upgrade request."""
