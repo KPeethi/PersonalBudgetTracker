@@ -2300,5 +2300,27 @@ def expense_forecast():
             'data': None
         })
 
+
+@app.route('/ai/last_month_predictions')
+@login_required
+def last_month_predictions():
+    """Generate and return predictions based on last month's expenses"""
+    logger.debug(f"Generating last month predictions, user: {current_user.username}")
+    
+    try:
+        # Generate the predictions
+        predictions = conversation_assistant.get_last_month_predictions(
+            user_id=current_user.id
+        )
+        
+        return jsonify(predictions)
+    except Exception as e:
+        logger.error(f"Error generating last month predictions: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f"Error generating predictions: {str(e)}",
+            'data': None
+        })
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True)

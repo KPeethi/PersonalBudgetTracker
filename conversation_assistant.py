@@ -10,7 +10,7 @@ import logging
 import json
 from typing import List, Dict, Any, Tuple, Optional
 from sqlalchemy import text, func, extract
-from models import Expense, User, db
+from models import Expense, User, db, CustomBudgetCategory
 from flask_login import current_user
 import config
 
