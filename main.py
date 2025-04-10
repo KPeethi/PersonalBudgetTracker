@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, url_for, flash, jsonify, session, Response, send_file
+from flask import render_template, request, redirect, url_for, flash, jsonify, session, Response, send_file, make_response
 from markupsafe import Markup
 from flask_login import login_user, current_user, logout_user, login_required
 from datetime import datetime, timedelta
@@ -1339,7 +1339,12 @@ def save_preferences():
         # Check if any budgets are exceeded and create notifications
         check_budget_limits(current_user.id)
         
-        return jsonify({'success': True})
+        # Set a cookie for theme to ensure persistence between pages
+        resp = make_response(jsonify({'success': True}))
+        if 'theme' in data or user_pref.theme:
+            theme = data.get('theme', user_pref.theme)
+            resp.set_cookie('theme', theme, max_age=31536000)  # 1 year
+        return resp
     except Exception as e:
         logger.exception("Error saving preferences")
         return jsonify({'success': False, 'error': str(e)})
