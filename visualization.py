@@ -125,6 +125,7 @@ def generate_monthly_trend_chart(
     df = df.sort_values("sort_key")
     
     # Create a line chart
+    # Set colors based on light/dark theme
     fig = px.line(
         df, 
         x="month_year", 
@@ -132,7 +133,7 @@ def generate_monthly_trend_chart(
         markers=True,
         title="Monthly Expense Trend",
         labels={"month_year": "Month", "total_amount": "Total Expenses ($)"},
-        color_discrete_sequence=["#6200ee"]
+        color_discrete_sequence=["#0d6efd"]  # Use standard bootstrap primary color
     )
     
     fig.update_layout(
@@ -186,7 +187,7 @@ def generate_daily_expense_chart(expenses: List[Any], days: int = 30) -> str:
         y="amount",
         title=f"Daily Expenses (Past {days} Days)",
         labels={"date": "Date", "amount": "Total Expenses ($)"},
-        color_discrete_sequence=["#03dac6"]
+        color_discrete_sequence=["#0dcaf0"]  # Use bootstrap info color
     )
     
     fig.update_layout(
@@ -363,7 +364,7 @@ def generate_income_vs_expenses_chart(
     # Create data for the chart
     labels = ['Expenses', 'Savings']
     values = [total_expenses, savings]
-    colors = ['#FF5252', '#00C853']  # Red for expenses, green for savings
+    colors = ['#dc3545', '#198754']  # Bootstrap danger and success colors
     
     # Create a donut chart
     fig = go.Figure(data=[go.Pie(
@@ -460,7 +461,7 @@ def generate_category_comparison_chart(
         barmode="group",
         title=f"Category Comparison: This {period_name.capitalize()} vs Last {period_name.capitalize()}",
         labels={"category": "Category", "amount": "Total Expenses ($)", "period": "Period"},
-        color_discrete_sequence=["#6200ee", "#03dac6"]
+        color_discrete_sequence=["#0d6efd", "#6c757d"]
     )
     
     fig.update_layout(
