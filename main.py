@@ -764,6 +764,11 @@ def dashboard():
         db.session.add(user_budget)
         db.session.commit()
     
+    # Get custom budget categories
+    custom_categories = CustomBudgetCategory.query.filter_by(
+        budget_id=user_budget.id
+    ).all()
+    
     # Calculate category spending
     category_spending = {}
     
@@ -777,9 +782,18 @@ def dashboard():
         'other': []  # Catch-all for anything not matching above
     }
     
-    # Initialize category totals
+    # Add custom categories to the map
+    for custom_cat in custom_categories:
+        # Convert the name to lowercase for matching
+        category_key = f"custom_{custom_cat.id}"
+        category_map[category_key] = [custom_cat.name.lower()]
+        # Initialize spending for this custom category
+        category_spending[category_key] = 0
+    
+    # Initialize category totals for standard categories
     for category in category_map.keys():
-        category_spending[category] = 0
+        if category not in category_spending:
+            category_spending[category] = 0
     
     # Calculate spending in each category
     current_month_expenses = [expense for expense in expenses if expense.date.month == current_month and expense.date.year == current_year]
@@ -790,7 +804,7 @@ def dashboard():
         expense_category = expense.category.lower()
         
         for budget_cat, keywords in category_map.items():
-            if any(keyword in expense_category for keyword in keywords):
+            if any(keyword in expense_category or expense_category in keyword for keyword in keywords):
                 category_spending[budget_cat] += expense.amount
                 assigned = True
                 break
@@ -804,24 +818,75 @@ def dashboard():
         'food': {
             'spent': category_spending['food'],
             'budget': user_budget.food,
-            'percentage': min(round((category_spending['food'] / user_budget.food * 100) if user_budget.food > 0 else 0), 100)
+            'percentage': min(round((category_spending['food'] / user_budget.food * 100) if user_budget.food > 0 else 0), 100),
+            'name': 'Food & Dining',
+            'icon': 'bi-cup-hot-fill',
+            'color': 'success'
         },
         'transportation': {
             'spent': category_spending['transportation'],
             'budget': user_budget.transportation,
-            'percentage': min(round((category_spending['transportation'] / user_budget.transportation * 100) if user_budget.transportation > 0 else 0), 100)
+            'percentage': min(round((category_spending['transportation'] / user_budget.transportation * 100) if user_budget.transportation > 0 else 0), 100),
+            'name': 'Transportation',
+            'icon': 'bi-car-front-fill',
+            'color': 'info'
         },
         'entertainment': {
             'spent': category_spending['entertainment'],
             'budget': user_budget.entertainment,
-            'percentage': min(round((category_spending['entertainment'] / user_budget.entertainment * 100) if user_budget.entertainment > 0 else 0), 100)
+            'percentage': min(round((category_spending['entertainment'] / user_budget.entertainment * 100) if user_budget.entertainment > 0 else 0), 100),
+            'name': 'Entertainment',
+            'icon': 'bi-film',
+            'color': 'primary'
+        },
+        'bills': {
+            'spent': category_spending['bills'],
+            'budget': user_budget.bills,
+            'percentage': min(round((category_spending['bills'] / user_budget.bills * 100) if user_budget.bills > 0 else 0), 100),
+            'name': 'Bills & Utilities',
+            'icon': 'bi-file-earmark-text',
+            'color': 'danger'
+        },
+        'shopping': {
+            'spent': category_spending['shopping'],
+            'budget': user_budget.shopping,
+            'percentage': min(round((category_spending['shopping'] / user_budget.shopping * 100) if user_budget.shopping > 0 else 0), 100),
+            'name': 'Shopping',
+            'icon': 'bi-bag-fill',
+            'color': 'warning'
+        },
+        'other': {
+            'spent': category_spending['other'],
+            'budget': user_budget.other,
+            'percentage': min(round((category_spending['other'] / user_budget.other * 100) if user_budget.other > 0 else 0), 100),
+            'name': 'Other',
+            'icon': 'bi-three-dots',
+            'color': 'secondary'
         },
         'total': {
             'spent': total_expenses,
             'budget': user_budget.total_budget,
-            'percentage': min(round((total_expenses / user_budget.total_budget * 100) if user_budget.total_budget > 0 else 0), 100)
+            'percentage': min(round((total_expenses / user_budget.total_budget * 100) if user_budget.total_budget > 0 else 0), 100),
+            'name': 'Total Budget',
+            'icon': 'bi-wallet2',
+            'color': 'dark'
         }
     }
+    
+    # Add custom categories to budget usage
+    for custom_cat in custom_categories:
+        category_key = f"custom_{custom_cat.id}"
+        if category_key in category_spending:
+            budget_usage[category_key] = {
+                'spent': category_spending[category_key],
+                'budget': custom_cat.amount,
+                'percentage': min(round((category_spending[category_key] / custom_cat.amount * 100) if custom_cat.amount > 0 else 0), 100),
+                'name': custom_cat.name,
+                'icon': custom_cat.icon if custom_cat.icon else 'bi-tag-fill',
+                'color': custom_cat.color if custom_cat.color else 'secondary',
+                'custom': True,
+                'id': custom_cat.id
+            }
     
     # Use the new dashboard template
     return render_template(

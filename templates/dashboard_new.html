@@ -166,11 +166,11 @@
                     <!-- Budget progress bars for top categories -->
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <div>Food & Dining</div>
+                            <div><i class="bi {{ budget_usage.food.icon }}"></i> {{ budget_usage.food.name }}</div>
                             <div class="text-muted small">${{ "%.2f"|format(budget_usage.food.spent) }} / ${{ "%.2f"|format(user_budget.food) }}</div>
                         </div>
                         <div class="progress" style="height: 10px;">
-                            <div class="progress-bar {% if budget_usage.food.percentage > 90 %}bg-danger{% elif budget_usage.food.percentage > 75 %}bg-warning{% else %}bg-success{% endif %}" 
+                            <div class="progress-bar bg-{{ budget_usage.food.color }} {% if budget_usage.food.percentage > 90 %}bg-danger{% elif budget_usage.food.percentage > 75 %}bg-warning{% endif %}" 
                                  role="progressbar" 
                                  style="width: {{ budget_usage.food.percentage }}%;" 
                                  aria-valuenow="{{ budget_usage.food.percentage }}" 
@@ -182,11 +182,11 @@
                     
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <div>Transportation</div>
+                            <div><i class="bi {{ budget_usage.transportation.icon }}"></i> {{ budget_usage.transportation.name }}</div>
                             <div class="text-muted small">${{ "%.2f"|format(budget_usage.transportation.spent) }} / ${{ "%.2f"|format(user_budget.transportation) }}</div>
                         </div>
                         <div class="progress" style="height: 10px;">
-                            <div class="progress-bar {% if budget_usage.transportation.percentage > 90 %}bg-danger{% elif budget_usage.transportation.percentage > 75 %}bg-warning{% else %}bg-success{% endif %}" 
+                            <div class="progress-bar bg-{{ budget_usage.transportation.color }} {% if budget_usage.transportation.percentage > 90 %}bg-danger{% elif budget_usage.transportation.percentage > 75 %}bg-warning{% endif %}" 
                                  role="progressbar" 
                                  style="width: {{ budget_usage.transportation.percentage }}%;" 
                                  aria-valuenow="{{ budget_usage.transportation.percentage }}" 
@@ -198,11 +198,11 @@
                     
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <div>Entertainment</div>
+                            <div><i class="bi {{ budget_usage.entertainment.icon }}"></i> {{ budget_usage.entertainment.name }}</div>
                             <div class="text-muted small">${{ "%.2f"|format(budget_usage.entertainment.spent) }} / ${{ "%.2f"|format(user_budget.entertainment) }}</div>
                         </div>
                         <div class="progress" style="height: 10px;">
-                            <div class="progress-bar {% if budget_usage.entertainment.percentage > 90 %}bg-danger{% elif budget_usage.entertainment.percentage > 75 %}bg-warning{% else %}bg-success{% endif %}" 
+                            <div class="progress-bar bg-{{ budget_usage.entertainment.color }} {% if budget_usage.entertainment.percentage > 90 %}bg-danger{% elif budget_usage.entertainment.percentage > 75 %}bg-warning{% endif %}" 
                                  role="progressbar" 
                                  style="width: {{ budget_usage.entertainment.percentage }}%;" 
                                  aria-valuenow="{{ budget_usage.entertainment.percentage }}" 
@@ -211,6 +211,59 @@
                         </div>
                         <div class="text-end text-muted small">{{ budget_usage.entertainment.percentage }}%</div>
                     </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div><i class="bi {{ budget_usage.bills.icon }}"></i> {{ budget_usage.bills.name }}</div>
+                            <div class="text-muted small">${{ "%.2f"|format(budget_usage.bills.spent) }} / ${{ "%.2f"|format(user_budget.bills) }}</div>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-{{ budget_usage.bills.color }} {% if budget_usage.bills.percentage > 90 %}bg-danger{% elif budget_usage.bills.percentage > 75 %}bg-warning{% endif %}" 
+                                 role="progressbar" 
+                                 style="width: {{ budget_usage.bills.percentage }}%;" 
+                                 aria-valuenow="{{ budget_usage.bills.percentage }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100"></div>
+                        </div>
+                        <div class="text-end text-muted small">{{ budget_usage.bills.percentage }}%</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div><i class="bi {{ budget_usage.shopping.icon }}"></i> {{ budget_usage.shopping.name }}</div>
+                            <div class="text-muted small">${{ "%.2f"|format(budget_usage.shopping.spent) }} / ${{ "%.2f"|format(user_budget.shopping) }}</div>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-{{ budget_usage.shopping.color }} {% if budget_usage.shopping.percentage > 90 %}bg-danger{% elif budget_usage.shopping.percentage > 75 %}bg-warning{% endif %}" 
+                                 role="progressbar" 
+                                 style="width: {{ budget_usage.shopping.percentage }}%;" 
+                                 aria-valuenow="{{ budget_usage.shopping.percentage }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100"></div>
+                        </div>
+                        <div class="text-end text-muted small">{{ budget_usage.shopping.percentage }}%</div>
+                    </div>
+                    
+                    <!-- Custom Budget Categories -->
+                    {% for key, budget_item in budget_usage.items() %}
+                        {% if key.startswith('custom_') and budget_item.custom %}
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <div><i class="bi {{ budget_item.icon }}"></i> {{ budget_item.name }}</div>
+                                <div class="text-muted small">${{ "%.2f"|format(budget_item.spent) }} / ${{ "%.2f"|format(budget_item.budget) }}</div>
+                            </div>
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar bg-{{ budget_item.color }} {% if budget_item.percentage > 90 %}bg-danger{% elif budget_item.percentage > 75 %}bg-warning{% endif %}" 
+                                     role="progressbar" 
+                                     style="width: {{ budget_item.percentage }}%;" 
+                                     aria-valuenow="{{ budget_item.percentage }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100"></div>
+                            </div>
+                            <div class="text-end text-muted small">{{ budget_item.percentage }}%</div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
                     
                     <div class="d-grid gap-2 mt-4">
                         <a href="{{ url_for('edit_budget') }}" class="btn btn-outline-primary">
