@@ -54,7 +54,7 @@
                         <i class="bi bi-gear me-1"></i> Preferences
                     </a>
                     {% if current_user.is_admin %}
-                    <a href="{{ url_for('admin') }}" class="btn btn-secondary">
+                    <a href="{{ url_for('admin_panel') }}" class="btn btn-secondary">
                         <i class="bi bi-shield-lock me-1"></i> Admin Panel
                     </a>
                     {% endif %}
