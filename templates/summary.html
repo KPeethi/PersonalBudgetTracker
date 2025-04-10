@@ -3,129 +3,137 @@
 {% block title %}Monthly Summary - Expense Tracker{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12 mb-4">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Monthly Expense Summary</h5>
-                <div class="d-flex gap-2">
-                    {% if summaries %}
-                    <a href="{{ url_for('export_expenses') }}{% if is_admin and 'all_users' in request.args %}?all_users=true{% endif %}" class="btn btn-sm btn-info">
-                        <i class="bi bi-download me-1"></i> Export CSV
-                    </a>
-                    {% endif %}
-                    
-                    {% if is_admin %}
-                    <a href="{{ url_for('monthly_summary') }}{% if 'all_users' not in request.args %}?all_users=true{% endif %}" class="btn btn-sm btn-outline-primary">
-                        {% if 'all_users' in request.args %}
-                            View My Expenses Only
-                        {% else %}
-                            View All Users' Expenses
-                        {% endif %}
-                    </a>
-                    {% endif %}
+<div class="container-fluid p-0">
+
+    <!-- Top Action Buttons -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Monthly Expense Analysis</h1>
+        <div class="d-flex gap-2">
+            {% if summaries %}
+            <a href="{{ url_for('export_expenses') }}{% if is_admin and 'all_users' in request.args %}?all_users=true{% endif %}" class="btn btn-sm btn-info">
+                <i class="bi bi-download me-1"></i> Export CSV
+            </a>
+            {% endif %}
+            
+            {% if is_admin %}
+            <a href="{{ url_for('monthly_summary') }}{% if 'all_users' not in request.args %}?all_users=true{% endif %}" class="btn btn-sm btn-outline-primary">
+                {% if 'all_users' in request.args %}
+                    View My Expenses Only
+                {% else %}
+                    View All Users' Expenses
+                {% endif %}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if summaries %}
+    <!-- Year to date summary -->
+    <div class="alert alert-primary mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">{{ current_year }} Year-to-Date Total:</h5>
+            <h4 class="mb-0">${{ "%.2f"|format(ytd_total) }}</h4>
+        </div>
+    </div>
+    
+    <!-- Charts Section - Monthly Expense Distribution and Monthly Expense Trend side by side -->
+    <div class="row mb-4">
+        <!-- Monthly Expense Distribution (Category Pie Chart) -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-0 py-3">
+                    <h5 class="mb-0">Monthly Expense Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <div id="category-chart" style="height: 350px;"></div>
                 </div>
             </div>
-            <div class="card-body">
-                {% if summaries %}
-                    <!-- Year to date summary -->
-                    <div class="alert alert-primary mb-4">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">{{ current_year }} Year-to-Date Total:</h5>
-                            <h4 class="mb-0">${{ "%.2f"|format(ytd_total) }}</h4>
-                        </div>
-                    </div>
-                    
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Month</th>
-                                    <th>Year</th>
-                                    <th>Total Expenses</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for summary in summaries %}
-                                <tr>
-                                    <td>{{ summary.month }}</td>
-                                    <td>{{ summary.year }}</td>
-                                    <td>${{ "%.2f"|format(summary.total_amount) }}</td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-outline-info" 
-                                                data-bs-toggle="collapse" 
-                                                data-bs-target="#collapse-{{ summary.month }}-{{ summary.year }}" 
-                                                aria-expanded="false">
-                                            <i class="bi bi-list-ul"></i> Details
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr class="collapse" id="collapse-{{ summary.month }}-{{ summary.year }}">
-                                    <td colspan="4" class="p-0">
-                                        <div class="card card-body m-2 bg-light">
-                                            <h6 class="mb-3">Category Breakdown</h6>
-                                            {% if summary.categories %}
-                                                <div class="table-responsive">
-                                                    <table class="table table-sm table-striped mb-0">
-                                                        <thead>
-                                                            <tr>
-                                                                <th>Category</th>
-                                                                <th>Amount</th>
-                                                                <th>% of Month</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {% for cat in summary.categories %}
-                                                            <tr>
-                                                                <td>{{ cat.category }}</td>
-                                                                <td>${{ "%.2f"|format(cat.amount) }}</td>
-                                                                <td>{{ "%.1f"|format((cat.amount / summary.total_amount) * 100) }}%</td>
-                                                            </tr>
-                                                            {% endfor %}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            {% else %}
-                                                <p class="mb-0 text-muted">No category data available for this month.</p>
-                                            {% endif %}
+        </div>
+        
+        <!-- Monthly Expense Trend (Line Chart) -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-0 py-3">
+                    <h5 class="mb-0">Monthly Expense Trend</h5>
+                </div>
+                <div class="card-body">
+                    <div id="monthly-chart" style="height: 350px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Monthly Expense Summary Table -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-transparent border-0 py-3">
+            <h5 class="mb-0">Monthly Expense Summary</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Year</th>
+                            <th>Total Expenses</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for summary in summaries %}
+                        <tr>
+                            <td>{{ summary.month }}</td>
+                            <td>{{ summary.year }}</td>
+                            <td>${{ "%.2f"|format(summary.total_amount) }}</td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-info" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#collapse-{{ summary.month }}-{{ summary.year }}" 
+                                        aria-expanded="false">
+                                    <i class="bi bi-list-ul"></i> Details
+                                </button>
+                            </td>
+                        </tr>
+                        <tr class="collapse" id="collapse-{{ summary.month }}-{{ summary.year }}">
+                            <td colspan="4" class="p-0">
+                                <div class="card card-body m-2 bg-light">
+                                    <h6 class="mb-3">Category Breakdown</h6>
+                                    {% if summary.categories %}
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-striped mb-0">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Category</th>
+                                                        <th>Amount</th>
+                                                        <th>% of Month</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for cat in summary.categories %}
+                                                    <tr>
+                                                        <td>{{ cat.category }}</td>
+                                                        <td>${{ "%.2f"|format(cat.amount) }}</td>
+                                                        <td>{{ "%.1f"|format((cat.amount / summary.total_amount) * 100) }}%</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
                                         </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <div class="alert alert-info">
-                        No monthly expense data available yet. <a href="{{ url_for('index') }}">Add some expenses</a> to see your monthly summary.
-                    </div>
-                {% endif %}
+                                    {% else %}
+                                        <p class="mb-0 text-muted">No category data available for this month.</p>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
-    
-    {% if summaries %}
-    <div class="col-12 mb-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Monthly Expense Trend</h5>
-            </div>
-            <div class="card-body">
-                <div id="monthly-chart" style="width: 100%; height: 400px;"></div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Monthly Expense Distribution</h5>
-            </div>
-            <div class="card-body">
-                <div id="category-chart" style="width: 100%; height: 400px;"></div>
-            </div>
-        </div>
+    {% else %}
+    <div class="alert alert-info">
+        No monthly expense data available yet. <a href="{{ url_for('index') }}">Add some expenses</a> to see your monthly summary.
     </div>
     {% endif %}
 </div>
@@ -152,19 +160,29 @@
         const trace = {
             x: reversedMonths,
             y: reversedAmounts,
-            type: 'bar',
+            type: 'scatter',
+            mode: 'lines+markers',
+            line: {
+                color: '#6610f2',
+                width: 3
+            },
             marker: {
-                color: '#6610f2'
+                color: '#6610f2',
+                size: 8
             }
         };
         
         const layout = {
-            title: 'Monthly Expenses',
+            title: '',
             xaxis: {
-                title: 'Month'
+                title: 'Month',
+                showgrid: true,
+                gridcolor: 'rgba(200,200,200,0.2)'
             },
             yaxis: {
-                title: 'Total Amount ($)'
+                title: 'Total Amount ($)',
+                showgrid: true,
+                gridcolor: 'rgba(200,200,200,0.2)'
             },
             paper_bgcolor: 'rgba(0,0,0,0)',
             plot_bgcolor: 'rgba(0,0,0,0)',
@@ -173,11 +191,12 @@
             },
             margin: {
                 l: 50,
-                r: 50,
-                b: 100,
-                t: 50,
+                r: 30,
+                b: 50,
+                t: 20,
                 pad: 4
-            }
+            },
+            hovermode: 'closest'
         };
         
         Plotly.newPlot('monthly-chart', [trace], layout);
@@ -196,27 +215,54 @@
             labels: categories,
             values: categoryAmounts,
             type: 'pie',
-            hole: 0.4,
+            hole: 0.5,
+            textinfo: 'label+percent',
+            textposition: 'outside',
+            automargin: true,
             marker: {
                 colors: [
                     '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
                     '#fd7e14', '#6f42c1', '#20c9a6', '#5a5c69', '#858796'
-                ]
-            }
+                ],
+                line: {
+                    color: 'rgba(255,255,255,0.5)',
+                    width: 2
+                }
+            },
+            hoverinfo: 'label+value+percent'
         };
         
         const pieLayout = {
-            title: 'Category Distribution for {{ summaries[0].month }} {{ summaries[0].year }}',
+            title: '',
+            showlegend: categories.length <= 7, // Only show legend if we have fewer categories
+            legend: {
+                orientation: 'h',
+                xanchor: 'center',
+                yanchor: 'bottom',
+                x: 0.5,
+                y: -0.2
+            },
+            annotations: [
+                {
+                    font: {
+                        size: 12
+                    },
+                    showarrow: false,
+                    text: '{{ summaries[0].month }} {{ summaries[0].year }}',
+                    x: 0.5,
+                    y: 0.5
+                }
+            ],
             paper_bgcolor: 'rgba(0,0,0,0)',
             plot_bgcolor: 'rgba(0,0,0,0)',
             font: {
                 color: '#333'
             },
             margin: {
-                l: 50,
-                r: 50,
-                b: 100,
-                t: 50,
+                l: 20,
+                r: 20,
+                b: 30,
+                t: 20,
                 pad: 4
             }
         };
