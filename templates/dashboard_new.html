@@ -343,21 +343,27 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     
     // Category Distribution Chart
-    const categoryData = {{ category_chart_data | tojson }};
-    const ctx2 = document.createElement('canvas');
-    document.getElementById('categoryDistributionChart').appendChild(ctx2);
+    const categoryData = {{ category_chart_data | tojson | safe }};
     
-    new Chart(ctx2, {
-        type: 'doughnut',
-        data: {
-            labels: categoryData.data.labels,
-            datasets: [{
-                data: categoryData.data.values,
-                backgroundColor: [
-                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'
-                ]
-            }]
-        },
+    // Debug to console
+    console.log("Category data:", categoryData);
+    
+    // Check if we have category data
+    if (categoryData && categoryData.data) {
+        const ctx2 = document.createElement('canvas');
+        document.getElementById('categoryDistributionChart').appendChild(ctx2);
+        
+        new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: categoryData.data.labels,
+                datasets: [{
+                    data: categoryData.data.values,
+                    backgroundColor: [
+                        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'
+                    ]
+                }]
+            },
         options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -369,6 +375,7 @@ document.addEventListener('DOMContentLoaded', function() {
             cutout: '65%'
         }
     });
+    }
 });
 </script>
 {% endblock %}
