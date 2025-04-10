@@ -947,6 +947,154 @@
             
             messageContainer.innerHTML = message;
         }
+        
+        function fetchLastMonthPredictions() {
+            // Get the loader and content areas
+            const loader = document.getElementById('lastMonthLoader');
+            const content = document.getElementById('lastMonthContent');
+            
+            // Show loader, hide content
+            loader.style.display = 'block';
+            content.style.display = 'none';
+            
+            fetch('/ai/last_month_predictions')
+            .then(response => response.json())
+            .then(data => {
+                // Hide loader
+                loader.style.display = 'none';
+                
+                if (data.success) {
+                    // Show content
+                    content.style.display = 'block';
+                    
+                    // Update UI with predictions
+                    renderLastMonthPredictions(data.data);
+                } else {
+                    // Show error message
+                    content.style.display = 'block';
+                    content.innerHTML = `
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            ${data.message || "Couldn't generate predictions. You may need more expense data."}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                // Hide loader, show error
+                loader.style.display = 'none';
+                content.style.display = 'block';
+                
+                console.error('Error fetching last month predictions:', error);
+                content.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Error loading predictions. Please try again later.
+                    </div>
+                `;
+            });
+        }
+        
+        function renderLastMonthPredictions(data) {
+            // Update month analyzed
+            document.getElementById('monthAnalyzed').textContent = data.month_analyzed;
+            
+            // Update total spent
+            document.getElementById('totalSpentLastMonth').textContent = 
+                `$${data.total_spent_last_month.toFixed(2)}`;
+            
+            // Update budget alert
+            const alertEl = document.getElementById('lastMonthAlert');
+            alertEl.classList.remove('alert-success', 'alert-warning', 'alert-danger');
+            
+            if (data.overall_budget_status === 'good') {
+                alertEl.classList.add('alert-success');
+                alertEl.innerHTML = `<i class="bi bi-check-circle me-2"></i> ${data.budget_message}`;
+            } else if (data.overall_budget_status === 'warning') {
+                alertEl.classList.add('alert-warning');
+                alertEl.innerHTML = `<i class="bi bi-exclamation-triangle me-2"></i> ${data.budget_message}`;
+            } else {
+                alertEl.classList.add('alert-danger');
+                alertEl.innerHTML = `<i class="bi bi-exclamation-circle me-2"></i> ${data.budget_message}`;
+            }
+            
+            // Render categories
+            const categoriesEl = document.getElementById('categoriesList');
+            categoriesEl.innerHTML = '';
+            
+            data.categories.forEach(category => {
+                const categoryCard = document.createElement('div');
+                categoryCard.className = 'card mb-2';
+                
+                // Add alert border if there's a budget alert
+                if (category.budget_alert) {
+                    categoryCard.classList.add(category.budget_alert.severity === 'high' ? 
+                        'border-danger' : 'border-warning');
+                }
+                
+                // Build category content
+                let budgetInfo = '';
+                if (category.budget_limit > 0) {
+                    const percentUsed = (category.last_month_total / category.budget_limit) * 100;
+                    budgetInfo = `
+                        <div class="mt-2">
+                            <small class="text-muted">Budget: $${category.budget_limit.toFixed(2)}</small>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar ${percentUsed > 90 ? 'bg-danger' : percentUsed > 75 ? 'bg-warning' : 'bg-success'}" 
+                                     role="progressbar" 
+                                     style="width: ${Math.min(100, percentUsed)}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Add alert message if needed
+                let alertMsg = '';
+                if (category.budget_alert) {
+                    alertMsg = `
+                        <div class="alert alert-${category.budget_alert.severity === 'high' ? 'danger' : 'warning'} mt-2 py-1 px-2 mb-0">
+                            <small><i class="bi bi-exclamation-triangle me-1"></i> ${category.budget_alert.message}</small>
+                        </div>
+                    `;
+                }
+                
+                categoryCard.innerHTML = `
+                    <div class="card-body py-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">${category.name}</h6>
+                            <span>$${category.last_month_total.toFixed(2)}</span>
+                        </div>
+                        <small class="text-muted">Projected: $${category.projected.toFixed(2)} this month</small>
+                        ${budgetInfo}
+                        ${alertMsg}
+                    </div>
+                `;
+                
+                categoriesEl.appendChild(categoryCard);
+            });
+            
+            // Render savings suggestions
+            const suggestionsEl = document.getElementById('savingsSuggestions');
+            suggestionsEl.innerHTML = '';
+            
+            if (data.savings_suggestions && data.savings_suggestions.length > 0) {
+                data.savings_suggestions.forEach(suggestion => {
+                    const suggestionEl = document.createElement('div');
+                    suggestionEl.className = 'alert alert-info py-2 mb-2';
+                    suggestionEl.innerHTML = `
+                        <small><i class="bi bi-lightbulb me-2"></i> ${suggestion.message}</small>
+                    `;
+                    suggestionsEl.appendChild(suggestionEl);
+                });
+            } else {
+                suggestionsEl.innerHTML = `
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-check2-circle fs-4"></i>
+                        <p class="mb-0 mt-2">No savings suggestions at this time.</p>
+                    </div>
+                `;
+            }
+        }
     });
 </script>
 {% endblock %}
