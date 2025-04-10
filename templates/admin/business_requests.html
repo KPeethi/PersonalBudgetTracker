@@ -16,6 +16,19 @@
             <h4 class="mb-0">Manage Business Upgrade Requests</h4>
             <span class="badge bg-light text-dark rounded-pill">{{ requests|length }} requests</span>
         </div>
+        
+        {% if requests and requests[0].status == 'pending' %}
+        <div class="p-3 bg-light">
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{{ url_for('direct_approve_business_request', request_id=requests[0].id) }}" 
+                   class="btn btn-success"
+                   onclick="return confirm('Are you sure you want to directly approve this business request?')">
+                    Approve Request
+                </a>
+                <button type="button" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+        {% endif %}
         <div class="card-body p-0">
             {% if requests %}
                 <div class="table-responsive">
@@ -78,6 +91,7 @@
                                                         <p>This will grant business user privileges to the user.</p>
                                                         
                                                         <form action="{{ url_for('admin_business_request_detail', request_id=request.id) }}" method="POST">
+                                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                                             <div class="mb-3">
                                                                 <label for="adminNotes{{ request.id }}" class="form-label">Admin Notes (Optional)</label>
                                                                 <textarea id="adminNotes{{ request.id }}" name="admin_notes" class="form-control" rows="3" placeholder="Enter any notes about this approval..."></textarea>
@@ -104,6 +118,7 @@
                                                         <p>Are you sure you want to reject the business upgrade request from {{ request.company_name }}?</p>
                                                         
                                                         <form action="{{ url_for('admin_business_request_detail', request_id=request.id) }}" method="POST">
+                                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                                             <div class="mb-3">
                                                                 <label for="rejectNotes{{ request.id }}" class="form-label">Rejection Reason (Recommended)</label>
                                                                 <textarea id="rejectNotes{{ request.id }}" name="admin_notes" class="form-control" rows="3" placeholder="Enter a reason for rejecting this request..."></textarea>
