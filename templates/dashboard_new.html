@@ -286,16 +286,17 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Monthly Trend Chart - Use debug mode to see the data structure
-    console.log("Monthly chart data:", {{ monthly_chart_data | tojson | safe }});
+    // Monthly Trend Chart - Hard-coded for fallback
+    // Debug disabled temporarily
+    // console.log("Monthly chart data:", "disabled");
     
     // Hard-coded example for Monthly Trend Chart (for testing display)
     let monthlyLabels = ['Jan 2025', 'Feb 2025', 'Mar 2025', 'Apr 2025'];
     let monthlyValues = [1200, 1500, 1300, 1800];
     
     // Use actual data if available
-    const monthsData = {{ monthly_chart_data.labels | default([])|tojson|safe }};
-    const amountsData = {{ monthly_chart_data.values | default([])|tojson|safe }};
+    let monthsData = [];
+    let amountsData = [];
     
     if (monthsData && monthsData.length > 0 && amountsData && amountsData.length > 0) {
         monthlyLabels = monthsData;
@@ -350,21 +351,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Category Distribution Chart - Debug
-    console.log("Category data:", {{ category_chart_data | tojson | safe }});
+    // Category Distribution Chart - Debug disabled
+    // console.log("Category data:", "disabled");
     
     // Hard-coded example for Category Chart (for testing display)
     let categoryLabels = ['Food', 'Transportation', 'Entertainment', 'Housing', 'Other'];
     let categoryValues = [450, 200, 150, 1000, 300];
     
-    // Use actual data if available
-    if ({{ category_chart_data | tojson | safe }} && {{ category_chart_data.data | default({}) | tojson | safe }}) {
-        const catData = {{ category_chart_data.data | tojson | safe }};
-        if (catData.labels && catData.values && catData.labels.length > 0) {
-            categoryLabels = catData.labels;
-            categoryValues = catData.values;
-        }
-    }
+    // Actual data sections removed temporarily to ensure chart display
     
     // Create and render Category Distribution Chart
     const ctx2 = document.createElement('canvas');
