@@ -543,11 +543,26 @@ def dashboard():
     comparison_chart_data = visualization.generate_category_comparison_chart(
         current_month_expenses, previous_month_expenses, "month")
 
+    # Get recent expenses for the dashboard
+    sorted_expenses = sorted(expenses, key=lambda x: x.date, reverse=True)
+    recent_expenses = sorted_expenses[:5] if len(sorted_expenses) > 5 else sorted_expenses
+    
+    # Create expense stats for the dashboard
+    expense_stats = {
+        'total_amount': total_expenses,
+        'avg_amount': total_expenses / total_count if total_count > 0 else 0,
+        'max_amount': max([exp.amount for exp in expenses]) if expenses else 0,
+        'total_count': total_count
+    }
+    
+    # Use the new dashboard template
     return render_template(
-        'dashboard.html',
+        'dashboard_new.html',
         total_expenses=total_expenses,
         total_count=total_count,
         users=users,
+        expense_stats=expense_stats,
+        recent_expenses=recent_expenses,
         category_chart_data=category_chart_data,
         weekly_expenses_chart_data=weekly_expenses_chart_data,
         monthly_chart_data=monthly_chart_data,
