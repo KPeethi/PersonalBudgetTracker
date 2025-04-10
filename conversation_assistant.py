@@ -660,6 +660,160 @@ def get_helpful_tip(query_info: Dict[str, Any], query_result: Dict[str, Any]) ->
 Implementation of time-series forecasting for predicting future expenses.
 """
 
+def get_last_month_predictions(user_id: int) -> Dict[str, Any]:
+    """
+    Generate detailed predictions based specifically on last month's expenses.
+    
+    This function provides a detailed breakdown of last month's expenses by category
+    and predicts spending for the current month based on recent patterns.
+    
+    Args:
+        user_id: User ID
+        
+    Returns:
+        Dictionary with last month analysis and predictions
+    """
+    # Get the current and last month dates
+    today = datetime.datetime.now()
+    current_month = datetime.date(today.year, today.month, 1)
+    
+    # Calculate last month
+    if today.month == 1:
+        last_month = datetime.date(today.year - 1, 12, 1)
+    else:
+        last_month = datetime.date(today.year, today.month - 1, 1)
+    
+    # Last month end date
+    if last_month.month == 12:
+        last_month_end = datetime.date(last_month.year + 1, 1, 1) - datetime.timedelta(days=1)
+    else:
+        last_month_end = datetime.date(last_month.year, last_month.month + 1, 1) - datetime.timedelta(days=1)
+    
+    # Get last month's expenses by category
+    last_month_sql = """
+    SELECT category, SUM(amount) as total
+    FROM expenses
+    WHERE user_id = :user_id
+    AND date >= :start_date
+    AND date <= :end_date
+    GROUP BY category
+    ORDER BY total DESC
+    """
+    
+    params = {
+        'user_id': user_id,
+        'start_date': last_month,
+        'end_date': last_month_end
+    }
+    
+    last_month_categories = db.session.execute(text(last_month_sql), params).all()
+    
+    # Get total expenses for last month
+    last_month_total_sql = """
+    SELECT SUM(amount) as total
+    FROM expenses
+    WHERE user_id = :user_id
+    AND date >= :start_date
+    AND date <= :end_date
+    """
+    
+    last_month_total_result = db.session.execute(text(last_month_total_sql), params).first()
+    last_month_total = float(last_month_total_result.total) if last_month_total_result.total else 0
+    
+    # Format category data
+    category_data = []
+    for cat in last_month_categories:
+        category_data.append({
+            'category': cat.category,
+            'total': float(cat.total),
+            'percentage': round((float(cat.total) / last_month_total * 100), 1) if last_month_total > 0 else 0
+        })
+    
+    # Get daily spending patterns for last month
+    daily_sql = """
+    SELECT date, SUM(amount) as total
+    FROM expenses
+    WHERE user_id = :user_id
+    AND date >= :start_date
+    AND date <= :end_date
+    GROUP BY date
+    ORDER BY date
+    """
+    
+    daily_expenses = db.session.execute(text(daily_sql), params).all()
+    
+    # Format daily data
+    daily_data = []
+    for day in daily_expenses:
+        daily_data.append({
+            'date': day.date.strftime('%Y-%m-%d'),
+            'total': float(day.total)
+        })
+    
+    # Calculate predictions for the current month based on last month's patterns
+    predicted_categories = []
+    for cat in category_data:
+        # Predict slight increase based on general inflation and spending trends
+        predicted_amount = cat['total'] * 1.025  # Assume 2.5% increase
+        
+        predicted_categories.append({
+            'category': cat['category'],
+            'last_month': cat['total'],
+            'predicted': round(predicted_amount, 2),
+            'change': round((predicted_amount - cat['total']) / cat['total'] * 100, 1) if cat['total'] > 0 else 0
+        })
+    
+    # Get user's budget to identify potential overages
+    budget_categories = {}
+    user = User.query.get(user_id)
+    
+    if user and hasattr(user, 'budget') and user.budget:
+        # Get standard budget categories
+        budget_categories = {
+            'food': user.budget.food if user.budget.food else 0,
+            'transportation': user.budget.transportation if user.budget.transportation else 0,
+            'entertainment': user.budget.entertainment if user.budget.entertainment else 0,
+            'bills': user.budget.bills if user.budget.bills else 0,
+            'shopping': user.budget.shopping if user.budget.shopping else 0,
+            'other': user.budget.other if user.budget.other else 0
+        }
+        
+        # Add custom categories if they exist
+        custom_categories = CustomBudgetCategory.query.filter_by(user_id=user_id).all()
+        for custom in custom_categories:
+            budget_categories[custom.name.lower()] = custom.amount
+    
+    # Check for potential budget overages based on predictions
+    budget_alerts = []
+    for pred in predicted_categories:
+        category = pred['category'].lower()
+        if category in budget_categories and budget_categories[category] > 0:
+            if pred['predicted'] > budget_categories[category]:
+                overage_percent = (pred['predicted'] - budget_categories[category]) / budget_categories[category] * 100
+                budget_alerts.append({
+                    'category': pred['category'],
+                    'budget': budget_categories[category],
+                    'predicted': pred['predicted'],
+                    'overage_percent': round(overage_percent, 1)
+                })
+    
+    # Prepare response
+    return {
+        'success': True,
+        'message': 'Last month predictions generated successfully',
+        'data': {
+            'month_name': last_month.strftime('%B %Y'),
+            'total_spent': last_month_total,
+            'categories': category_data,
+            'daily_spending': daily_data,
+            'predictions': {
+                'categories': predicted_categories,
+                'total': round(sum(pred['predicted'] for pred in predicted_categories), 2),
+                'budget_alerts': budget_alerts
+            }
+        }
+    }
+
 def get_expense_forecast(user_id: int, category: str = None, months_ahead: int = 3) -> Dict[str, Any]:
     """
     Generate expense forecast for a user.
