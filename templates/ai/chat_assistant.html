@@ -147,7 +147,30 @@
                     <div class="chat-container p-3" id="chatContainer">
                         <!-- Welcome message -->
                         <div class="chat-message assistant-message">
-                            <p class="mb-0">Hi there! I'm your financial assistant. How can I help you understand your expenses today?</p>
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px;">
+                                    <i class="bi bi-robot"></i>
+                                </div>
+                                <div>
+                                    <strong>Financial Assistant</strong>
+                                    <div class="text-muted" style="font-size: 0.75rem;">Just now</div>
+                                </div>
+                            </div>
+                            <p class="mb-2">👋 Hi there! I'm your financial assistant. I can help you understand your expenses, analyze spending patterns, and provide insights to improve your financial health.</p>
+                            <p class="mb-3">What would you like to know about your finances today?</p>
+                            
+                            <hr>
+                            <div class="follow-up-container d-flex flex-wrap gap-2">
+                                <div class="follow-up-chip bg-light text-dark p-2 rounded" style="font-size: 0.85rem; cursor: pointer;" onclick="document.getElementById('userInput').value = 'What were my top 5 expenses?'; document.getElementById('chatForm').dispatchEvent(new Event('submit'));">
+                                    What were my top 5 expenses?
+                                </div>
+                                <div class="follow-up-chip bg-light text-dark p-2 rounded" style="font-size: 0.85rem; cursor: pointer;" onclick="document.getElementById('userInput').value = 'How much did I spend this month?'; document.getElementById('chatForm').dispatchEvent(new Event('submit'));">
+                                    How much did I spend this month?
+                                </div>
+                                <div class="follow-up-chip bg-light text-dark p-2 rounded" style="font-size: 0.85rem; cursor: pointer;" onclick="document.getElementById('userInput').value = 'Which category had the biggest increase?'; document.getElementById('chatForm').dispatchEvent(new Event('submit'));">
+                                    Which category had the biggest increase?
+                                </div>
+                            </div>
                         </div>
                         
                         <!-- Messages will be added here dynamically -->
@@ -375,7 +398,7 @@
             });
         }
         
-        function addMessage(message, sender) {
+        function addMessage(message, sender, includeFollowups = true) {
             const messageDiv = document.createElement('div');
             messageDiv.classList.add('chat-message');
             messageDiv.classList.add(sender + '-message');
@@ -384,11 +407,73 @@
             const formattedMessage = message.replace(/\n/g, '<br>');
             messageDiv.innerHTML = `<p class="mb-0">${formattedMessage}</p>`;
             
+            // Add follow-up suggestion chips if this is an assistant message
+            if (sender === 'assistant' && includeFollowups) {
+                let followupContainer = document.createElement('div');
+                followupContainer.className = 'follow-up-container mt-2 d-flex flex-wrap gap-2';
+                
+                // Generate follow-up suggestions based on the current message
+                let suggestions = generateFollowupSuggestions(message);
+                
+                suggestions.forEach(suggestion => {
+                    let chip = document.createElement('div');
+                    chip.className = 'follow-up-chip bg-light text-dark p-2 rounded';
+                    chip.style.fontSize = '0.85rem';
+                    chip.style.cursor = 'pointer';
+                    chip.textContent = suggestion;
+                    chip.addEventListener('click', function() {
+                        userInput.value = suggestion;
+                        chatForm.dispatchEvent(new Event('submit'));
+                    });
+                    followupContainer.appendChild(chip);
+                });
+                
+                if (suggestions.length > 0) {
+                    messageDiv.appendChild(document.createElement('hr'));
+                    messageDiv.appendChild(followupContainer);
+                }
+            }
+            
             // Insert before the thinking indicator
             chatContainer.insertBefore(messageDiv, thinkingIndicator);
             
             // Scroll to bottom
             chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        function generateFollowupSuggestions(message) {
+            const suggestions = [];
+            
+            // Check if message is about expenses
+            if (message.toLowerCase().includes('food')) {
+                suggestions.push("How does my food spending compare to last month?");
+                suggestions.push("What's my average monthly spending on food?");
+            }
+            
+            if (message.toLowerCase().includes('spend') || message.toLowerCase().includes('expense')) {
+                suggestions.push("What are my top spending categories?");
+                suggestions.push("Which category had the biggest increase?");
+            }
+            
+            if (message.toLowerCase().includes('top') || message.toLowerCase().includes('largest')) {
+                suggestions.push("What are my recurring expenses?");
+                suggestions.push("How can I reduce my spending?");
+            }
+            
+            if (message.toLowerCase().includes('month')) {
+                suggestions.push("How much will I spend next month?");
+                suggestions.push("Show me my monthly trend");
+            }
+            
+            // Add default suggestions if none were generated
+            if (suggestions.length === 0) {
+                suggestions.push("What were my top 5 expenses?");
+                suggestions.push("How much did I spend this month?");
+                suggestions.push("Analyze my spending patterns");
+            }
+            
+            // Limit to 3 suggestions max
+            return suggestions.slice(0, 3);
         }
         
         function processUserMessage(message) {

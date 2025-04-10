@@ -558,7 +558,7 @@ def generate_ai_response(query_text: str, user_id: int) -> str:
         logger.error(f"Error generating AI response: {e}")
         return "I'm designed to answer financial questions about your expenses. Try asking something like 'How much did I spend on food last month?' or 'What were my top expenses?'"
 
-def process_query(query_text: str) -> str:
+def process_query(query_text: str) -> dict:
     """
     Process a natural language query and return a response.
     
@@ -566,23 +566,94 @@ def process_query(query_text: str) -> str:
         query_text: User's natural language query
         
     Returns:
-        Response string
+        Dictionary with response and metadata
     """
     if not current_user or not current_user.is_authenticated:
-        return "Please log in to use the conversation assistant."
+        return {"success": False, "response": "Please log in to use the conversation assistant."}
     
-    # Analyze query to determine type and parameters
-    query_info = analyze_query(query_text)
+    try:
+        # Analyze query to determine type and parameters
+        query_info = analyze_query(query_text)
+        
+        if query_info['query_type'] == 'unmatched':
+            # Use AI to generate a response
+            response = generate_ai_response(query_text, current_user.id)
+            return {"success": True, "response": response, "query_type": "ai_generated"}
+        
+        # Execute the SQL query
+        query_result = execute_query(query_info)
+        
+        # Format the result
+        response = format_query_result(query_info, query_result)
+        
+        # Add a helpful tip based on the query type
+        tip = get_helpful_tip(query_info, query_result)
+        if tip:
+            response += f"\n\n💡 {tip}"
+        
+        return {
+            "success": True, 
+            "response": response, 
+            "query_type": query_info['query_type'],
+            "data": query_result
+        }
+    except Exception as e:
+        logger.error(f"Error processing query: {e}")
+        return {"success": False, "response": f"Sorry, I encountered an error processing your question. Please try another question or rephrase it."}
+
+def get_helpful_tip(query_info: Dict[str, Any], query_result: Dict[str, Any]) -> str:
+    """
+    Generate a helpful tip based on the query type and result.
     
-    if query_info['query_type'] == 'unmatched':
-        # Use AI to generate a response
-        return generate_ai_response(query_text, current_user.id)
+    Args:
+        query_info: Information about the query
+        query_result: Results from the query
+        
+    Returns:
+        A helpful tip or empty string if no tip is applicable
+    """
+    query_type = query_info['query_type']
     
-    # Execute the SQL query
-    query_result = execute_query(query_info)
+    # Tips for expense queries
+    if query_type == 'expense_total':
+        category = query_info.get('category')
+        if category and query_result.get('total', 0) > 500:
+            return f"Your spending on {category} is quite high. Consider setting a budget limit for this category."
     
-    # Format the result
-    return format_query_result(query_info, query_result)
+    elif query_type == 'top_expenses':
+        if query_result.get('expenses') and len(query_result['expenses']) > 0:
+            top_expense = query_result['expenses'][0]
+            return f"Your highest expense was on {top_expense['description']}. Is this a one-time purchase or a recurring expense?"
+    
+    elif query_type == 'category_comparison':
+        categories = query_result.get('categories', [])
+        if categories and len(categories) > 1:
+            top_category = max(categories, key=lambda x: x['amount'])
+            percentage = top_category['percentage']
+            if percentage > 40:
+                return f"Your {top_category['category']} expenses make up {percentage:.1f}% of your total spending. Diversifying your spending can help maintain financial balance."
+    
+    elif query_type == 'spending_trend':
+        trend = query_result.get('trend')
+        if trend == 'increasing':
+            return "Your spending is trending upward. Review your recent expenses to identify areas where you could cut back."
+        elif trend == 'decreasing':
+            return "Great job! Your spending is trending downward. Keep up the good financial habits."
+    
+    # Default tips based on random selection
+    default_tips = [
+        "Tracking your expenses regularly can help you stay within budget.",
+        "Consider setting aside money for savings each month before spending on non-essentials.",
+        "Comparing your expenses month-to-month can help identify unusual spending patterns.",
+        "Try creating categories for your expenses to better understand your spending habits.",
+        "Setting automatic transfers to savings can help build your emergency fund without thinking about it."
+    ]
+    
+    # Return a random tip 20% of the time if no specific tip was generated
+    if random.random() < 0.2:
+        return random.choice(default_tips)
+    
+    return ""
 """
 Implementation of time-series forecasting for predicting future expenses.
 """
