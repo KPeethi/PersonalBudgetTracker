@@ -284,10 +284,56 @@ def expenses_by_category(category):
     form.date.data = datetime.today()
 
     if current_user.is_authenticated:
-        # Filter by category AND user
-        expenses = Expense.query.filter_by(category=category,
-                                           user_id=current_user.id).order_by(
-                                               Expense.date.desc()).all()
+        # Get search, sort, and pagination parameters
+        search_query = request.args.get('search', '')
+        sort_by = request.args.get('sort_by', 'date')
+        sort_order = request.args.get('sort_order', 'desc')
+        page = request.args.get('page', 1, type=int)
+        per_page = 10  # Number of expenses per page
+        
+        # Base query filtered by category AND user
+        base_query = Expense.query.filter_by(category=category, user_id=current_user.id)
+        
+        # Apply search filter if provided
+        if search_query:
+            base_query = base_query.filter(
+                db.or_(
+                    Expense.description.ilike(f'%{search_query}%'),
+                    Expense.category.ilike(f'%{search_query}%')
+                )
+            )
+        
+        # Get total count for pagination
+        total_items = base_query.count()
+        
+        # Apply sorting
+        if sort_by == 'amount':
+            if sort_order == 'asc':
+                base_query = base_query.order_by(Expense.amount.asc())
+            else:
+                base_query = base_query.order_by(Expense.amount.desc())
+        elif sort_by == 'category':
+            if sort_order == 'asc':
+                base_query = base_query.order_by(Expense.category.asc())
+            else:
+                base_query = base_query.order_by(Expense.category.desc())
+        elif sort_by == 'description':
+            if sort_order == 'asc':
+                base_query = base_query.order_by(Expense.description.asc())
+            else:
+                base_query = base_query.order_by(Expense.description.desc())
+        else:  # default: sort by date
+            if sort_order == 'asc':
+                base_query = base_query.order_by(Expense.date.asc())
+            else:
+                base_query = base_query.order_by(Expense.date.desc())
+        
+        # Apply pagination
+        paginated_query = base_query.paginate(page=page, per_page=per_page, error_out=False)
+        expenses = paginated_query.items
+        total_pages = paginated_query.pages
+        
+        # Get categories for this user
         categories = db.session.query(Expense.category).filter_by(
             user_id=current_user.id).distinct().order_by(
                 Expense.category).all()
@@ -305,7 +351,15 @@ def expenses_by_category(category):
                            categories=category_list,
                            selected_category=category,
                            today_date=today_date,
-                           form=form)
+                           form=form,
+                           # Pagination and search variables
+                           page=page,
+                           total_pages=total_pages,
+                           total_items=total_items,
+                           search_query=search_query,
+                           sort_by=sort_by,
+                           sort_order=sort_order,
+                           per_page=per_page)
 
 
 @app.route('/summary')

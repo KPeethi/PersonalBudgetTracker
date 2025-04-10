@@ -199,6 +199,54 @@
                                 </tbody>
                             </table>
                         </div>
+                        
+                        <!-- Pagination -->
+                        {% if total_pages > 1 %}
+                        <nav aria-label="Expense pagination" class="mt-3">
+                            <ul class="pagination pagination-sm justify-content-center">
+                                <!-- Previous button -->
+                                <li class="page-item {{ 'disabled' if page == 1 else '' }}">
+                                    <a class="page-link" href="{{ url_for('index', 
+                                        search=search_query, 
+                                        sort_by=sort_by, 
+                                        sort_order=sort_order,
+                                        page=(page - 1)) }}{% if selected_category %}?category={{ selected_category }}{% endif %}" 
+                                       aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                                
+                                <!-- Page buttons - show 5 pages max -->
+                                {% set start_page = [page - 2, 1]|max %}
+                                {% set end_page = [start_page + 4, total_pages]|min %}
+                                {% set start_page = [end_page - 4, 1]|max %}
+                                
+                                {% for p in range(start_page, end_page + 1) %}
+                                <li class="page-item {{ 'active' if p == page else '' }}">
+                                    <a class="page-link" href="{{ url_for('index', 
+                                        search=search_query, 
+                                        sort_by=sort_by, 
+                                        sort_order=sort_order,
+                                        page=p) }}{% if selected_category %}?category={{ selected_category }}{% endif %}">
+                                        {{ p }}
+                                    </a>
+                                </li>
+                                {% endfor %}
+                                
+                                <!-- Next button -->
+                                <li class="page-item {{ 'disabled' if page >= total_pages else '' }}">
+                                    <a class="page-link" href="{{ url_for('index', 
+                                        search=search_query, 
+                                        sort_by=sort_by, 
+                                        sort_order=sort_order,
+                                        page=(page + 1)) }}{% if selected_category %}?category={{ selected_category }}{% endif %}" 
+                                       aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                        {% endif %}
                     {% else %}
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle me-2"></i>
