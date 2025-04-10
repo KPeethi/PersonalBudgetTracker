@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Receipts - Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h2 mb-1">Receipts</h1>
+            <p class="text-muted">Upload and manage your expense receipts</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadReceiptModal">
+                <i class="bi bi-upload me-1"></i> Upload Receipt
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    {% if receipts %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Expense</th>
+                                        <th>Filename</th>
+                                        <th>Size</th>
+                                        <th>Type</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for receipt in receipts %}
+                                    <tr>
+                                        <td>{{ receipt.upload_date.strftime('%Y-%m-%d') }}</td>
+                                        <td>
+                                            {% if receipt.expense %}
+                                                <a href="{{ url_for('index') }}?highlight={{ receipt.expense_id }}">
+                                                    {{ receipt.expense.description }} (${{ "%.2f"|format(receipt.expense.amount) }})
+                                                </a>
+                                            {% else %}
+                                                <span class="text-muted">No expense linked</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ receipt.filename }}</td>
+                                        <td>{{ (receipt.file_size / 1024)|round|int }} KB</td>
+                                        <td>{{ receipt.file_type }}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{{ url_for('view_receipt', receipt_id=receipt.id) }}" class="btn btn-outline-primary" target="_blank">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a href="{{ url_for('download_receipt', receipt_id=receipt.id) }}" class="btn btn-outline-secondary">
+                                                    <i class="bi bi-download"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-outline-danger delete-receipt" data-id="{{ receipt.id }}">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="mb-3">
+                                <i class="bi bi-receipt text-muted" style="font-size: 4rem;"></i>
+                            </div>
+                            <h4>No receipts yet</h4>
+                            <p class="text-muted">Upload your first receipt to keep track of your expenses</p>
+                            <button type="button" class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#uploadReceiptModal">
+                                <i class="bi bi-upload me-1"></i> Upload Receipt
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Receipt Modal -->
+<div class="modal fade" id="uploadReceiptModal" tabindex="-1" aria-labelledby="uploadReceiptModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadReceiptModalLabel">Upload Receipt</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('upload_receipt') }}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    {{ form.csrf_token }}
+                    
+                    <div class="mb-3">
+                        <label for="receipt_file" class="form-label">Receipt Image</label>
+                        <input type="file" class="form-control" id="receipt_file" name="receipt_file" accept="image/png, image/jpeg, image/jpg, application/pdf" required>
+                        <div class="form-text">Upload PNG, JPEG, or PDF files (max 5MB)</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="expense_id" class="form-label">Link to Expense (Optional)</label>
+                        <select class="form-select" id="expense_id" name="expense_id">
+                            <option value="">-- Select an expense --</option>
+                            {% for expense in recent_expenses %}
+                                <option value="{{ expense.id }}">
+                                    {{ expense.date.strftime('%Y-%m-%d') }} - {{ expense.description }} (${{ "%.2f"|format(expense.amount) }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description (Optional)</label>
+                        <textarea class="form-control" id="description" name="description" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteReceiptModal" tabindex="-1" aria-labelledby="deleteReceiptModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteReceiptModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete this receipt? This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteReceiptForm" method="POST" action="{{ url_for('delete_receipt', receipt_id=0) }}">
+                    <input type="hidden" name="_method" value="DELETE">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set up delete button functionality
+        const deleteButtons = document.querySelectorAll('.delete-receipt');
+        const deleteForm = document.getElementById('deleteReceiptForm');
+        
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const receiptId = this.getAttribute('data-id');
+                // Update the form action with the correct receipt ID
+                deleteForm.action = "{{ url_for('delete_receipt', receipt_id=0) }}".replace('0', receiptId);
+                // Show the confirmation modal
+                new bootstrap.Modal(document.getElementById('deleteReceiptModal')).show();
+            });
+        });
+    });
+</script>
+{% endblock %}

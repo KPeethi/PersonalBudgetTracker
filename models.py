@@ -167,3 +167,30 @@ class UserNotification(db.Model):
     def __repr__(self):
         """String representation of a notification."""
         return f"UserNotification(title={self.title}, type={self.notification_type}, read={self.is_read})"
+
+
+class Receipt(db.Model):
+    """Represents uploaded expense receipts."""
+    __tablename__ = 'receipts'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    expense_id = db.Column(db.Integer, db.ForeignKey('expenses.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    # File information
+    filename = db.Column(db.String(255), nullable=False)
+    file_path = db.Column(db.String(512), nullable=False)
+    file_size = db.Column(db.Integer, nullable=False)  # Size in bytes
+    file_type = db.Column(db.String(100), nullable=False)  # MIME type
+    
+    # Metadata
+    upload_date = db.Column(db.DateTime, default=datetime.utcnow)
+    description = db.Column(db.String(255), nullable=True)
+    
+    # Relationships
+    expense = db.relationship('Expense', backref=db.backref('receipts', lazy=True))
+    user = db.relationship('User', backref=db.backref('receipts', lazy=True))
+    
+    def __repr__(self):
+        """String representation of a receipt."""
+        return f"Receipt(id={self.id}, expense_id={self.expense_id}, filename={self.filename})"

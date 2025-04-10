@@ -4,8 +4,9 @@ Defines the forms used in the application.
 """
 
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileField, FileRequired, FileAllowed
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, FloatField, DateField, TextAreaField, SelectField
-from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, NumberRange
+from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, NumberRange, Optional
 from models import User
 
 class RegistrationForm(FlaskForm):
@@ -70,3 +71,13 @@ class ExpenseForm(FlaskForm):
         NumberRange(min=0.01, message='Amount must be greater than 0')
     ])
     submit = SubmitField('Add Expense')
+
+class ReceiptUploadForm(FlaskForm):
+    """Form for uploading expense receipts."""
+    receipt_file = FileField('Receipt File', validators=[
+        FileRequired(),
+        FileAllowed(['jpg', 'jpeg', 'png', 'pdf'], 'Only images (JPG, PNG) and PDF files are allowed.')
+    ])
+    expense_id = SelectField('Link to Expense', coerce=int, validators=[Optional()])
+    description = TextAreaField('Description', validators=[Optional(), Length(max=255)])
+    submit = SubmitField('Upload Receipt')
