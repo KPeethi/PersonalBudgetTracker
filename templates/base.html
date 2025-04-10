@@ -390,12 +390,34 @@
             <span>Settings</span>
         </a>
         
+        {% if current_user.is_business_user or current_user.is_admin %}
+        <div class="sidebar-category">Business Features</div>
+        
+        <a href="{{ url_for('business_excel_import') }}" class="sidebar-link {% if request.path == url_for('business_excel_import') %}active{% endif %}">
+            <i class="bi bi-file-earmark-spreadsheet"></i>
+            <span>Excel Import</span>
+        </a>
+        {% elif not current_user.is_business_user %}
+        <div class="sidebar-category">Business Features</div>
+        
+        <a href="{{ url_for('request_business_upgrade') }}" class="sidebar-link {% if request.path == url_for('request_business_upgrade') %}active{% endif %}">
+            <i class="bi bi-arrow-up-circle"></i>
+            <span>Request Upgrade</span>
+            <span class="badge bg-primary rounded-pill ms-2">PRO</span>
+        </a>
+        {% endif %}
+        
         {% if current_user.is_admin %}
         <div class="sidebar-category">Administration</div>
         
         <a href="{{ url_for('admin_panel') }}" class="sidebar-link {% if request.path == url_for('admin_panel') %}active{% endif %}">
             <i class="bi bi-shield-lock"></i>
             <span>Admin Panel</span>
+        </a>
+        
+        <a href="{{ url_for('admin_business_requests') }}" class="sidebar-link {% if request.path == url_for('admin_business_requests') %}active{% endif %}">
+            <i class="bi bi-briefcase"></i>
+            <span>Business Requests</span>
         </a>
         {% endif %}
         
