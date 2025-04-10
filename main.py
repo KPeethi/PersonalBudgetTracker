@@ -888,9 +888,9 @@ def dashboard():
                 'id': custom_cat.id
             }
     
-    # Use the new dashboard template
+    # Use the v2 dashboard template with the new layout
     return render_template(
-        'dashboard_new.html',
+        'dashboard_v2.html',
         total_expenses=total_expenses,
         total_count=total_count,
         users=users,
