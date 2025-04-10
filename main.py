@@ -2280,54 +2280,7 @@ def process_audio():
             'error': f"Error processing audio: {str(e)}"
         })
 
-@app.route('/ai/expense_forecast')
-@login_required
-def expense_forecast():
-    """Generate and return expense forecast data"""
-    logger.debug(f"Generating expense forecast, user: {current_user.username}")
-    
-    # Get optional category parameter
-    category = request.args.get('category')
-    months_ahead = request.args.get('months', 3, type=int)
-    
-    try:
-        # Generate the forecast
-        forecast_data = conversation_assistant.get_expense_forecast(
-            user_id=current_user.id,
-            category=category,
-            months_ahead=months_ahead
-        )
-        
-        return jsonify(forecast_data)
-    except Exception as e:
-        logger.error(f"Error generating expense forecast: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': f"Error generating forecast: {str(e)}",
-            'data': None
-        })
-
-
-@app.route('/ai/last_month_predictions')
-@login_required
-def last_month_predictions():
-    """Generate and return predictions based on last month's expenses"""
-    logger.debug(f"Generating last month predictions, user: {current_user.username}")
-    
-    try:
-        # Generate the predictions
-        predictions = conversation_assistant.get_last_month_predictions(
-            user_id=current_user.id
-        )
-        
-        return jsonify(predictions)
-    except Exception as e:
-        logger.error(f"Error generating last month predictions: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': f"Error generating predictions: {str(e)}",
-            'data': None
-        })
+# Old expense forecast route moved to business features section below
 
 # Business Features Routes
 @app.route('/business/request_upgrade', methods=['GET', 'POST'])
