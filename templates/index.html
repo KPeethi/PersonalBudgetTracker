@@ -103,6 +103,64 @@
                 </div>
                 <div class="card-body">
                     {% if expenses %}
+                        <!-- Search and Sort Controls -->
+                        <div class="row mb-3">
+                            <div class="col-md-6 mb-2 mb-md-0">
+                                <form method="get" action="{{ url_for('index') }}" class="d-flex">
+                                    {% if selected_category %}
+                                    <input type="hidden" name="category" value="{{ selected_category }}">
+                                    {% endif %}
+                                    <input type="text" class="form-control form-control-sm me-2" 
+                                           name="search" placeholder="Search expenses..." 
+                                           value="{{ search_query }}">
+                                    <button type="submit" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-search"></i>
+                                    </button>
+                                </form>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex justify-content-md-end">
+                                    <div class="dropdown me-2">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                                                id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                            Sort By: {{ sort_by.capitalize() }}
+                                        </button>
+                                        <ul class="dropdown-menu" aria-labelledby="sortDropdown">
+                                            <li><a class="dropdown-item" href="{{ url_for('index', 
+                                                search=search_query, 
+                                                sort_by='date', 
+                                                sort_order=sort_order,
+                                                page=page) }}{% if selected_category %}?category={{ selected_category }}{% endif %}">Date</a></li>
+                                            <li><a class="dropdown-item" href="{{ url_for('index', 
+                                                search=search_query, 
+                                                sort_by='description', 
+                                                sort_order=sort_order,
+                                                page=page) }}{% if selected_category %}?category={{ selected_category }}{% endif %}">Description</a></li>
+                                            <li><a class="dropdown-item" href="{{ url_for('index', 
+                                                search=search_query, 
+                                                sort_by='category', 
+                                                sort_order=sort_order,
+                                                page=page) }}{% if selected_category %}?category={{ selected_category }}{% endif %}">Category</a></li>
+                                            <li><a class="dropdown-item" href="{{ url_for('index', 
+                                                search=search_query, 
+                                                sort_by='amount', 
+                                                sort_order=sort_order,
+                                                page=page) }}{% if selected_category %}?category={{ selected_category }}{% endif %}">Amount</a></li>
+                                        </ul>
+                                    </div>
+                                    
+                                    <!-- Order Toggle Button -->
+                                    <a href="{{ url_for('index', 
+                                        search=search_query, 
+                                        sort_by=sort_by, 
+                                        sort_order='asc' if sort_order == 'desc' else 'desc',
+                                        page=page) }}{% if selected_category %}?category={{ selected_category }}{% endif %}" 
+                                       class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-arrow-{{ 'down' if sort_order == 'desc' else 'up' }}"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
                         <div class="table-responsive">
                             <table class="table table-hover align-middle">
                                 <thead class="table-light">
