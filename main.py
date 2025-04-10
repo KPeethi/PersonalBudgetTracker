@@ -432,12 +432,15 @@ def dashboard():
         # Admins can see all expenses or filter by user
         user_id = request.args.get('user_id')
         if user_id:
-            expenses = Expense.query.filter_by(user_id=user_id).all()
+            base_query = Expense.query.filter_by(user_id=user_id)
         else:
-            expenses = Expense.query.all()
+            base_query = Expense.query
     else:
         # Regular users can only see their own expenses
-        expenses = Expense.query.filter_by(user_id=current_user.id).all()
+        base_query = Expense.query.filter_by(user_id=current_user.id)
+    
+    # Get the complete list for total calculations and charts
+    expenses = base_query.all()
 
     # Calculate total expenses
     total_expenses = sum(expense.amount for expense in expenses)
