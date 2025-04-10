@@ -90,3 +90,40 @@ class ReceiptUploadForm(FlaskForm):
     
     description = TextAreaField('Receipt Description', validators=[Optional(), Length(max=255)])
     submit = SubmitField('Upload Receipt')
+
+
+class BudgetForm(FlaskForm):
+    """Form for setting budget values."""
+    # Monthly total budget
+    total_budget = FloatField('Total Monthly Budget', validators=[
+        DataRequired(),
+        NumberRange(min=0, message='Budget must be a positive number')
+    ])
+    
+    # Category budgets
+    food = FloatField('Food & Dining', validators=[
+        DataRequired(),
+        NumberRange(min=0, message='Budget must be a positive number')
+    ])
+    transportation = FloatField('Transportation', validators=[
+        DataRequired(),
+        NumberRange(min=0, message='Budget must be a positive number')
+    ])
+    entertainment = FloatField('Entertainment', validators=[
+        DataRequired(),
+        NumberRange(min=0, message='Budget must be a positive number')
+    ])
+    bills = FloatField('Bills & Utilities', validators=[
+        DataRequired(),
+        NumberRange(min=0, message='Budget must be a positive number')
+    ])
+    shopping = FloatField('Shopping', validators=[
+        DataRequired(),
+        NumberRange(min=0, message='Budget must be a positive number')
+    ])
+    other = FloatField('Other Expenses', validators=[
+        DataRequired(),
+        NumberRange(min=0, message='Budget must be a positive number')
+    ])
+    
+    submit = SubmitField('Save Budget')

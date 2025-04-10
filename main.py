@@ -12,7 +12,7 @@ import os
 from werkzeug.utils import secure_filename
 from app import app, db
 from models import User, Expense, UserPreference, Budget, UserNotification, Receipt
-from forms import RegistrationForm, LoginForm, ExpenseForm, ReceiptUploadForm
+from forms import RegistrationForm, LoginForm, ExpenseForm, ReceiptUploadForm, BudgetForm
 import plaid_service
 import visualization
 import suggestions
@@ -1520,6 +1520,63 @@ def preferences():
                            title='Preferences',
                            user_pref=user_pref,
                            user_budget=user_budget)
+
+
+@app.route('/budget/edit', methods=['GET', 'POST'])
+@login_required
+def edit_budget():
+    """Edit user's budget settings"""
+    # Get the current month and year
+    current_month = datetime.now().month
+    current_year = datetime.now().year
+    
+    # Get the user's budget for the current month/year or create a new one
+    user_budget = Budget.query.filter_by(
+        user_id=current_user.id,
+        month=current_month,
+        year=current_year
+    ).first()
+    
+    if not user_budget:
+        # Create a new budget with default values
+        user_budget = Budget(
+            user_id=current_user.id,
+            month=current_month,
+            year=current_year
+        )
+        db.session.add(user_budget)
+        db.session.commit()
+        flash('Created a new budget for the current month.', 'info')
+    
+    # Create the form and populate it with the current budget values
+    form = BudgetForm(obj=user_budget) if request.method == 'GET' else BudgetForm()
+    
+    if form.validate_on_submit():
+        try:
+            # Update the budget with form data
+            user_budget.total_budget = form.total_budget.data
+            user_budget.food = form.food.data
+            user_budget.transportation = form.transportation.data
+            user_budget.entertainment = form.entertainment.data
+            user_budget.bills = form.bills.data
+            user_budget.shopping = form.shopping.data
+            user_budget.other = form.other.data
+            user_budget.updated_at = datetime.utcnow()
+            
+            db.session.commit()
+            flash('Budget updated successfully!', 'success')
+            return redirect(url_for('dashboard'))
+        
+        except Exception as e:
+            db.session.rollback()
+            logger.exception("Error updating budget")
+            flash(f'Error updating budget: {str(e)}', 'danger')
+    
+    # For GET requests or if form validation fails
+    return render_template('edit_budget.html', 
+                          title='Edit Budget',
+                          form=form,
+                          user_budget=user_budget)
 
 
 @app.route('/save_preferences', methods=['POST'])

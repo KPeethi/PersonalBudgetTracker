@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Budget - Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h4 class="card-title mb-4">
+                        <i class="bi bi-wallet2 me-2"></i>Edit Budget
+                    </h4>
+                    
+                    <form method="POST" action="{{ url_for('edit_budget') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-4">
+                            <h5 class="text-muted mb-3">Monthly Budget</h5>
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    {{ form.total_budget.label(class="form-label") }}
+                                    {{ form.total_budget(class="form-control", placeholder="Enter total monthly budget") }}
+                                    <div class="text-muted small mt-1">Your overall budget for all expenses in a month</div>
+                                    {% if form.total_budget.errors %}
+                                        <div class="alert alert-danger mt-2">
+                                            {% for error in form.total_budget.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h5 class="text-muted mb-3">Category Budgets</h5>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    {{ form.food.label(class="form-label") }}
+                                    {{ form.food(class="form-control", placeholder="Food budget") }}
+                                    {% if form.food.errors %}
+                                        <div class="alert alert-danger mt-2">
+                                            {% for error in form.food.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.transportation.label(class="form-label") }}
+                                    {{ form.transportation(class="form-control", placeholder="Transportation budget") }}
+                                    {% if form.transportation.errors %}
+                                        <div class="alert alert-danger mt-2">
+                                            {% for error in form.transportation.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    {{ form.entertainment.label(class="form-label") }}
+                                    {{ form.entertainment(class="form-control", placeholder="Entertainment budget") }}
+                                    {% if form.entertainment.errors %}
+                                        <div class="alert alert-danger mt-2">
+                                            {% for error in form.entertainment.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.bills.label(class="form-label") }}
+                                    {{ form.bills(class="form-control", placeholder="Bills & Utilities budget") }}
+                                    {% if form.bills.errors %}
+                                        <div class="alert alert-danger mt-2">
+                                            {% for error in form.bills.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    {{ form.shopping.label(class="form-label") }}
+                                    {{ form.shopping(class="form-control", placeholder="Shopping budget") }}
+                                    {% if form.shopping.errors %}
+                                        <div class="alert alert-danger mt-2">
+                                            {% for error in form.shopping.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.other.label(class="form-label") }}
+                                    {{ form.other(class="form-control", placeholder="Other expenses budget") }}
+                                    {% if form.other.errors %}
+                                        <div class="alert alert-danger mt-2">
+                                            {% for error in form.other.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 mt-4">
+                            {{ form.submit(class="btn btn-primary") }}
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
