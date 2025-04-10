@@ -36,16 +36,77 @@
                         </div>
                         
                         <div class="mb-3">
-                            {{ form.expense_id.label(class="form-label") }}
-                            {{ form.expense_id(class="form-select") }}
-                            {% if form.expense_id.errors %}
-                                <div class="text-danger">
-                                    {% for error in form.expense_id.errors %}
-                                        <small>{{ error }}</small>
-                                    {% endfor %}
+                            <div class="form-check mb-2">
+                                {{ form.create_new_expense(class="form-check-input") }}
+                                {{ form.create_new_expense.label(class="form-check-label fw-bold") }}
+                            </div>
+                            
+                            <!-- Existing expense selection (shown when create_new_expense is unchecked) -->
+                            <div id="existingExpenseSection">
+                                {{ form.expense_id.label(class="form-label") }}
+                                {{ form.expense_id(class="form-select") }}
+                                {% if form.expense_id.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.expense_id.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">Link this receipt to an existing expense</small>
+                            </div>
+                            
+                            <!-- New expense fields (shown when create_new_expense is checked) -->
+                            <div id="newExpenseSection" class="mt-3 border-top pt-3" style="display: none;">
+                                <h6 class="mb-3">New Expense Details</h6>
+                                
+                                <div class="mb-2">
+                                    {{ form.expense_date.label(class="form-label") }}
+                                    {{ form.expense_date(class="form-control", type="date") }}
+                                    {% if form.expense_date.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.expense_date.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
                                 </div>
-                            {% endif %}
-                            <small class="form-text text-muted">Link this receipt to a specific expense</small>
+                                
+                                <div class="mb-2">
+                                    {{ form.expense_description.label(class="form-label") }}
+                                    {{ form.expense_description(class="form-control") }}
+                                    {% if form.expense_description.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.expense_description.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-2">
+                                    {{ form.expense_category.label(class="form-label") }}
+                                    {{ form.expense_category(class="form-control") }}
+                                    {% if form.expense_category.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.expense_category.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-2">
+                                    {{ form.expense_amount.label(class="form-label") }}
+                                    {{ form.expense_amount(class="form-control") }}
+                                    {% if form.expense_amount.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.expense_amount.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="mb-3">
@@ -200,6 +261,41 @@
                     window.location.href = '{{ url_for("receipts") }}';
                 }
             });
+        }
+        
+        // Toggle between existing expense selection and new expense fields
+        const createNewExpenseCheckbox = document.getElementById('create_new_expense');
+        const existingExpenseSection = document.getElementById('existingExpenseSection');
+        const newExpenseSection = document.getElementById('newExpenseSection');
+        
+        if (createNewExpenseCheckbox) {
+            // Set initial state
+            toggleExpenseSections();
+            
+            // Add event listener for changes
+            createNewExpenseCheckbox.addEventListener('change', toggleExpenseSections);
+            
+            function toggleExpenseSections() {
+                if (createNewExpenseCheckbox.checked) {
+                    existingExpenseSection.style.display = 'none';
+                    newExpenseSection.style.display = 'block';
+                    // Make new expense fields required and existing expense optional
+                    document.getElementById('expense_date').required = true;
+                    document.getElementById('expense_description').required = true;
+                    document.getElementById('expense_category').required = true;
+                    document.getElementById('expense_amount').required = true;
+                    document.getElementById('expense_id').required = false;
+                } else {
+                    existingExpenseSection.style.display = 'block';
+                    newExpenseSection.style.display = 'none';
+                    // Make existing expense required and new expense fields optional
+                    document.getElementById('expense_id').required = true;
+                    document.getElementById('expense_date').required = false;
+                    document.getElementById('expense_description').required = false;
+                    document.getElementById('expense_category').required = false;
+                    document.getElementById('expense_amount').required = false;
+                }
+            }
         }
     });
 </script>

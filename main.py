@@ -1553,10 +1553,19 @@ def receipts():
     """View all receipts and upload form"""
     form = ReceiptUploadForm()
     
+    # Set default date to today for new expense
+    form.expense_date.data = datetime.today()
+    
     # Get all user's expenses for dropdown selection
     expenses = Expense.query.filter_by(user_id=current_user.id).order_by(Expense.date.desc()).all()
-    form.expense_id.choices = [(expense.id, f"{expense.date.strftime('%Y-%m-%d')} - {expense.description} (${expense.amount:.2f})") 
-                               for expense in expenses]
+    
+    # Populate expense dropdown with user's expenses
+    if expenses:
+        form.expense_id.choices = [(expense.id, f"{expense.date.strftime('%Y-%m-%d')} - {expense.description} (${expense.amount:.2f})") 
+                                for expense in expenses]
+    else:
+        # If no expenses, display a placeholder message
+        form.expense_id.choices = [(-1, "No expenses found. Please create a new expense.")]
     
     # Get all user's receipts
     if current_user.is_admin and request.args.get('all_users') == 'true':
@@ -1589,9 +1598,46 @@ def upload_receipt():
             # Save file
             file.save(file_path)
             
-            # Create receipt record with required expense ID
+            # Determine if we're creating a new expense or using an existing one
+            expense_id = None
+            
+            if form.create_new_expense.data:
+                # Create a new expense with the provided details
+                if not form.expense_date.data or not form.expense_description.data or not form.expense_category.data or not form.expense_amount.data:
+                    flash('When creating a new expense, all expense fields are required.', 'danger')
+                    return redirect(url_for('receipts'))
+                
+                # Create the new expense
+                new_expense = Expense(
+                    date=form.expense_date.data,
+                    description=form.expense_description.data,
+                    category=form.expense_category.data,
+                    amount=form.expense_amount.data,
+                    user_id=current_user.id
+                )
+                
+                db.session.add(new_expense)
+                db.session.flush()  # This will assign an ID to the new expense
+                
+                expense_id = new_expense.id
+                logger.debug(f"Created new expense with ID: {expense_id}")
+            else:
+                # Use the selected existing expense
+                if not form.expense_id.data:
+                    flash('Please select an expense to link the receipt to.', 'danger')
+                    return redirect(url_for('receipts'))
+                
+                # Verify the expense belongs to the current user
+                expense = Expense.query.filter_by(id=form.expense_id.data, user_id=current_user.id).first()
+                if not expense:
+                    flash('The selected expense does not exist or does not belong to you.', 'danger')
+                    return redirect(url_for('receipts'))
+                
+                expense_id = form.expense_id.data
+            
+            # Create receipt record with the expense ID
             receipt = Receipt(
-                expense_id=form.expense_id.data,
+                expense_id=expense_id,
                 user_id=current_user.id,
                 filename=filename,
                 file_path=file_path,

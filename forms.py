@@ -78,6 +78,15 @@ class ReceiptUploadForm(FlaskForm):
         FileRequired(),
         FileAllowed(['jpg', 'jpeg', 'png', 'pdf'], 'Only images (JPG, PNG) and PDF files are allowed.')
     ])
-    expense_id = SelectField('Link to Expense (Required)', coerce=int, validators=[DataRequired()])
-    description = TextAreaField('Description', validators=[Optional(), Length(max=255)])
+    # Option to select from existing expenses
+    expense_id = SelectField('Link to Expense', coerce=int, validators=[Optional()])
+    
+    # Option to create a new expense
+    create_new_expense = BooleanField('Create New Expense')
+    expense_date = DateField('Expense Date', validators=[Optional()])
+    expense_description = StringField('Expense Description', validators=[Optional(), Length(min=1, max=255)])
+    expense_category = StringField('Category', validators=[Optional(), Length(min=1, max=100)])
+    expense_amount = FloatField('Amount ($)', validators=[Optional(), NumberRange(min=0.01, message='Amount must be greater than 0')])
+    
+    description = TextAreaField('Receipt Description', validators=[Optional(), Length(max=255)])
     submit = SubmitField('Upload Receipt')
