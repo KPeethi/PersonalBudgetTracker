@@ -84,6 +84,12 @@ def register():
 def login():
     """Login user"""
     logger.debug("Login route accessed")
+    
+    # Additional debugging
+    logger.info("===== LOGIN DEBUG =====")
+    logger.info(f"Request method: {request.method}")
+    logger.info(f"Form data: {request.form}")
+    
     if current_user.is_authenticated:
         logger.debug(f"User is already authenticated: {current_user.username}")
         return redirect(url_for('index'))
