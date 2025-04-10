@@ -453,56 +453,7 @@
         </div>
     </div>
 
-    <!-- Monthly Expense Summary Section (at the bottom) -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-transparent border-0 py-3">
-                    <h5 class="mb-0">Monthly Expense Summary</h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Month</th>
-                                    <th>Total Amount</th>
-                                    <th>Number of Expenses</th>
-                                    <th>Average</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for month in monthly_chart_data.data[:5] %}
-                                <tr>
-                                    <td>{{ month.label }}</td>
-                                    <td>${{ "{:,.2f}".format(month.value) }}</td>
-                                    <td>{{ month.count }}</td>
-                                    <td>${{ "{:,.2f}".format(month.value / month.count) if month.count else '0.00' }}</td>
-                                    <td>
-                                        <a href="{{ url_for('monthly_summary') }}#{{ month.month_num }}-{{ month.year }}" 
-                                           class="btn btn-sm btn-outline-secondary">
-                                            Details
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="5" class="text-center py-3">No expense data available</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="card-footer border-0 bg-transparent">
-                    <a href="{{ url_for('monthly_summary') }}" class="btn btn-outline-primary">
-                        View All Monthly Summaries <i class="bi bi-arrow-right ms-1"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
+
 </div>
 {% endblock %}
 
