@@ -148,7 +148,7 @@
         <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
             <div class="container">
                 <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
-                    <i class="bi bi-wallet2 me-2 text-primary"></i>
+                    <i class="bi bi-folder me-2 text-primary"></i>
                     Expense Tracker
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
@@ -202,19 +202,20 @@
                             {% endif %}
                         {% endif %}
                     </ul>
-                    <ul class="navbar-nav">
+                    
+                    <!-- Right-aligned navigation items -->
+                    <div class="ms-auto d-flex align-items-center">
                         <!-- Theme Toggle Button - Always visible -->
-                        <li class="nav-item me-2">
+                        <div class="me-3">
                             <button class="btn btn-primary rounded-circle p-2 d-flex align-items-center justify-content-center" id="theme-toggle" style="width: 40px; height: 40px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                                 <i class="bi bi-sun-fill text-white" id="theme-icon-light"></i>
                                 <i class="bi bi-moon-fill text-white" id="theme-icon-dark" style="display: none;"></i>
                             </button>
-                        </li>
+                        </div>
                         
                         {% if current_user.is_authenticated %}
-                            
                             <!-- Notification dropdown -->
-                            <li class="nav-item dropdown me-2">
+                            <div class="me-3">
                                 <a class="nav-link position-relative" href="#" id="notificationDropdown" role="button"
                                    data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="bi bi-bell fs-5"></i>
@@ -238,9 +239,10 @@
                                         <a href="{{ url_for('all_notifications_page') }}" class="text-decoration-none small d-block text-center view-all-notifications">View all notifications</a>
                                     </div>
                                 </div>
-                            </li>
+                            </div>
+                            
                             <!-- User dropdown -->
-                            <li class="nav-item dropdown">
+                            <div>
                                 <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button"
                                    data-bs-toggle="dropdown" aria-expanded="false">
                                     <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center me-2" 
@@ -267,20 +269,18 @@
                                         </a>
                                     </li>
                                 </ul>
-                            </li>
+                            </div>
                         {% else %}
-                            <li class="nav-item">
+                            <div class="d-flex">
                                 <a class="nav-link {% if request.path == url_for('login') %}active-nav-item{% endif %}" href="{{ url_for('login') }}">
                                     <i class="bi bi-box-arrow-in-right me-1"></i> Login
                                 </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {% if request.path == url_for('register') %}active-nav-item{% endif %}" href="{{ url_for('register') }}">
+                                <a class="nav-link ms-3 {% if request.path == url_for('register') %}active-nav-item{% endif %}" href="{{ url_for('register') }}">
                                     <i class="bi bi-person-plus me-1"></i> Register
                                 </a>
-                            </li>
+                            </div>
                         {% endif %}
-                    </ul>
+                    </div>
                 </div>
             </div>
         </nav>
