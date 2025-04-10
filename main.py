@@ -38,6 +38,21 @@ def nl2br_filter(text):
         return ""
     return Markup(text.replace('\n', '<br>'))
 
+@app.template_filter('month_name')
+def month_name_filter(month_number):
+    """Convert month number to month name"""
+    if not month_number:
+        return ""
+    month_names = ['January', 'February', 'March', 'April', 'May', 'June', 
+                   'July', 'August', 'September', 'October', 'November', 'December']
+    try:
+        month_index = int(month_number) - 1
+        if 0 <= month_index < 12:
+            return month_names[month_index]
+        return str(month_number)
+    except (ValueError, TypeError):
+        return str(month_number)
+
 
 # Authentication routes
 @app.route('/register', methods=['GET', 'POST'])

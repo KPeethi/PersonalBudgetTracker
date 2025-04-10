@@ -1,27 +1,51 @@
 {% extends "base.html" %}
 
-{% block title %}Edit Budget - Expense Tracker{% endblock %}
+{% block title %}Budget Settings - Expense Tracker{% endblock %}
 
 {% block content %}
 <div class="container py-4">
     <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card border-0 shadow-sm">
+        <div class="col-lg-10">
+            <!-- Page header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">
+                    <i class="bi bi-wallet2 me-2"></i>Budget Settings
+                </h2>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+                </a>
+            </div>
+            
+            <!-- Main budget settings card -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent border-0 py-3">
+                    <h5 class="mb-0">Monthly Budget Plan</h5>
+                    <p class="text-muted small mb-0">Set your budget limits for the current month</p>
+                </div>
                 <div class="card-body p-4">
-                    <h4 class="card-title mb-4">
-                        <i class="bi bi-wallet2 me-2"></i>Edit Budget
-                    </h4>
-                    
                     <form method="POST" action="{{ url_for('edit_budget') }}">
                         {{ form.hidden_tag() }}
                         
+                        <!-- Current Month Display -->
+                        <div class="alert alert-light mb-4">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-calendar3 me-2 fs-4"></i>
+                                <div>
+                                    <span class="small text-muted">Current Budget Period</span>
+                                    <h5 class="mb-0">{{ user_budget.month|int|month_name }} {{ user_budget.year }}</h5>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="mb-4">
-                            <h5 class="text-muted mb-3">Monthly Budget</h5>
-                            <div class="row mb-3">
+                            <h5 class="mb-3">Total Monthly Budget</h5>
+                            <div class="row">
                                 <div class="col-md-12">
-                                    {{ form.total_budget.label(class="form-label") }}
-                                    {{ form.total_budget(class="form-control", placeholder="Enter total monthly budget") }}
-                                    <div class="text-muted small mt-1">Your overall budget for all expenses in a month</div>
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text">$</span>
+                                        {{ form.total_budget(class="form-control form-control-lg", placeholder="Enter total monthly budget") }}
+                                    </div>
+                                    <div class="text-muted small">Your overall budget limit for all expenses this month</div>
                                     {% if form.total_budget.errors %}
                                         <div class="alert alert-danger mt-2">
                                             {% for error in form.total_budget.errors %}
@@ -33,93 +57,257 @@
                             </div>
                         </div>
                         
+                        <hr class="my-4">
+                        
                         <div class="mb-4">
-                            <h5 class="text-muted mb-3">Category Budgets</h5>
+                            <h5 class="mb-3">Category Budget Allocation</h5>
+                            <p class="text-muted small mb-4">Set individual limits for each spending category</p>
                             
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    {{ form.food.label(class="form-label") }}
-                                    {{ form.food(class="form-control", placeholder="Food budget") }}
-                                    {% if form.food.errors %}
-                                        <div class="alert alert-danger mt-2">
-                                            {% for error in form.food.errors %}
-                                                {{ error }}
-                                            {% endfor %}
+                            <!-- Food & Dining -->
+                            <div class="card mb-3 border-0 bg-light">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-4 mb-3 mb-md-0">
+                                            <div class="d-flex align-items-center">
+                                                <div class="rounded p-2 bg-warning-subtle me-3">
+                                                    <i class="bi bi-cup-hot fs-4 text-warning"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0">{{ form.food.label.text }}</h6>
+                                                    <span class="text-muted small">Groceries, restaurants, dining</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                    {% endif %}
-                                </div>
-                                <div class="col-md-6">
-                                    {{ form.transportation.label(class="form-label") }}
-                                    {{ form.transportation(class="form-control", placeholder="Transportation budget") }}
-                                    {% if form.transportation.errors %}
-                                        <div class="alert alert-danger mt-2">
-                                            {% for error in form.transportation.errors %}
-                                                {{ error }}
-                                            {% endfor %}
+                                        <div class="col-md-8">
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                {{ form.food(class="form-control", placeholder="Food budget") }}
+                                            </div>
+                                            {% if form.food.errors %}
+                                                <div class="alert alert-danger mt-2">
+                                                    {% for error in form.food.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
                                         </div>
-                                    {% endif %}
+                                    </div>
                                 </div>
                             </div>
                             
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    {{ form.entertainment.label(class="form-label") }}
-                                    {{ form.entertainment(class="form-control", placeholder="Entertainment budget") }}
-                                    {% if form.entertainment.errors %}
-                                        <div class="alert alert-danger mt-2">
-                                            {% for error in form.entertainment.errors %}
-                                                {{ error }}
-                                            {% endfor %}
+                            <!-- Transportation -->
+                            <div class="card mb-3 border-0 bg-light">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-4 mb-3 mb-md-0">
+                                            <div class="d-flex align-items-center">
+                                                <div class="rounded p-2 bg-info-subtle me-3">
+                                                    <i class="bi bi-car-front fs-4 text-info"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0">{{ form.transportation.label.text }}</h6>
+                                                    <span class="text-muted small">Gas, public transit, rideshares</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                    {% endif %}
-                                </div>
-                                <div class="col-md-6">
-                                    {{ form.bills.label(class="form-label") }}
-                                    {{ form.bills(class="form-control", placeholder="Bills & Utilities budget") }}
-                                    {% if form.bills.errors %}
-                                        <div class="alert alert-danger mt-2">
-                                            {% for error in form.bills.errors %}
-                                                {{ error }}
-                                            {% endfor %}
+                                        <div class="col-md-8">
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                {{ form.transportation(class="form-control", placeholder="Transportation budget") }}
+                                            </div>
+                                            {% if form.transportation.errors %}
+                                                <div class="alert alert-danger mt-2">
+                                                    {% for error in form.transportation.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
                                         </div>
-                                    {% endif %}
+                                    </div>
                                 </div>
                             </div>
                             
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    {{ form.shopping.label(class="form-label") }}
-                                    {{ form.shopping(class="form-control", placeholder="Shopping budget") }}
-                                    {% if form.shopping.errors %}
-                                        <div class="alert alert-danger mt-2">
-                                            {% for error in form.shopping.errors %}
-                                                {{ error }}
-                                            {% endfor %}
+                            <!-- Entertainment -->
+                            <div class="card mb-3 border-0 bg-light">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-4 mb-3 mb-md-0">
+                                            <div class="d-flex align-items-center">
+                                                <div class="rounded p-2 bg-success-subtle me-3">
+                                                    <i class="bi bi-film fs-4 text-success"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0">{{ form.entertainment.label.text }}</h6>
+                                                    <span class="text-muted small">Movies, games, subscriptions</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                    {% endif %}
+                                        <div class="col-md-8">
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                {{ form.entertainment(class="form-control", placeholder="Entertainment budget") }}
+                                            </div>
+                                            {% if form.entertainment.errors %}
+                                                <div class="alert alert-danger mt-2">
+                                                    {% for error in form.entertainment.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="col-md-6">
-                                    {{ form.other.label(class="form-label") }}
-                                    {{ form.other(class="form-control", placeholder="Other expenses budget") }}
-                                    {% if form.other.errors %}
-                                        <div class="alert alert-danger mt-2">
-                                            {% for error in form.other.errors %}
-                                                {{ error }}
-                                            {% endfor %}
+                            </div>
+                            
+                            <!-- Bills & Utilities -->
+                            <div class="card mb-3 border-0 bg-light">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-4 mb-3 mb-md-0">
+                                            <div class="d-flex align-items-center">
+                                                <div class="rounded p-2 bg-danger-subtle me-3">
+                                                    <i class="bi bi-house fs-4 text-danger"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0">{{ form.bills.label.text }}</h6>
+                                                    <span class="text-muted small">Rent, utilities, insurance</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                    {% endif %}
+                                        <div class="col-md-8">
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                {{ form.bills(class="form-control", placeholder="Bills budget") }}
+                                            </div>
+                                            {% if form.bills.errors %}
+                                                <div class="alert alert-danger mt-2">
+                                                    {% for error in form.bills.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Shopping -->
+                            <div class="card mb-3 border-0 bg-light">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-4 mb-3 mb-md-0">
+                                            <div class="d-flex align-items-center">
+                                                <div class="rounded p-2 bg-primary-subtle me-3">
+                                                    <i class="bi bi-bag fs-4 text-primary"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0">{{ form.shopping.label.text }}</h6>
+                                                    <span class="text-muted small">Clothing, electronics, retail</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                {{ form.shopping(class="form-control", placeholder="Shopping budget") }}
+                                            </div>
+                                            {% if form.shopping.errors %}
+                                                <div class="alert alert-danger mt-2">
+                                                    {% for error in form.shopping.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Other Expenses -->
+                            <div class="card mb-3 border-0 bg-light">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-4 mb-3 mb-md-0">
+                                            <div class="d-flex align-items-center">
+                                                <div class="rounded p-2 bg-secondary-subtle me-3">
+                                                    <i class="bi bi-three-dots fs-4 text-secondary"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0">{{ form.other.label.text }}</h6>
+                                                    <span class="text-muted small">Miscellaneous expenses</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                {{ form.other(class="form-control", placeholder="Other expenses budget") }}
+                                            </div>
+                                            {% if form.other.errors %}
+                                                <div class="alert alert-danger mt-2">
+                                                    {% for error in form.other.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="d-grid gap-2 mt-4">
-                            {{ form.submit(class="btn btn-primary") }}
-                            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
                         </div>
                     </form>
+                </div>
+            </div>
+            
+            <!-- Budget Tips Card -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h5 class="card-title">
+                        <i class="bi bi-lightbulb me-2 text-warning"></i>Budget Tips
+                    </h5>
+                    <ul class="list-group list-group-flush mt-3">
+                        <li class="list-group-item px-0 border-0">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            <span>The 50/30/20 rule suggests spending 50% on needs, 30% on wants, and 20% on savings</span>
+                        </li>
+                        <li class="list-group-item px-0 border-0">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            <span>Set realistic budget limits based on your actual spending patterns</span>
+                        </li>
+                        <li class="list-group-item px-0 border-0">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            <span>Review and adjust your budget monthly to match changing financial situations</span>
+                        </li>
+                        <li class="list-group-item px-0 border-0">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            <span>Enable budget notifications to stay informed when you approach spending limits</span>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+// Form validation for budget entries
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const totalBudgetInput = form.querySelector('input[name="total_budget"]');
+    
+    // Optional: Add real-time validation for budget entries
+    const budgetInputs = form.querySelectorAll('input[type="number"]');
+    budgetInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            if (parseFloat(this.value) < 0) {
+                this.value = 0;
+            }
+        });
+    });
+});
+</script>
 {% endblock %}
