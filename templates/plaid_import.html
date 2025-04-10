@@ -18,6 +18,7 @@
                     </button>
                 </div>
                 
+                {% if current_user.is_admin %}
                 <div class="mb-3">
                     <h6 class="fw-bold">Or Use Sample Data</h6>
                     <p class="text-muted small">Generate sample transaction data for testing.</p>
@@ -37,6 +38,7 @@
                         </button>
                     </form>
                 </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -80,7 +82,12 @@
                     </div>
                 {% else %}
                     <div class="alert alert-info">
-                        No transactions loaded. Connect your bank account or generate sample data to see transactions here.
+                        No transactions loaded. 
+                        {% if current_user.is_admin %}
+                        Connect your bank account or generate sample data to see transactions here.
+                        {% else %}
+                        Connect your bank account to see transactions here.
+                        {% endif %}
                     </div>
                 {% endif %}
             </div>
@@ -110,7 +117,11 @@
                         const linkToken = data.link_token;
                         
                         if (!linkToken) {
+                            {% if current_user.is_admin %}
                             alert('Error: No link token available. Using sample data is recommended.');
+                            {% else %}
+                            alert('Error: No link token available. Please contact an administrator for assistance.');
+                            {% endif %}
                             return;
                         }
                         
@@ -147,7 +158,11 @@
                     })
                     .catch(error => {
                         console.error('Error fetching link token:', error);
+                        {% if current_user.is_admin %}
                         alert('Error initializing Plaid. Using sample data is recommended.');
+                        {% else %}
+                        alert('Error initializing Plaid. Please contact an administrator for assistance.');
+                        {% endif %}
                     });
             });
         }
