@@ -375,6 +375,11 @@
             <span>AI Assistant</span>
         </a>
         
+        <a href="{{ url_for('chat_assistant') }}" class="sidebar-link {% if request.path == url_for('chat_assistant') %}active{% endif %}">
+            <i class="bi bi-chat-dots"></i>
+            <span>Chat Assistant</span>
+        </a>
+        
         <a href="{{ url_for('receipts') }}" class="sidebar-link {% if request.path == url_for('receipts') %}active{% endif %}">
             <i class="bi bi-receipt"></i>
             <span>Receipts</span>

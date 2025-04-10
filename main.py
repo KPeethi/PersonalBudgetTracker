@@ -2235,9 +2235,11 @@ def process_audio():
             'error': 'Empty audio file'
         })
     
+    # Define temp_filename outside try block so it's accessible in except block
+    temp_filename = os.path.join(UPLOAD_FOLDER, f"temp_audio_{current_user.id}.wav")
+    
     try:
         # Save the audio file temporarily
-        temp_filename = os.path.join(UPLOAD_FOLDER, f"temp_audio_{current_user.id}.wav")
         audio_file.save(temp_filename)
         
         # Use OpenAI Whisper API to transcribe the audio
@@ -2254,7 +2256,8 @@ def process_audio():
             )
             
         # Clean up the temporary file
-        os.remove(temp_filename)
+        if os.path.exists(temp_filename):
+            os.remove(temp_filename)
         
         return jsonify({
             'success': True,
