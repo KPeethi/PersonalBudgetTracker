@@ -2390,30 +2390,48 @@ def admin_business_requests():
 @login_required
 def admin_business_request_detail(request_id):
     """View and process a specific business upgrade request."""
+    logger.info("===== BUSINESS REQUEST DETAIL DEBUG =====")
+    logger.info(f"Request ID: {request_id}")
+    logger.info(f"Request method: {request.method}")
+    logger.info(f"Current user: {current_user.username} (ID: {current_user.id}, Admin: {current_user.is_admin})")
+    
     if not current_user.is_admin:
+        logger.warning(f"Non-admin user tried to access business request: {current_user.username}")
         flash('You do not have permission to access this page.', 'danger')
         return redirect(url_for('dashboard'))
     
     # Get the business upgrade request
     upgrade_request = BusinessUpgradeRequest.query.get_or_404(request_id)
+    logger.info(f"Found upgrade request: ID {upgrade_request.id}, Status: {upgrade_request.status}, User ID: {upgrade_request.user_id}")
     
     # Get the requesting user
     user = User.query.get(upgrade_request.user_id)
+    if user:
+        logger.info(f"Found requesting user: {user.username} (ID: {user.id}, Currently business: {user.is_business_user})")
+    else:
+        logger.error(f"Could not find user with ID: {upgrade_request.user_id}")
     
     if request.method == 'POST':
+        logger.info("Processing POST request")
+        logger.info(f"Form data: {request.form}")
+        
         action = request.form.get('action')
         admin_notes = request.form.get('admin_notes', '')
+        
+        logger.info(f"Action: {action}, Notes: {admin_notes}")
         
         # Update the request
         upgrade_request.admin_notes = admin_notes
         upgrade_request.handled_by = current_user.id
         
         if action == 'approve':
+            logger.info("Approving request")
             # Approve the request
             upgrade_request.status = 'approved'
             
             # Update user's business status
             user.is_business_user = True
+            logger.info(f"Set user.is_business_user to {user.is_business_user}")
             
             # Create user notification
             notification = UserNotification(
@@ -2423,8 +2441,10 @@ def admin_business_request_detail(request_id):
                 notification_type='success'
             )
             db.session.add(notification)
+            logger.info(f"Created approval notification for user {user.id}")
             
         elif action == 'reject':
+            logger.info("Rejecting request")
             # Reject the request
             upgrade_request.status = 'rejected'
             
@@ -2436,9 +2456,12 @@ def admin_business_request_detail(request_id):
                 notification_type='warning'
             )
             db.session.add(notification)
+            logger.info(f"Created rejection notification for user {user.id}")
         
         try:
+            logger.info("Committing changes to database")
             db.session.commit()
+            logger.info("Database commit successful")
             flash(f'Business upgrade request has been {upgrade_request.status}.', 'success')
             return redirect(url_for('admin_business_requests'))
         except Exception as e:

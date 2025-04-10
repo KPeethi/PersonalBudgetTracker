@@ -118,7 +118,8 @@
                     
                     {% if request.status == 'pending' %}
                     <h5>Process Request</h5>
-                    <form method="POST">
+                    <form method="POST" action="{{ url_for('admin_business_request_detail', request_id=request.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <div class="mb-3">
                             <label for="admin_notes" class="form-label">Admin Notes</label>
                             <textarea name="admin_notes" id="admin_notes" class="form-control" rows="4">{{ request.admin_notes }}</textarea>
