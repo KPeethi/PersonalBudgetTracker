@@ -1647,8 +1647,8 @@ def edit_budget():
                 budget_id=user_budget.id,
                 name=category_name,
                 amount=category_amount,
-                # Default icon and color, can be enhanced later
-                icon='tag',
+                # Default icon and color with Bootstrap icon prefix
+                icon='bi-tag-fill',
                 color='primary'
             )
             db.session.add(new_category)

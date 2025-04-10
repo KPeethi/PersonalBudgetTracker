@@ -313,7 +313,7 @@
                                             </div>
                                         </div>
                                         <div class="col-md-2 d-flex align-items-end">
-                                            <button type="button" class="btn btn-outline-primary w-100" id="addCustomCategoryBtn">
+                                            <button type="submit" name="add_custom_category" class="btn btn-outline-primary w-100" id="addCustomCategoryBtn">
                                                 <i class="bi bi-plus-circle me-1"></i> Add
                                             </button>
                                         </div>
@@ -380,30 +380,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Add custom category button handling
+    // Client-side validation for custom category
     const addCustomCategoryBtn = document.getElementById('addCustomCategoryBtn');
-    addCustomCategoryBtn.addEventListener('click', function() {
+    addCustomCategoryBtn.addEventListener('click', function(e) {
         const categoryNameInput = form.querySelector('input[name="custom_category_name"]');
-        const categoryAmountInput = form.querySelector('input[name="custom_category_amount"]');
-        
         const categoryName = categoryNameInput.value.trim();
-        const categoryAmount = parseFloat(categoryAmountInput.value) || 0;
         
         if (!categoryName) {
+            e.preventDefault();
             alert('Please enter a category name');
             categoryNameInput.focus();
-            return;
+            return false;
         }
-        
-        // Set a flag to indicate this is an add operation
-        const hiddenInput = document.createElement('input');
-        hiddenInput.type = 'hidden';
-        hiddenInput.name = 'add_custom_category';
-        hiddenInput.value = 'true';
-        form.appendChild(hiddenInput);
-        
-        // Submit the form to add the category
-        form.submit();
     });
 });
 
