@@ -314,6 +314,11 @@
             <span>AI Assistant</span>
         </a>
         
+        <a href="{{ url_for('receipts') }}" class="sidebar-link {% if request.path == url_for('receipts') %}active{% endif %}">
+            <i class="bi bi-receipt"></i>
+            <span>Receipts</span>
+        </a>
+        
         <a href="{{ url_for('preferences') }}" class="sidebar-link {% if request.path == url_for('preferences') %}active{% endif %}">
             <i class="bi bi-gear"></i>
             <span>Settings</span>
