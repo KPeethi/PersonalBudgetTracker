@@ -107,8 +107,11 @@ def get_last_month_predictions(user_id: int) -> Dict[str, Any]:
     Returns:
         Dictionary with last month analysis and predictions
     """
+    logger.debug(f"Generating last month predictions for user ID: {user_id}")
+    
     # Get current date and determine last month
     today = datetime.date.today()
+    logger.debug(f"Current date: {today}")
     
     # Last month date range
     if today.month == 1:
@@ -124,34 +127,76 @@ def get_last_month_predictions(user_id: int) -> Dict[str, Any]:
     else:
         last_month_end = datetime.date(last_month_year, last_month + 1, 1) - datetime.timedelta(days=1)
     
+    logger.debug(f"Last month date range: {last_month_start} to {last_month_end}")
+    
     # Get user's budget settings
-    user = User.query.get(user_id)
-    monthly_budget = user.monthly_budget if user else 0
+    try:
+        user = User.query.get(user_id)
+        if not user:
+            logger.warning(f"User not found for ID: {user_id}")
+            return {
+                "success": False,
+                "message": "User not found",
+                "data": None
+            }
+        
+        monthly_budget = user.monthly_budget if hasattr(user, 'monthly_budget') else 0
+        logger.debug(f"User monthly budget: {monthly_budget}")
+    except Exception as e:
+        logger.error(f"Error getting user data: {str(e)}")
+        return {
+            "success": False,
+            "message": f"Error retrieving user data: {str(e)}",
+            "data": None
+        }
     
     # Get last month's expenses by category
-    sql_query = """
-    SELECT category, SUM(amount) as total 
-    FROM expenses
-    WHERE user_id = :user_id 
-        AND date BETWEEN :start_date AND :end_date
-    GROUP BY category
-    ORDER BY total DESC
-    """
-    
-    params = {
-        'user_id': user_id,
-        'start_date': last_month_start,
-        'end_date': last_month_end
-    }
-    
-    category_totals = db.session.execute(text(sql_query), params).all()
+    try:
+        sql_query = """
+        SELECT category, SUM(amount) as total 
+        FROM expenses
+        WHERE user_id = :user_id 
+            AND date BETWEEN :start_date AND :end_date
+        GROUP BY category
+        ORDER BY total DESC
+        """
+        
+        params = {
+            'user_id': user_id,
+            'start_date': last_month_start,
+            'end_date': last_month_end
+        }
+        
+        category_totals = db.session.execute(text(sql_query), params).all()
+        logger.debug(f"Found {len(category_totals)} categories with expenses")
+        
+        # If no expenses found for last month, return early with a message
+        if not category_totals:
+            logger.info(f"No expenses found for last month for user ID: {user_id}")
+            return {
+                "success": False,
+                "message": "No expenses found for last month. Add some expenses to see predictions.",
+                "data": None
+            }
+    except Exception as e:
+        logger.error(f"Error executing SQL query: {str(e)}")
+        return {
+            "success": False,
+            "message": f"Database error: {str(e)}",
+            "data": None
+        }
     
     # Get custom budget categories if they exist
     custom_budgets = {}
     try:
-        budget_categories = CustomBudgetCategory.query.filter_by(user_id=user_id).all()
-        for category in budget_categories:
-            custom_budgets[category.category_name] = category.monthly_limit
+        # Check if CustomBudgetCategory exists
+        if 'CustomBudgetCategory' in globals():
+            budget_categories = CustomBudgetCategory.query.filter_by(user_id=user_id).all()
+            for category in budget_categories:
+                custom_budgets[category.category_name] = category.monthly_limit
+            logger.debug(f"Found {len(custom_budgets)} custom budget categories")
+        else:
+            logger.warning("CustomBudgetCategory model not found, skipping custom budget lookup")
     except Exception as e:
         logger.error(f"Error fetching custom budgets: {str(e)}")
     
