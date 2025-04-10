@@ -3,124 +3,57 @@ AI Assistant module for the Expense Tracker application.
 Provides intelligent analysis and recommendations based on expense data.
 """
 
-import json
-import os
-import logging
 from datetime import datetime, timedelta
-from typing import List, Dict, Any, Tuple, Optional
-import calendar
-
-from openai import OpenAI
-
-# Import configuration
-from config import OPENAI_API_KEY, OPENAI_MODEL
+import logging
+import os
+import re
+from typing import List, Dict, Any, Optional
+import config
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Initialize OpenAI client
-# the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
-# do not change this unless explicitly requested by the user
-openai_client = OpenAI(api_key=OPENAI_API_KEY)
+# Import OpenAI
+try:
+    from openai import OpenAI
+    OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY") or config.OPENAI_API_KEY
+    if OPENAI_API_KEY:
+        openai_client = OpenAI(api_key=OPENAI_API_KEY)
+        OPENAI_MODEL = config.OPENAI_MODEL
+        logger.debug(f"OpenAI API configured with model: {OPENAI_MODEL}")
+    else:
+        openai_client = None
+        logger.warning("OpenAI API key not configured")
+except ImportError:
+    openai_client = None
+    logger.warning("OpenAI package not available")
+except Exception as e:
+    openai_client = None
+    logger.error(f"Error initializing OpenAI: {str(e)}")
 
-# AI Analysis Options
+# Analysis options
 ANALYSIS_OPTIONS = {
-    "expense_trends": {
-        "title": "Expense Trend Analysis",
-        "description": "Identify spending patterns and trends over time.",
-        "prompt_template": """
-            Analyze the following expense data over time:
-            {expense_data}
-            
-            Focus on:
-            1. Monthly/weekly spending trends
-            2. Irregular spending patterns
-            3. Notable increases or decreases in specific categories
-            4. Seasonal patterns if applicable
-            
-            Provide a clear, concise analysis with actionable insights in a friendly, conversational tone.
-            Limit your response to 3-5 key observations and make them specific to the data.
-        """
+    "budget_analysis": {
+        "title": "Budget Analysis",
+        "description": "Analyze your spending relative to your income and recommend budget adjustments"
     },
-    "budget_recommendations": {
-        "title": "Budget Recommendations",
-        "description": "Get personalized budget suggestions based on your spending history.",
-        "prompt_template": """
-            Based on the following expense data:
-            {expense_data}
-            
-            Total expenses: ${total_expenses}
-            Income (if available): ${income}
-            
-            Provide specific budget recommendations including:
-            1. Suggested spending limits for top 3 categories
-            2. Areas where spending could be reduced
-            3. A balanced monthly budget breakdown
-            4. Specific, actionable advice for better financial management
-            
-            Make recommendations practical, personalized, and based on the actual spending patterns in the data.
-            Write in a supportive, non-judgmental tone. Limit to 5 key recommendations.
-        """
+    "category_analysis": {
+        "title": "Category Analysis",
+        "description": "Analyze spending patterns across different categories"
+    },
+    "trend_analysis": {
+        "title": "Spending Trend Analysis",
+        "description": "Identify trends in your spending habits over time"
     },
     "savings_opportunities": {
         "title": "Savings Opportunities",
-        "description": "Discover potential savings based on your spending patterns.",
-        "prompt_template": """
-            Analyze these expenses to find savings opportunities:
-            {expense_data}
-            
-            Identify:
-            1. Categories with unusually high spending
-            2. Potential subscription overlaps or unused services
-            3. Timing opportunities (e.g., bulk purchases, seasonal buying)
-            4. Specific items or services where cheaper alternatives might exist
-            
-            For each opportunity, provide an estimated potential monthly savings amount.
-            Be specific and practical in your advice. Limit to 3-4 concrete suggestions.
-        """
-    },
-    "category_analysis": {
-        "title": "Category Spending Analysis",
-        "description": "Deep dive into your spending categories to identify patterns and outliers.",
-        "prompt_template": """
-            Analyze the following expense categories:
-            {category_data}
-            
-            For each major category:
-            1. Compare to typical household spending benchmarks
-            2. Identify subcategory patterns
-            3. Highlight any unusual or concerning spending
-            4. Note positive spending habits
-            
-            Provide specific insights about the user's unique category distribution.
-            Be objective and analytical but maintain a helpful, conversational tone.
-        """
+        "description": "Identify areas where you could reduce spending to save more"
     },
     "financial_goals": {
-        "title": "Financial Goal Setting",
-        "description": "Get customized financial goal suggestions based on your spending history.",
-        "prompt_template": """
-            Based on the following expense history:
-            {expense_data}
-            
-            Suggest 3 personalized financial goals including:
-            1. A specific savings target with timeline
-            2. A spending reduction goal for the highest category
-            3. A debt reduction plan if applicable
-            
-            For each goal, provide:
-            - A clear target amount
-            - A realistic timeframe
-            - Specific action steps to achieve it
-            - A way to measure progress
-            
-            Make all goals SMART (Specific, Measurable, Achievable, Relevant, Time-bound).
-            Write in a motivational and encouraging tone.
-        """
+        "title": "Financial Goals Planning",
+        "description": "Get recommendations for achieving financial goals based on your spending patterns"
     }
 }
-
 
 def format_expense_data_for_ai(expenses: List[Dict[str, Any]], 
                                include_time_info: bool = True,
@@ -137,78 +70,59 @@ def format_expense_data_for_ai(expenses: List[Dict[str, Any]],
         A formatted string representation of expense data
     """
     if not expenses:
-        return "No expense data available."
+        return "No expense data available"
     
-    # Calculate basic statistics
-    total_spent = sum(expense['amount'] for expense in expenses)
-    avg_expense = total_spent / len(expenses) if expenses else 0
+    # Calculate total amount
+    total_amount = sum(expense.get('amount', 0) for expense in expenses)
     
-    # Get date range
-    dates = [expense['date'] for expense in expenses if isinstance(expense['date'], datetime)]
-    if dates:
-        min_date = min(dates)
-        max_date = max(dates)
-        date_range = f"From {min_date.strftime('%Y-%m-%d')} to {max_date.strftime('%Y-%m-%d')}"
-    else:
-        date_range = "Unknown date range"
-    
-    # Categorize expenses
+    # Group by category
     categories = {}
     for expense in expenses:
-        category = expense['category']
+        category = expense.get('category', 'Uncategorized')
         if category not in categories:
             categories[category] = 0
-        categories[category] += expense['amount']
+        categories[category] += expense.get('amount', 0)
     
-    # Sort categories by amount (highest first)
-    sorted_categories = sorted(categories.items(), key=lambda x: x[1], reverse=True)
-    
-    # Build formatted string
-    result = [
-        f"Expense Summary:",
-        f"- Total spent: ${total_spent:.2f}",
-        f"- Number of expenses: {len(expenses)}",
-        f"- Average expense: ${avg_expense:.2f}",
-        f"- {date_range}",
-        f"\nCategory Breakdown:"
-    ]
-    
-    for category, amount in sorted_categories:
-        percentage = (amount / total_spent) * 100 if total_spent > 0 else 0
-        result.append(f"- {category}: ${amount:.2f} ({percentage:.1f}%)")
-    
-    # Add time-based analysis if requested
-    if include_time_info and expenses:
-        result.append("\nMonthly Analysis:")
-        monthly_data = {}
-        
+    # Group by month if time info requested
+    monthly_data = {}
+    if include_time_info:
         for expense in expenses:
-            expense_date = expense['date']
-            if isinstance(expense_date, datetime):
-                month_key = expense_date.strftime("%Y-%m")
+            date = expense.get('date')
+            if isinstance(date, datetime):
+                month_key = date.strftime('%Y-%m')
                 if month_key not in monthly_data:
                     monthly_data[month_key] = 0
-                monthly_data[month_key] += expense['amount']
-        
-        # Sort months chronologically
-        sorted_months = sorted(monthly_data.items())
-        for month_key, amount in sorted_months:
-            result.append(f"- {month_key}: ${amount:.2f}")
+                monthly_data[month_key] += expense.get('amount', 0)
     
-    # Add detailed entries if requested
-    if include_detailed_breakdown and expenses:
-        result.append("\nRecent Expenses (up to 15):")
-        # Sort by date (newest first)
-        sorted_expenses = sorted(expenses, key=lambda x: x['date'] if isinstance(x['date'], datetime) else datetime.min, reverse=True)
-        
-        # Include up to 15 most recent expenses
-        for i, expense in enumerate(sorted_expenses[:15]):
-            expense_date = expense['date']
-            date_str = expense_date.strftime("%Y-%m-%d") if isinstance(expense_date, datetime) else "Unknown date"
-            result.append(f"- {date_str}: {expense['description']} (${expense['amount']:.2f}, Category: {expense['category']})")
+    # Format the output
+    output = [f"Total Expenses: ${total_amount:.2f}"]
+    output.append(f"Number of Expenses: {len(expenses)}")
+    output.append(f"Number of Categories: {len(categories)}")
+    output.append("\nCategory Breakdown:")
     
-    return "\n".join(result)
-
+    for category, amount in sorted(categories.items(), key=lambda x: x[1], reverse=True):
+        percentage = (amount / total_amount) * 100 if total_amount > 0 else 0
+        output.append(f"- {category}: ${amount:.2f} ({percentage:.1f}%)")
+    
+    if include_time_info and monthly_data:
+        output.append("\nMonthly Breakdown:")
+        for month, amount in sorted(monthly_data.items()):
+            output.append(f"- {month}: ${amount:.2f}")
+    
+    if include_detailed_breakdown:
+        output.append("\nRecent Expenses:")
+        # Sort expenses by date (newest first) and take the most recent 10
+        recent_expenses = sorted(
+            [exp for exp in expenses if exp.get('date')], 
+            key=lambda x: x.get('date'), 
+            reverse=True
+        )[:10]
+        
+        for i, expense in enumerate(recent_expenses, 1):
+            date_str = expense.get('date').strftime('%Y-%m-%d') if expense.get('date') else 'Unknown'
+            output.append(f"{i}. {date_str} - {expense.get('category')}: ${expense.get('amount', 0):.2f} - {expense.get('description', 'No description')}")
+    
+    return "\n".join(output)
 
 def format_category_data_for_ai(expenses: List[Dict[str, Any]]) -> str:
     """
@@ -221,62 +135,45 @@ def format_category_data_for_ai(expenses: List[Dict[str, Any]]) -> str:
         A formatted string with detailed category analysis
     """
     if not expenses:
-        return "No expense data available."
+        return "No expense data available"
     
-    # Calculate total spent
-    total_spent = sum(expense['amount'] for expense in expenses)
-    
-    # Create category map
+    # Group by category
     categories = {}
     for expense in expenses:
-        category = expense['category']
+        category = expense.get('category', 'Uncategorized')
         if category not in categories:
             categories[category] = {
                 'total': 0,
                 'count': 0,
                 'expenses': []
             }
-        
-        categories[category]['total'] += expense['amount']
+        categories[category]['total'] += expense.get('amount', 0)
         categories[category]['count'] += 1
-        categories[category]['expenses'].append({
-            'date': expense['date'],
-            'amount': expense['amount'],
-            'description': expense['description']
-        })
+        categories[category]['expenses'].append(expense)
     
-    # Build formatted string
-    result = [
-        f"Category Analysis:",
-        f"- Total expenses: ${total_spent:.2f}",
-        f"- Number of categories: {len(categories)}",
-        f"\nDetailed Category Breakdown:"
-    ]
+    # Calculate total amount
+    total_amount = sum(data['total'] for data in categories.values())
     
-    # Sort categories by total amount (highest first)
-    sorted_categories = sorted(categories.items(), key=lambda x: x[1]['total'], reverse=True)
+    # Format the output
+    output = [f"Category Analysis (Total: ${total_amount:.2f})"]
     
-    for category_name, data in sorted_categories:
-        percentage = (data['total'] / total_spent) * 100 if total_spent > 0 else 0
-        avg_expense = data['total'] / data['count'] if data['count'] > 0 else 0
+    for category, data in sorted(categories.items(), key=lambda x: x[1]['total'], reverse=True):
+        percentage = (data['total'] / total_amount) * 100 if total_amount > 0 else 0
+        avg_amount = data['total'] / data['count'] if data['count'] > 0 else 0
         
-        result.append(f"\n{category_name}:")
-        result.append(f"- Total spent: ${data['total']:.2f} ({percentage:.1f}% of all expenses)")
-        result.append(f"- Number of expenses: {data['count']}")
-        result.append(f"- Average per expense: ${avg_expense:.2f}")
+        output.append(f"\n## {category}")
+        output.append(f"Total: ${data['total']:.2f} ({percentage:.1f}% of all expenses)")
+        output.append(f"Number of Expenses: {data['count']}")
+        output.append(f"Average Amount: ${avg_amount:.2f}")
         
-        # Sort expenses by amount (highest first)
-        sorted_expenses = sorted(data['expenses'], key=lambda x: x['amount'], reverse=True)
-        
-        # Show top 3 expenses in this category
-        if sorted_expenses:
-            result.append("- Top expenses in this category:")
-            for idx, expense in enumerate(sorted_expenses[:3]):
-                date_str = expense['date'].strftime("%Y-%m-%d") if isinstance(expense['date'], datetime) else "Unknown date"
-                result.append(f"  {idx+1}. {expense['description']} - ${expense['amount']:.2f} ({date_str})")
+        # Add sample expenses
+        output.append("Sample Expenses:")
+        sorted_expenses = sorted(data['expenses'], key=lambda x: x.get('amount', 0), reverse=True)
+        for i, expense in enumerate(sorted_expenses[:5], 1):
+            date_str = expense.get('date').strftime('%Y-%m-%d') if expense.get('date') else 'Unknown'
+            output.append(f"{i}. {date_str}: ${expense.get('amount', 0):.2f} - {expense.get('description', 'No description')}")
     
-    return "\n".join(result)
-
+    return "\n".join(output)
 
 def get_analysis_options() -> Dict[str, Dict[str, str]]:
     """
@@ -285,14 +182,7 @@ def get_analysis_options() -> Dict[str, Dict[str, str]]:
     Returns:
         Dictionary of analysis options with titles and descriptions
     """
-    options = {}
-    for key, data in ANALYSIS_OPTIONS.items():
-        options[key] = {
-            'title': data['title'],
-            'description': data['description']
-        }
-    return options
-
+    return ANALYSIS_OPTIONS
 
 def generate_ai_analysis(analysis_type: str, 
                          expenses: List[Dict[str, Any]], 
@@ -308,26 +198,107 @@ def generate_ai_analysis(analysis_type: str,
     Returns:
         String containing the AI analysis
     """
+    if not openai_client:
+        return "AI analysis is not available. Please check your OpenAI API configuration."
+    
+    if not expenses:
+        return "No expense data available for analysis."
+    
     if analysis_type not in ANALYSIS_OPTIONS:
         return f"Invalid analysis type: {analysis_type}. Available types: {', '.join(ANALYSIS_OPTIONS.keys())}"
     
     try:
         # Format expense data appropriately
         if analysis_type == "category_analysis":
-            expense_data = format_category_data_for_ai(expenses)
+            formatted_data = format_category_data_for_ai(expenses)
         else:
-            expense_data = format_expense_data_for_ai(expenses)
+            formatted_data = format_expense_data_for_ai(expenses)
         
-        # Get template and fill in data
-        template = ANALYSIS_OPTIONS[analysis_type]['prompt_template']
-        total_expenses = sum(expense['amount'] for expense in expenses)
+        # Create prompt based on analysis type
+        prompt = ""
+        if analysis_type == "budget_analysis":
+            if income:
+                prompt = f"""
+                Analyze the following expense data and provide budget recommendations based on an income of ${income:.2f} per month:
+                
+                {formatted_data}
+                
+                Please provide:
+                1. An analysis of whether spending is sustainable relative to income
+                2. Recommended budget allocations by category (as percentages of income)
+                3. Specific advice for categories where spending may be too high
+                
+                Keep your response concise and actionable.
+                """
+            else:
+                prompt = f"""
+                Analyze the following expense data and provide budget recommendations:
+                
+                {formatted_data}
+                
+                Please provide:
+                1. Analysis of spending patterns by category
+                2. Recommended general budget allocations (as percentages)
+                3. Specific advice for categories where spending may be too high
+                
+                Keep your response concise and actionable.
+                """
         
-        prompt = template.format(
-            expense_data=expense_data,
-            category_data=format_category_data_for_ai(expenses),
-            total_expenses=f"{total_expenses:.2f}",
-            income=f"{income:.2f}" if income is not None else "unknown"
-        )
+        elif analysis_type == "category_analysis":
+            prompt = f"""
+            Analyze the following category breakdown of expenses:
+            
+            {formatted_data}
+            
+            Please provide:
+            1. Insights into the spending distribution across categories
+            2. Any categories that seem unusually high or low compared to typical patterns
+            3. Recommendations for potential adjustments to category spending
+            
+            Keep your response concise and actionable.
+            """
+        
+        elif analysis_type == "trend_analysis":
+            prompt = f"""
+            Analyze the following expense data for trends over time:
+            
+            {formatted_data}
+            
+            Please provide:
+            1. Observations about spending patterns over time
+            2. Any notable increases or decreases in spending
+            3. Seasonal or cyclical patterns if apparent
+            
+            Keep your response concise and actionable.
+            """
+        
+        elif analysis_type == "savings_opportunities":
+            prompt = f"""
+            Analyze the following expense data to identify savings opportunities:
+            
+            {formatted_data}
+            
+            Please provide:
+            1. Specific categories where spending could potentially be reduced
+            2. Practical strategies for reducing spending in these areas
+            3. An estimate of potential monthly savings if recommendations are followed
+            
+            Keep your response concise and actionable.
+            """
+        
+        elif analysis_type == "financial_goals":
+            prompt = f"""
+            Based on the following expense data, provide recommendations for financial goals:
+            
+            {formatted_data}
+            
+            Please provide:
+            1. Suggested financial goals based on current spending patterns
+            2. Recommended adjustments to spending to achieve these goals
+            3. A rough timeline for achieving different financial milestones
+            
+            Keep your response concise and actionable.
+            """
         
         # Generate response from OpenAI
         response = openai_client.chat.completions.create(
@@ -338,14 +309,11 @@ def generate_ai_analysis(analysis_type: str,
             ]
         )
         
-        # Extract and return the analysis
-        analysis = response.choices[0].message.content
-        return analysis
+        return response.choices[0].message.content
     
     except Exception as e:
         logger.exception(f"Error generating AI analysis: {e}")
         return f"Error generating analysis: {str(e)}"
-
 
 def get_expense_insights(expenses: List[Dict[str, Any]], 
                          time_period: str = 'all') -> str:
@@ -362,55 +330,95 @@ def get_expense_insights(expenses: List[Dict[str, Any]],
     if not expenses:
         return "No expense data available for analysis."
     
-    try:
-        # Filter expenses by time period if needed
-        filtered_expenses = expenses
-        period_description = "all recorded expenses"
-        
-        if time_period == 'month':
-            today = datetime.today()
-            start_date = datetime(today.year, today.month, 1)
-            end_date = datetime(today.year, today.month, calendar.monthrange(today.year, today.month)[1])
-            filtered_expenses = [e for e in expenses if isinstance(e['date'], datetime) and start_date <= e['date'] <= end_date]
-            period_description = f"expenses in {today.strftime('%B %Y')}"
-            
-        elif time_period == 'year':
-            today = datetime.today()
-            start_date = datetime(today.year, 1, 1)
-            end_date = datetime(today.year, 12, 31)
-            filtered_expenses = [e for e in expenses if isinstance(e['date'], datetime) and start_date <= e['date'] <= end_date]
-            period_description = f"expenses in {today.year}"
-        
-        # Format expense data
-        expense_data = format_expense_data_for_ai(filtered_expenses)
-        
-        # Create prompt for general insights
-        prompt = f"""
-        Provide a brief overview of the following {period_description}:
-        
-        {expense_data}
-        
-        Focus on:
-        1. The top 2-3 spending categories and what they might indicate
-        2. Any unusual or noteworthy spending patterns
-        3. 1-2 practical suggestions for improving financial health
-        
-        Keep your response concise (under 5 paragraphs), conversational and focused on actionable insights.
-        """
-        
-        # Generate response from OpenAI
-        response = openai_client.chat.completions.create(
-            model=OPENAI_MODEL,
-            messages=[
-                {"role": "system", "content": "You are a helpful financial advisor specializing in personal expense analysis."},
-                {"role": "user", "content": prompt}
-            ]
-        )
-        
-        # Extract and return the insights
-        insights = response.choices[0].message.content
-        return insights
+    # Filter expenses by time period if needed
+    filtered_expenses = expenses
+    period_description = "all recorded expenses"
     
+    if time_period == 'month':
+        today = datetime.now()
+        start_date = datetime(today.year, today.month, 1)
+        if today.month == 12:
+            end_date = datetime(today.year + 1, 1, 1) - timedelta(days=1)
+        else:
+            end_date = datetime(today.year, today.month + 1, 1) - timedelta(days=1)
+        filtered_expenses = [e for e in expenses if isinstance(e.get('date'), datetime) and start_date <= e.get('date') <= end_date]
+        period_description = f"expenses in {today.strftime('%B %Y')}"
+        
+    elif time_period == 'year':
+        today = datetime.now()
+        start_date = datetime(today.year, 1, 1)
+        end_date = datetime(today.year, 12, 31)
+        filtered_expenses = [e for e in expenses if isinstance(e.get('date'), datetime) and start_date <= e.get('date') <= end_date]
+        period_description = f"expenses in {today.year}"
+    
+    # Format expense data
+    expense_data = format_expense_data_for_ai(filtered_expenses)
+    
+    # Create prompt for general insights
+    prompt = f"""
+    Provide a brief overview of the following {period_description}:
+    
+    {expense_data}
+    
+    Focus on:
+    1. The top 2-3 spending categories and what they might indicate
+    2. Any unusual or noteworthy spending patterns
+    3. 1-2 practical suggestions for improving financial health
+    
+    Keep your response concise (under 5 paragraphs), conversational and focused on actionable insights.
+    """
+    
+    # Try to use OpenAI API if available
+    if openai_client:
+        try:
+            response = openai_client.chat.completions.create(
+                model=OPENAI_MODEL,
+                messages=[
+                    {"role": "system", "content": "You are a helpful financial advisor specializing in personal expense analysis."},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            logger.error(f"Error generating expense insights using OpenAI: {str(e)}")
+            # Fall through to fallback insights
+    
+    # Fallback insights without API
+    try:
+        # Create helpful fallback insights based on the expense data
+        if not filtered_expenses or len(filtered_expenses) == 0:
+            return "No expense data available for the selected time period. Try selecting a different period or add more expenses."
+        
+        # Simple analysis without API
+        categories = {}
+        total_spend = 0
+        
+        for expense in filtered_expenses:
+            cat = expense.get('category', 'Other')
+            amount = expense.get('amount', 0)
+            categories[cat] = categories.get(cat, 0) + amount
+            total_spend += amount
+        
+        # Sort categories by amount
+        sorted_cats = sorted(categories.items(), key=lambda x: x[1], reverse=True)
+        top_categories = sorted_cats[:3] if len(sorted_cats) >= 3 else sorted_cats
+        
+        insights = [
+            f"Based on your spending data, here are some basic insights:",
+            f"Total spending: ${total_spend:.2f}",
+            f"Your top spending categories are:"
+        ]
+        
+        for cat, amount in top_categories:
+            percent = (amount / total_spend * 100) if total_spend > 0 else 0
+            insights.append(f"- {cat}: ${amount:.2f} ({percent:.1f}%)")
+        
+        insights.append("\nRecommendations:")
+        insights.append("1. Track your expenses regularly to maintain better financial control.")
+        insights.append("2. Set up a monthly budget for each spending category.")
+        insights.append("3. Consider setting aside 10-15% of your income for savings.")
+        
+        return "\n".join(insights)
     except Exception as e:
-        logger.exception(f"Error generating expense insights: {e}")
-        return f"Error generating insights: {str(e)}"
+        logger.error(f"Error generating fallback expense insights: {str(e)}")
+        return "Unable to generate insights at this time. Please try again later."
