@@ -243,8 +243,11 @@ def generate_weekly_expenses_chart(expenses: List[Any], weeks: int = 4) -> str:
     # Add week number
     df['week'] = df['date'].apply(lambda x: f"Week {(x - start_date).days // 7 + 1}")
     
-    # Group by week and category, sum amounts
-    weekly_category_totals = df.groupby(['week', 'category']).sum().reset_index()
+    # Convert date to string to avoid summing date objects
+    df['date_str'] = df['date'].apply(lambda x: x.strftime('%Y-%m-%d'))
+    
+    # Group by week and category, sum amounts (only sum the amount column)
+    weekly_category_totals = df.groupby(['week', 'category'])['amount'].sum().reset_index()
     
     # Calculate the average weekly expense for all categories combined
     total_by_week = df.groupby('week')['amount'].sum().reset_index()
