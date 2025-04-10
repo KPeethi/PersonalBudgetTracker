@@ -126,4 +126,14 @@ class BudgetForm(FlaskForm):
         NumberRange(min=0, message='Budget must be a positive number')
     ])
     
+    # Custom category fields
+    custom_category_name = StringField('Custom Category Name', validators=[
+        Optional(),
+        Length(min=1, max=50)
+    ])
+    custom_category_amount = FloatField('Custom Category Amount', validators=[
+        Optional(),
+        NumberRange(min=0, message='Budget must be a positive number')
+    ])
+    
     submit = SubmitField('Save Budget')

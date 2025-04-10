@@ -135,12 +135,31 @@ class Budget(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationship
+    # Relationships
     user = db.relationship('User', backref=db.backref('budgets', lazy=True))
+    custom_categories = db.relationship('CustomBudgetCategory', backref='budget', lazy=True, cascade="all, delete-orphan")
     
     def __repr__(self):
         """String representation of a budget."""
         return f"Budget(user_id={self.user_id}, total=${self.total_budget:.2f}, month={self.month}/{self.year})"
+
+
+class CustomBudgetCategory(db.Model):
+    """Represents custom budget categories created by users."""
+    __tablename__ = 'custom_budget_categories'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    budget_id = db.Column(db.Integer, db.ForeignKey('budgets.id'), nullable=False)
+    name = db.Column(db.String(50), nullable=False)
+    amount = db.Column(db.Float, default=0.0)
+    icon = db.Column(db.String(50), default='three-dots')  # Bootstrap icon name
+    color = db.Column(db.String(20), default='secondary')  # Bootstrap color name
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __repr__(self):
+        """String representation of a custom budget category."""
+        return f"CustomBudgetCategory(name={self.name}, amount=${self.amount:.2f})"
 
 class UserNotification(db.Model):
     """Represents notifications for users."""
