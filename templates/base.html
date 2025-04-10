@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="{{ current_user.preference.theme if current_user.is_authenticated and current_user.preference else 'light' }}" id="html-root">
+<html lang="en" data-bs-theme="light" id="html-root">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -474,33 +474,52 @@
             const themeToggle = document.getElementById('theme-toggle');
             const iconLight = document.getElementById('theme-icon-light');
             const iconDark = document.getElementById('theme-icon-dark');
+            const htmlRoot = document.getElementById('html-root');
             
-            // Check current theme and set the correct icon
-            const currentTheme = document.getElementById('html-root').getAttribute('data-bs-theme');
-            if (currentTheme === 'dark') {
-                iconLight.style.display = 'none';
-                iconDark.style.display = 'inline-block';
-            } else {
-                iconLight.style.display = 'inline-block';
-                iconDark.style.display = 'none';
+            // Function to get theme from cookie
+            function getThemeFromCookie() {
+                const cookieValue = document.cookie
+                    .split('; ')
+                    .find(row => row.startsWith('theme='));
+                return cookieValue ? cookieValue.split('=')[1] : null;
             }
             
-            // Toggle theme on click
-            themeToggle.addEventListener('click', function() {
-                const currentTheme = document.getElementById('html-root').getAttribute('data-bs-theme');
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                
-                // Update HTML attribute
-                document.getElementById('html-root').setAttribute('data-bs-theme', newTheme);
-                
-                // Toggle icons
-                if (newTheme === 'dark') {
+            // Function to apply theme
+            function applyTheme(theme) {
+                htmlRoot.setAttribute('data-bs-theme', theme);
+                if (theme === 'dark') {
                     iconLight.style.display = 'none';
                     iconDark.style.display = 'inline-block';
                 } else {
                     iconLight.style.display = 'inline-block';
                     iconDark.style.display = 'none';
                 }
+            }
+            
+            // First check for theme cookie
+            const cookieTheme = getThemeFromCookie();
+            if (cookieTheme) {
+                applyTheme(cookieTheme);
+            } else {
+                // Then check for user preference if authenticated
+                {% if current_user.is_authenticated and current_user.preference and current_user.preference.theme %}
+                applyTheme("{{ current_user.preference.theme }}");
+                {% else %}
+                // Finally check localStorage for non-authenticated users
+                const savedTheme = localStorage.getItem('theme');
+                if (savedTheme) {
+                    applyTheme(savedTheme);
+                }
+                {% endif %}
+            }
+            
+            // Toggle theme on click
+            themeToggle.addEventListener('click', function() {
+                const currentTheme = htmlRoot.getAttribute('data-bs-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                // Apply the new theme
+                applyTheme(newTheme);
                 
                 // Save preference to database if logged in
                 {% if current_user.is_authenticated %}
@@ -519,23 +538,10 @@
                 {% else %}
                 // Save to localStorage for non-authenticated users
                 localStorage.setItem('theme', newTheme);
+                // Also set a cookie to ensure consistency across pages
+                document.cookie = `theme=${newTheme};path=/;max-age=31536000`;
                 {% endif %}
             });
-            
-            // For non-authenticated users, check localStorage on page load
-            {% if not current_user.is_authenticated %}
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme) {
-                document.getElementById('html-root').setAttribute('data-bs-theme', savedTheme);
-                if (savedTheme === 'dark') {
-                    iconLight.style.display = 'none';
-                    iconDark.style.display = 'inline-block';
-                } else {
-                    iconLight.style.display = 'inline-block';
-                    iconDark.style.display = 'none';
-                }
-            }
-            {% endif %}
         });
     </script>
 
