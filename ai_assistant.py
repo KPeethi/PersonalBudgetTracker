@@ -187,6 +187,8 @@ def get_analysis_options() -> Dict[str, Dict[str, str]]:
     """
     return ANALYSIS_OPTIONS
 
+
+
 def generate_ai_analysis(analysis_type: str, 
                          expenses: List[Dict[str, Any]], 
                          income: Optional[float] = None) -> str:
@@ -201,9 +203,6 @@ def generate_ai_analysis(analysis_type: str,
     Returns:
         String containing the AI analysis
     """
-    if not openai_client:
-        return "AI analysis is not available. Please check your OpenAI API configuration."
-    
     if not expenses:
         return "No expense data available for analysis."
     
@@ -303,24 +302,199 @@ def generate_ai_analysis(analysis_type: str,
             Keep your response concise and actionable.
             """
         
-        # Generate response from OpenAI
-        try:
-            response = openai_client.chat.completions.create(
-                model=OPENAI_MODEL,
-                messages=[
-                    {"role": "system", "content": "You are a helpful financial advisor specializing in personal expense analysis."},
-                    {"role": "user", "content": prompt}
-                ]
-            )
+        # Generate response from OpenAI if available
+        if openai_client:
+            try:
+                response = openai_client.chat.completions.create(
+                    model=OPENAI_MODEL,
+                    messages=[
+                        {"role": "system", "content": "You are a helpful financial advisor specializing in personal expense analysis."},
+                        {"role": "user", "content": prompt}
+                    ]
+                )
+                
+                return response.choices[0].message.content
+            except Exception as e:
+                logger.error(f"Error generating AI analysis with OpenAI API: {str(e)}")
+                # Fall through to fallback
+        
+        # Fallback analysis without OpenAI API
+        # Calculate total amount and categories
+        total_amount = sum(expense.get('amount', 0) for expense in expenses)
+        categories = {}
+        for expense in expenses:
+            category = expense.get('category', 'Uncategorized')
+            if category not in categories:
+                categories[category] = 0
+            categories[category] += expense.get('amount', 0)
+        
+        # Sort categories by amount
+        sorted_cats = sorted(categories.items(), key=lambda x: x[1], reverse=True)
+        
+        # Create basic response based on analysis type
+        response = [f"Analysis of your expenses (Total: ${total_amount:.2f})"]
+        
+        if analysis_type == "budget_analysis":
+            response.append("\nBudget Recommendations:")
             
-            return response.choices[0].message.content
-        except Exception as e:
-            logger.error(f"Error generating AI analysis with OpenAI API: {str(e)}")
-            return f"Error generating analysis with OpenAI API: {str(e)}"
+            # If income provided, check sustainability
+            if income:
+                if total_amount > income:
+                    response.append(f"⚠️ Your monthly expenses (${total_amount:.2f}) exceed your income (${income:.2f}). This is not sustainable.")
+                else:
+                    savings = income - total_amount
+                    savings_percent = (savings / income) * 100 if income > 0 else 0
+                    response.append(f"✓ Your monthly expenses (${total_amount:.2f}) are within your income (${income:.2f}).")
+                    response.append(f"You're saving approximately ${savings:.2f} per month ({savings_percent:.1f}% of income).")
+            
+            # Recommended category allocations
+            response.append("\nRecommended Budget Allocations:")
+            
+            # Standard budget percentages
+            standard_budget = {
+                "Housing": 30,
+                "Food": 15,
+                "Transportation": 10,
+                "Utilities": 10,
+                "Healthcare": 10,
+                "Entertainment": 5,
+                "Savings": 15,
+                "Miscellaneous": 5
+            }
+            
+            for category, amount in sorted_cats[:5]:
+                percent = (amount / total_amount) * 100 if total_amount > 0 else 0
+                std_percent = standard_budget.get(category, 10)  # Default to 10% if not in standard categories
+                
+                if percent > std_percent * 1.5:  # If spending 50% more than recommended
+                    response.append(f"- {category}: ${amount:.2f} ({percent:.1f}% of total) - ⚠️ Consider reducing (recommended: {std_percent}%)")
+                else:
+                    response.append(f"- {category}: ${amount:.2f} ({percent:.1f}% of total)")
+        
+        elif analysis_type == "category_analysis":
+            response.append("\nCategory Breakdown:")
+            
+            for category, amount in sorted_cats:
+                percent = (amount / total_amount) * 100 if total_amount > 0 else 0
+                response.append(f"- {category}: ${amount:.2f} ({percent:.1f}% of total)")
+            
+            # Add insights based on largest category
+            if sorted_cats:
+                top_category, top_amount = sorted_cats[0]
+                top_percent = (top_amount / total_amount) * 100 if total_amount > 0 else 0
+                
+                if top_percent > 40:
+                    response.append(f"\nInsight: Your {top_category} expenses represent a significant portion ({top_percent:.1f}%) of your total spending.")
+                    response.append(f"Consider examining this category for potential savings opportunities.")
+        
+        elif analysis_type == "savings_opportunities":
+            response.append("\nPotential Savings Opportunities:")
+            
+            # Look for categories with high spending
+            for category, amount in sorted_cats[:3]:
+                percent = (amount / total_amount) * 100 if total_amount > 0 else 0
+                
+                # Suggest specific strategies based on category
+                if category.lower() in ["food", "dining", "restaurants", "groceries"]:
+                    response.append(f"- {category} (${amount:.2f}, {percent:.1f}% of total):")
+                    response.append("  • Meal planning and bulk cooking can reduce costs by 20-30%")
+                    response.append("  • Limiting dining out to once per week can save $100-200 monthly")
+                
+                elif category.lower() in ["entertainment", "subscriptions", "streaming"]:
+                    response.append(f"- {category} (${amount:.2f}, {percent:.1f}% of total):")
+                    response.append("  • Review and cancel unused subscriptions")
+                    response.append("  • Consider sharing subscription costs with family/friends")
+                
+                elif category.lower() in ["transportation", "gas", "fuel", "car"]:
+                    response.append(f"- {category} (${amount:.2f}, {percent:.1f}% of total):")
+                    response.append("  • Carpooling or public transportation can reduce costs by 40-50%")
+                    response.append("  • Combining errands can reduce fuel consumption")
+                
+                else:
+                    response.append(f"- {category} (${amount:.2f}, {percent:.1f}% of total):")
+                    response.append("  • Review this category for non-essential spending")
+                    response.append("  • Consider setting a monthly budget for this category")
+        
+        elif analysis_type == "trend_analysis" or analysis_type == "financial_goals":
+            response.append("\nBasic Analysis:")
+            
+            for category, amount in sorted_cats[:5]:
+                percent = (amount / total_amount) * 100 if total_amount > 0 else 0
+                response.append(f"- {category}: ${amount:.2f} ({percent:.1f}% of total)")
+            
+            response.append("\nRecommendations:")
+            response.append("1. Track your expenses regularly to identify trends over time")
+            response.append("2. Set up a monthly budget for each category")
+            response.append("3. Aim to save at least 15-20% of your income")
+            response.append("4. Consider creating an emergency fund of 3-6 months of expenses")
+        
+        return "\n".join(response)
     
     except Exception as e:
         logger.exception(f"Error generating AI analysis: {e}")
         return f"Error generating analysis: {str(e)}"
+
+def generate_expense_insights_fallback(expenses: List[Dict[str, Any]], period_description: str) -> str:
+    """
+    Generate expense insights without using OpenAI API.
+    This is a fallback method when the API is unavailable or has errors.
+    
+    Args:
+        expenses: List of filtered expense objects or dictionaries
+        period_description: Description of the time period analyzed
+        
+    Returns:
+        String containing manually generated insights
+    """
+    if not expenses:
+        return "No expense data available for analysis."
+    
+    # Calculate total amount
+    total_amount = sum(expense.get('amount', 0) for expense in expenses)
+    
+    # Group by category
+    categories = {}
+    for expense in expenses:
+        category = expense.get('category', 'Uncategorized')
+        if category not in categories:
+            categories[category] = 0
+        categories[category] += expense.get('amount', 0)
+    
+    # Get top categories
+    top_categories = sorted(categories.items(), key=lambda x: x[1], reverse=True)[:3]
+    
+    # Calculate average per expense
+    avg_amount = total_amount / len(expenses) if expenses else 0
+    
+    # Build response
+    insights = [
+        f"Based on your {period_description}, you've spent a total of ${total_amount:.2f} across {len(expenses)} transactions.",
+        f"Your average expense is ${avg_amount:.2f}."
+    ]
+    
+    # Top categories insights
+    if top_categories:
+        insights.append("\nYour top spending categories are:")
+        for i, (category, amount) in enumerate(top_categories, 1):
+            percentage = (amount / total_amount) * 100 if total_amount > 0 else 0
+            insights.append(f"{i}. {category}: ${amount:.2f} ({percentage:.1f}% of total)")
+    
+    # General recommendation based on top category
+    if top_categories:
+        top_category, top_amount = top_categories[0]
+        percentage = (top_amount / total_amount) * 100 if total_amount > 0 else 0
+        
+        if percentage > 50:
+            insights.append(f"\nNote that {top_category} represents over half of your spending. Consider setting a budget for this category to better manage your finances.")
+        elif percentage > 30:
+            insights.append(f"\nYour spending in {top_category} is significant. Consider looking for ways to reduce costs in this area.")
+        else:
+            insights.append("\nYour spending appears to be fairly distributed among categories, which is generally a good sign for financial health.")
+    
+    # General suggestion
+    insights.append("\nSuggestion: Track your expenses consistently to identify patterns and opportunities for saving. Consider setting category-specific budgets for better financial control.")
+    
+    return "\n".join(insights)
 
 def get_expense_insights(expenses: List[Dict[str, Any]], 
                          time_period: str = 'all') -> str:
@@ -402,44 +576,8 @@ def get_expense_insights(expenses: List[Dict[str, Any]],
             return response.choices[0].message.content
         except Exception as e:
             logger.error(f"Error generating expense insights using OpenAI: {str(e)}")
-            # Fall through to fallback insights
+            # Use fallback if OpenAI API fails
+            return generate_expense_insights_fallback(filtered_expenses, period_description)
     
-    # Fallback insights without API
-    try:
-        # Create helpful fallback insights based on the expense data
-        if not filtered_expenses or len(filtered_expenses) == 0:
-            return "No expense data available for the selected time period. Try selecting a different period or add more expenses."
-        
-        # Simple analysis without API
-        categories = {}
-        total_spend = 0
-        
-        for expense in filtered_expenses:
-            cat = expense.get('category', 'Other')
-            amount = expense.get('amount', 0)
-            categories[cat] = categories.get(cat, 0) + amount
-            total_spend += amount
-        
-        # Sort categories by amount
-        sorted_cats = sorted(categories.items(), key=lambda x: x[1], reverse=True)
-        top_categories = sorted_cats[:3] if len(sorted_cats) >= 3 else sorted_cats
-        
-        insights = [
-            f"Based on your spending data, here are some basic insights:",
-            f"Total spending: ${total_spend:.2f}",
-            f"Your top spending categories are:"
-        ]
-        
-        for cat, amount in top_categories:
-            percent = (amount / total_spend * 100) if total_spend > 0 else 0
-            insights.append(f"- {cat}: ${amount:.2f} ({percent:.1f}%)")
-        
-        insights.append("\nRecommendations:")
-        insights.append("1. Track your expenses regularly to maintain better financial control.")
-        insights.append("2. Set up a monthly budget for each spending category.")
-        insights.append("3. Consider setting aside 10-15% of your income for savings.")
-        
-        return "\n".join(insights)
-    except Exception as e:
-        logger.error(f"Error generating fallback expense insights: {str(e)}")
-        return "Unable to generate insights at this time. Please try again later."
+    # If no OpenAI client or if API call failed, use fallback implementation
+    return generate_expense_insights_fallback(filtered_expenses, period_description)
