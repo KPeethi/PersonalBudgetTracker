@@ -682,9 +682,56 @@ def generate_ai_response(query_text: str, user_id: int) -> str:
     if "bye" in query_lower or "goodbye" in query_lower:
         return "Goodbye! Feel free to come back anytime you need insights on your finances."
     
-    # If OpenAI API is not available or we have no client
+    # If OpenAI API is not available or we have no client, try to generate a helpful response with the data we have access to
     if not openai_client:
-        return "I'm designed to answer questions about your financial data. For questions about your expenses, try something like 'How much did I spend on food?' or 'What were my top expenses?'"
+        try:
+            # Get some recent expenses to provide context
+            expenses = Expense.query.filter_by(user_id=user_id).order_by(Expense.date.desc()).limit(20).all()
+            
+            if not expenses or len(expenses) == 0:
+                return "I don't see any expense data to analyze. Please add some expenses first, then I can help answer your questions."
+            
+            # Format expense data
+            expense_data = []
+            for e in expenses:
+                expense_data.append({
+                    'date': e.date.strftime('%Y-%m-%d'),
+                    'description': e.description,
+                    'category': e.category,
+                    'amount': e.amount
+                })
+            
+            # Get summary of expenses
+            total_amount = sum(e.amount for e in expenses)
+            categories = {}
+            for e in expenses:
+                if e.category not in categories:
+                    categories[e.category] = 0
+                categories[e.category] += e.amount
+            
+            # Sort categories by amount
+            sorted_cats = sorted(categories.items(), key=lambda x: x[1], reverse=True)
+            top_categories = sorted_cats[:3] if len(sorted_cats) >= 3 else sorted_cats
+            
+            # Build response
+            response_parts = ["I can help answer questions about your finances. Based on your recent expenses:"]
+            response_parts.append(f"You've spent a total of ${total_amount:.2f} across your {len(expense_data)} most recent transactions.")
+            
+            response_parts.append("\nYour top spending categories are:")
+            for category, amount in top_categories:
+                percentage = (amount / total_amount) * 100 if total_amount > 0 else 0
+                response_parts.append(f"- {category}: ${amount:.2f} ({percentage:.1f}%)")
+            
+            latest = expense_data[0] if expense_data else None
+            if latest:
+                response_parts.append(f"\nYour most recent transaction was ${latest['amount']:.2f} for {latest['description']} on {latest['date']}.")
+            
+            response_parts.append("\nFor better results, try specific questions like 'How much did I spend on food?' or 'What were my top expenses last month?'")
+            
+            return "\n".join(response_parts)
+        except Exception as e:
+            logger.error(f"Error generating no-OpenAI response: {e}")
+            return "I'm designed to answer questions about your financial data. For questions about your expenses, try something like 'How much did I spend on food?' or 'What were my top expenses?'"
     
     # If it's a more complex or non-financial question, try to use OpenAI if available
     try:
@@ -750,7 +797,44 @@ def generate_ai_response(query_text: str, user_id: int) -> str:
     
     except Exception as e:
         logger.error(f"Error generating AI response: {e}")
-        return "I'm designed to answer financial questions about your expenses. Try asking something like 'How much did I spend on food last month?' or 'What were my top expenses?'"
+        
+        # Generate a helpful response based on the expense data even without OpenAI
+        try:
+            # Create a more informative fallback response using the expense data we've already collected
+            response_parts = []
+            
+            # Add a friendly intro
+            response_parts.append("I'm sorry, I couldn't process your question with our advanced AI system.")
+            
+            # If we have expense data, provide some basic insights
+            if expense_data and len(expense_data) > 0:
+                # Total expenses
+                response_parts.append(f"Based on your recent expenses, you've spent a total of ${total_amount:.2f}.")
+                
+                # Top categories (up to 3)
+                if category_data and len(category_data) > 0:
+                    top_cats = category_data[:3] if len(category_data) > 3 else category_data
+                    response_parts.append("Your top spending categories are:")
+                    for cat in top_cats:
+                        response_parts.append(f"- {cat['category']}: ${cat['amount']:.2f} ({cat['percentage']:.1f}%)")
+                
+                # Recent transaction
+                if len(expense_data) > 0:
+                    latest = expense_data[0]  # Most recent expense (already ordered by date desc)
+                    response_parts.append(f"Your most recent transaction was ${latest['amount']:.2f} for {latest['description']} on {latest['date']}.")
+            
+            else:
+                response_parts.append("I don't see any recent expense data to analyze.")
+            
+            # Add a suggestion for better queries
+            response_parts.append("\nFor better results, try specific questions like 'How much did I spend on food last month?' or 'What were my top expenses this year?'")
+            
+            return "\n".join(response_parts)
+            
+        except Exception as fallback_error:
+            # If our fallback also fails, provide a simple generic response
+            logger.error(f"Error generating fallback response: {fallback_error}")
+            return "I'm designed to answer financial questions about your expenses. Try asking something like 'How much did I spend on food last month?' or 'What were my top expenses?'"
 
 def process_query(query_text: str) -> dict:
     """
