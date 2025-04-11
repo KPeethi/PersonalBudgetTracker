@@ -10,8 +10,27 @@ from datetime import datetime, timezone
 
 try:
     from app import app, db
-    from models import User, Category, ExpenseType, BusinessUpgradeRequest
+    from models import User, BusinessUpgradeRequest
     from werkzeug.security import generate_password_hash
+    
+    # Check if Category model exists
+    try:
+        from models import Category
+    except ImportError:
+        # Define a local Category class if it doesn't exist
+        class Category(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+            name = db.Column(db.String(100), unique=True, nullable=False)
+    
+    # Check if ExpenseType model exists
+    try:
+        from models import ExpenseType
+    except ImportError:
+        # Define a local ExpenseType class if it doesn't exist
+        class ExpenseType(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+            name = db.Column(db.String(100), unique=True, nullable=False)
+            
 except ImportError:
     print("Error: Unable to import required modules.")
     print("Make sure you've activated your virtual environment and installed all dependencies.")

@@ -22,9 +22,23 @@ pip install flask flask-login flask-sqlalchemy flask-wtf email-validator gunicor
 echo "Setting up VS Code configuration..."
 python setup_vscode_env.py
 
+echo "Creating .env file from example..."
+if [ ! -f .env ]; then
+    cp .env.example .env
+    echo "Created .env file. Please update it with your database credentials."
+else
+    echo ".env file already exists. Skipping..."
+fi
+
 echo ""
-echo "Setup complete!"
-echo "Please refer to INSTALLATION_VSCODE.md for next steps."
+echo "==============================================================="
+echo "Setup complete! Next steps:"
+echo "==============================================================="
+echo "1. Update the .env file with your database credentials"
+echo "2. Run the database initialization script: python init_database.py"
+echo "3. Start the application: python main.py"
+echo ""
+echo "For more details, refer to INSTALLATION_VSCODE.md"
 echo ""
 echo "Press Enter to exit..."
 read
