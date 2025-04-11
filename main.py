@@ -590,6 +590,29 @@ def dashboard():
     
     # Get the complete list for total calculations and charts
     expenses = base_query.all()
+    
+    # Initialize receipt form for the dashboard
+    receipt_form = ReceiptUploadForm()
+    
+    # Set default date to today for new expense
+    receipt_form.expense_date.data = datetime.today()
+    
+    # Get all user's expenses for dropdown selection
+    user_expenses = Expense.query.filter_by(user_id=current_user.id).order_by(Expense.date.desc()).all()
+    
+    # Populate expense dropdown with user's expenses
+    if user_expenses:
+        receipt_form.expense_id.choices = [(expense.id, f"{expense.date.strftime('%Y-%m-%d')} - {expense.description} (${expense.amount:.2f})") 
+                                for expense in user_expenses]
+    else:
+        # If no expenses, display a placeholder message
+        receipt_form.expense_id.choices = [(-1, "No expenses found. Please create a new expense.")]
+    
+    # Get all user's receipts
+    if current_user.is_admin and request.args.get('all_users') == 'true':
+        receipts = Receipt.query.order_by(Receipt.upload_date.desc()).all()
+    else:
+        receipts = Receipt.query.filter_by(user_id=current_user.id).order_by(Receipt.upload_date.desc()).all()
 
     # Calculate total expenses
     total_expenses = sum(expense.amount for expense in expenses)
