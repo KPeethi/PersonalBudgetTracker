@@ -23,6 +23,7 @@
                     <h6 class="fw-bold">Or Use Sample Data</h6>
                     <p class="text-muted small">Generate sample transaction data for testing.</p>
                     <form action="{{ url_for('import_sample_data') }}" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <div class="mb-3">
                             <label for="start_date" class="form-label">Start Date</label>
                             <input type="date" class="form-control" id="start_date" name="start_date" 
@@ -49,6 +50,7 @@
                 <h5 class="mb-0">Transactions</h5>
                 {% if transactions %}
                 <form action="{{ url_for('save_imported_data') }}" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <input type="hidden" name="transaction_data" value="{{ transaction_data }}">
                     <button type="submit" class="btn btn-success">
                         <i class="bi bi-check-circle me-2"></i>Save to Expenses
@@ -132,9 +134,13 @@
                                 fetch('{{ url_for("exchange_public_token") }}', {
                                     method: 'POST',
                                     headers: {
-                                        'Content-Type': 'application/json'
+                                        'Content-Type': 'application/json',
+                                        'X-CSRFToken': '{{ csrf_token() }}'
                                     },
-                                    body: JSON.stringify({ public_token: public_token })
+                                    body: JSON.stringify({ 
+                                        public_token: public_token,
+                                        csrf_token: '{{ csrf_token() }}'
+                                    })
                                 })
                                 .then(response => response.json())
                                 .then(data => {
