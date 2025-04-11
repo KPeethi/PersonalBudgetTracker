@@ -948,7 +948,12 @@ def dashboard():
         # Pagination variables
         total_items=total_items,
         per_page=per_page,
-        current_page=page)
+        current_page=page,
+        # Receipt data for integrated uploading functionality
+        receipt_form=receipt_form,
+        receipts=receipts,
+        is_admin=current_user.is_admin,
+        time_period=request.args.get('period', 'month'))
 
 
 # Admin routes
