@@ -1,102 +1,128 @@
-# VS Code Installation Guide for Expense Tracker
+# Expense Tracker - VSCode Installation Guide
 
-This guide will help you set up the Expense Tracker application in Visual Studio Code. Follow these steps to resolve the common issues that may appear in the VS Code environment.
+This guide will walk you through setting up the Expense Tracker application in Visual Studio Code.
 
-## 1. Create a Virtual Environment
+## Prerequisites
 
-First, create a Python virtual environment to isolate the project dependencies:
+1. **Visual Studio Code**: [Download and install VS Code](https://code.visualstudio.com/)
+2. **Python**: Version 3.8 or higher
+3. **Git**: For version control
+4. **PostgreSQL**: Database for storing application data
+
+## Quick Setup (Recommended)
+
+We've provided scripts to automate the setup process:
+
+### For Windows:
+1. Right-click `setup_vscode.bat` and select "Run as administrator"
+2. Follow the on-screen instructions
+
+### For macOS/Linux:
+1. Open Terminal in the project directory
+2. Make the script executable: `chmod +x setup_vscode.sh`
+3. Run the script: `./setup_vscode.sh`
+4. Follow the on-screen instructions
+
+The scripts will:
+- Create a Python virtual environment
+- Install all required dependencies
+- Set up VS Code configuration files
+- Create template environment files
+
+After running the script, skip to Step 4 (Database Setup) below.
+
+## Manual Setup (Alternative)
+
+If the automatic setup doesn't work for you, follow these manual steps:
+
+### Step 1: Clone the Repository
 
 ```bash
-# Windows
-python -m venv venv
-.\venv\Scripts\activate
+git clone <repository-url>
+cd expense-tracker
+```
 
-# macOS/Linux
-python3 -m venv venv
+### Step 2: Set Up Python Environment
+
+1. Open the project in VS Code
+2. Open a terminal in VS Code (Terminal > New Terminal)
+3. Create a virtual environment:
+
+```bash
+# Create virtual environment
+python -m venv venv
+
+# Activate the virtual environment
+# For Windows:
+venv\Scripts\activate
+# For macOS/Linux:
 source venv/bin/activate
 ```
 
-## 2. Install Required Packages
+### Step 3: Install Dependencies
 
-Install all the required packages:
+Install the necessary packages:
 
 ```bash
-pip install flask flask-login flask-sqlalchemy flask-wtf email-validator psycopg2-binary pymysql requests plaid-python pandas plotly numpy openai markupsafe werkzeug gunicorn
+pip install flask flask-login flask-sqlalchemy flask-wtf email-validator gunicorn 
+pip install psycopg2-binary numpy pandas plotly werkzeug markupsafe
+pip install antropic openai twilio sqlalchemy plaid-python requests trafilatura
 ```
 
-## 3. Set Up Environment Variables
+### Step 3.5: Set Up VS Code Configuration
 
-Create a `.env` file in the root directory of your project with the following content:
+Run the setup script to create VS Code configuration files:
 
-```
-# Database Configuration
-DATABASE_URL=sqlite:///expense_tracker.db
-# For PostgreSQL, use something like:
-# DATABASE_URL=postgresql://username:password@localhost:5432/expense_tracker
-
-# Flask Configuration
-SECRET_KEY=your-secret-key-change-this-in-production
-DEBUG=True
-
-# Plaid API Configuration
-PLAID_CLIENT_ID=67a4290da237bf001e5c7ac6
-PLAID_SECRET=02e5286ff3222322801b1649e99ca5
-PLAID_ENV=sandbox
-PLAID_REDIRECT_URI=http://localhost:5000/plaid/oauth-callback
-
-# OpenAI API Configuration (if using AI features)
-OPENAI_API_KEY=your-openai-api-key
-```
-
-## 4. Configure VS Code for Python
-
-Make sure VS Code is properly configured for Python:
-
-1. Install the Python extension for VS Code
-2. Select the correct Python interpreter (the one from your virtual environment)
-3. Configure the Python path in VS Code:
-   - Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS)
-   - Type "Python: Select Interpreter" and select the Python from your virtual environment
-
-## 5. Configure VS Code Workspace Settings
-
-Create a `.vscode` folder in your project root if it doesn't exist, then create a `settings.json` file inside with the following content:
-
-```json
-{
-    "python.linting.enabled": true,
-    "python.linting.pylintEnabled": true,
-    "python.linting.flake8Enabled": false,
-    "python.linting.mypyEnabled": false,
-    "python.analysis.extraPaths": [
-        "${workspaceFolder}"
-    ],
-    "python.envFile": "${workspaceFolder}/.env",
-    "python.terminal.activateEnvironment": true
-}
-```
-
-## 6. Install PostgreSQL (if using PostgreSQL)
-
-If you're using PostgreSQL as your database, make sure to install PostgreSQL on your system and ensure that the `pg_config` executable is in your PATH.
-
-For Windows:
-1. During PostgreSQL installation, make sure to select the option to add PostgreSQL bin directory to the PATH
-2. After installation, you may need to restart VS Code or your computer
-
-For macOS (using Homebrew):
 ```bash
-brew install postgresql
+python setup_vscode_env.py
 ```
 
-For Ubuntu/Debian:
+## Step 4: Set Up Database
+
+1. Create a PostgreSQL database for the application
+2. Create a `.env` file in the project root:
+
+```
+DATABASE_URL=postgresql://username:password@localhost/expense_tracker
+FLASK_SECRET_KEY=your-secret-key
+OPENAI_API_KEY=your-openai-api-key  # Optional for AI features
+PLAID_CLIENT_ID=your-plaid-client-id  # Optional for Plaid integration
+PLAID_SECRET=your-plaid-secret  # Optional for Plaid integration
+PLAID_ENV=sandbox  # Optional for Plaid integration
+```
+
+Replace `username`, `password`, and other values with your actual credentials.
+
+## Step 5: Database Setup
+
+Run the database initialization script to set up the database with tables and default data:
+
 ```bash
-sudo apt-get install postgresql postgresql-contrib libpq-dev
+# Initialize the database (creates tables and default admin user)
+python init_database.py
 ```
 
-## 7. Configure launch.json (Optional)
+This script will:
+- Create all required database tables
+- Add default expense categories
+- Create a default admin user (admin@example.com / Password123!)
 
-For better debugging, create a `launch.json` file in the `.vscode` folder:
+If you encounter any issues, ensure your database connection details in the `.env` file are correct and that your PostgreSQL server is running.
+
+## Step 6: Install VS Code Extensions
+
+Install the following VS Code extensions for a better development experience:
+
+1. **Python**: For Python language support
+2. **SQLTools**: For database management
+3. **Jinja**: For improved HTML/Jinja2 template syntax highlighting
+4. **Git Graph**: For visualizing Git history
+5. **Better TOML**: For TOML file support
+
+## Step 7: Configure VS Code for Debugging
+
+1. Create a `.vscode` folder in your project (if it doesn't exist)
+2. Create a `launch.json` file inside the `.vscode` folder:
 
 ```json
 {
@@ -109,105 +135,68 @@ For better debugging, create a `launch.json` file in the `.vscode` folder:
             "module": "flask",
             "env": {
                 "FLASK_APP": "main.py",
-                "FLASK_ENV": "development",
-                "FLASK_DEBUG": "1",
-                "DATABASE_URL": "sqlite:///expense_tracker.db",
-                "SECRET_KEY": "development-key",
-                "PLAID_CLIENT_ID": "67a4290da237bf001e5c7ac6",
-                "PLAID_SECRET": "02e5286ff3222322801b1649e99ca5",
-                "PLAID_ENV": "sandbox",
-                "PLAID_REDIRECT_URI": "http://localhost:5000/plaid/oauth-callback"
+                "FLASK_DEBUG": "1"
             },
             "args": [
                 "run",
-                "--no-debugger",
                 "--host=0.0.0.0",
-                "--port=5000"
+                "--port=5000",
+                "--no-debugger"
             ],
-            "jinja": true
+            "jinja": true,
+            "justMyCode": true
         }
     ]
 }
 ```
 
-## 8. Additional VS Code Troubleshooting
+## Step 8: Run the Application
 
-### Fixing Common VS Code Errors
+1. Use the VS Code debugger by pressing F5 or clicking the Run and Debug icon
+2. Alternatively, run the application from the terminal:
 
-If you're seeing errors like the ones below in your VS Code problems tab:
+```bash
+python main.py
+```
 
-- "Import X could not be resolved"
-- "`msodl` is not defined"
-- "`pyodbc` is not defined"
-- "`a4290da237bf001e5c7ac6` is not defined"
-- "`02e5286ff3222322801b1649e99ca5` is not defined"
-- "`sandbox` is not defined"
-- "`http` is not defined"
-- "`rLzA` is not defined"
+3. Open your browser and navigate to: `http://localhost:5000`
 
-These are primarily due to:
-1. Missing Python packages
-2. Environment variables not properly loaded
-3. VS Code's language server not detecting imports
+## Admin Credentials
 
-To fix these issues:
+Use these credentials to access admin features:
 
-1. Make sure you've installed all required packages in your virtual environment:
-   ```bash
-   pip install flask flask-login flask-sqlalchemy flask-wtf email-validator psycopg2-binary pymysql requests plaid-python pandas plotly numpy openai markupsafe werkzeug gunicorn python-dotenv
-   ```
+- Email: admin@example.com
+- Password: Password123!
 
-2. Add the python-dotenv package and update your code to load environment variables:
-   ```bash
-   pip install python-dotenv
-   ```
-
-3. Make sure your .env file contains all the necessary variables (see section 3)
-
-4. Add this code at the top of config.py to load environment variables:
-   ```python
-   import os
-   from dotenv import load_dotenv
-   
-   # Load environment variables from .env file
-   load_dotenv()
-   ```
-
-5. For VS Code Language Server issues:
-   - Update your Python extension for VS Code
-   - Restart VS Code
-   - Reload VS Code window: Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS), type "Reload Window" and press Enter
-   - Force re-scan of your workspace: Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS), type "Python: Clear Cache and Reload" and press Enter
+## Troubleshooting
 
 ### Database Connection Issues
 
-If you encounter database connection issues:
+If you have trouble connecting to the database, verify:
+- PostgreSQL is running
+- Your database credentials in the `.env` file are correct
+- The database exists and is accessible
 
-1. Make sure your `DATABASE_URL` is correctly set in your `.env` file
-2. For PostgreSQL, ensure the database server is running
-3. Check if you have the correct database drivers installed (`psycopg2-binary` for PostgreSQL or `pymysql` for MySQL)
+### Missing Dependencies
 
-### Plaid API Configuration
+If you encounter errors about missing modules:
 
-For Plaid API to work properly:
+```bash
+pip install <missing-module>
+```
 
-1. Make sure your Plaid API credentials are correctly set in your `.env` file
-2. For local development, use the Sandbox environment
-3. Ensure your `PLAID_REDIRECT_URI` is set correctly for your local environment
+### Port Already in Use
 
-## 9. Running the Application
+If port 5000 is already in use, you can change it in the `main.py` file or run:
 
-With the proper configuration in place, you can run the application from VS Code using:
+```bash
+python main.py --port=5001
+```
 
-1. The Run button in VS Code with the configured Flask launch profile
-2. Or from the terminal in your virtual environment:
-   ```bash
-   flask run --host=0.0.0.0 --port=5000
-   ```
+## Development Tips
 
-## Need Help?
-
-If you encounter any issues not covered in this guide, please check:
-- The official Flask documentation: https://flask.palletsprojects.com/
-- VS Code Python extension documentation: https://code.visualstudio.com/docs/python/python-tutorial
-- Plaid API documentation: https://plaid.com/docs/
+- Use VS Code's integrated terminal for running commands
+- Use the debugger to set breakpoints and inspect variables
+- Use the Git integration for version control
+- Use the SQLTools extension to query the database directly
+- Make use of VS Code's IntelliSense for Python and HTML/Jinja templates
