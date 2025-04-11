@@ -18,15 +18,30 @@
                 <div class="card-header bg-white">
                     <h5 class="card-title mb-0"><i class="bi bi-upload me-2"></i>Upload Receipt</h5>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-4">
                     <form method="POST" action="{{ url_for('upload_receipt') }}" enctype="multipart/form-data">
                         {{ form.hidden_tag() }}
                         
-                        <div class="mb-3">
-                            {{ form.receipt_file.label(class="form-label") }}
-                            {{ form.receipt_file(class="form-control") }}
+                        <!-- Upload Icon and Title -->
+                        <div class="text-center mb-4">
+                            <i class="bi bi-upload text-primary mb-2" style="font-size: 2rem;"></i>
+                            <h5>Upload Receipt</h5>
+                        </div>
+                        
+                        <!-- Receipt File Field -->
+                        <div class="mb-4">
+                            <label for="receipt_file" class="form-label">Receipt File</label>
+                            {{ form.receipt_file(class="form-control form-control-lg", style="display: none;") }}
+                            <div class="card border-dashed">
+                                <div class="card-body p-3 text-center">
+                                    <button type="button" id="selectFileBtn" class="btn btn-outline-primary btn-lg w-100">
+                                        Choose File
+                                    </button>
+                                    <div id="fileNameDisplay" class="mt-2 text-muted">No file chosen</div>
+                                </div>
+                            </div>
                             {% if form.receipt_file.errors %}
-                                <div class="text-danger">
+                                <div class="text-danger mt-1">
                                     {% for error in form.receipt_file.errors %}
                                         <small>{{ error }}</small>
                                     {% endfor %}
@@ -35,85 +50,92 @@
                             <small class="form-text text-muted">Accepted formats: JPG, PNG, PDF. Max size: 5MB</small>
                         </div>
                         
+                        <!-- Create New Expense Checkbox -->
                         <div class="mb-3">
                             <div class="form-check mb-2">
                                 {{ form.create_new_expense(class="form-check-input") }}
                                 {{ form.create_new_expense.label(class="form-check-label fw-bold") }}
                             </div>
-                            
-                            <!-- Existing expense selection (shown when create_new_expense is unchecked) -->
-                            <div id="existingExpenseSection">
-                                {{ form.expense_id.label(class="form-label") }}
-                                {{ form.expense_id(class="form-select") }}
-                                {% if form.expense_id.errors %}
-                                    <div class="text-danger">
-                                        {% for error in form.expense_id.errors %}
-                                            <small>{{ error }}</small>
-                                        {% endfor %}
+                        </div>
+                        
+                        <!-- Existing expense selection (shown when create_new_expense is unchecked) -->
+                        <div id="existingExpenseSection" class="mb-4">
+                            <label for="expense_id" class="form-label fw-medium">Link to Expense</label>
+                            {{ form.expense_id(class="form-select form-select-lg") }}
+                            {% if form.expense_id.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.expense_id.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">Link this receipt to an existing expense</small>
+                        </div>
+                        
+                        <!-- New expense fields (shown when create_new_expense is checked) -->
+                        <div id="newExpenseSection" class="mb-4" style="display: none;">
+                            <div class="card border bg-light">
+                                <div class="card-header bg-light border-bottom">
+                                    <h6 class="mb-0">New Expense Details</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        {{ form.expense_date.label(class="form-label fw-medium") }}
+                                        {{ form.expense_date(class="form-control", type="date") }}
+                                        {% if form.expense_date.errors %}
+                                            <div class="text-danger mt-1">
+                                                {% for error in form.expense_date.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
                                     </div>
-                                {% endif %}
-                                <small class="form-text text-muted">Link this receipt to an existing expense</small>
-                            </div>
-                            
-                            <!-- New expense fields (shown when create_new_expense is checked) -->
-                            <div id="newExpenseSection" class="mt-3 border-top pt-3" style="display: none;">
-                                <h6 class="mb-3">New Expense Details</h6>
-                                
-                                <div class="mb-2">
-                                    {{ form.expense_date.label(class="form-label") }}
-                                    {{ form.expense_date(class="form-control", type="date") }}
-                                    {% if form.expense_date.errors %}
-                                        <div class="text-danger">
-                                            {% for error in form.expense_date.errors %}
-                                                <small>{{ error }}</small>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                
-                                <div class="mb-2">
-                                    {{ form.expense_description.label(class="form-label") }}
-                                    {{ form.expense_description(class="form-control") }}
-                                    {% if form.expense_description.errors %}
-                                        <div class="text-danger">
-                                            {% for error in form.expense_description.errors %}
-                                                <small>{{ error }}</small>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                
-                                <div class="mb-2">
-                                    {{ form.expense_category.label(class="form-label") }}
-                                    {{ form.expense_category(class="form-control") }}
-                                    {% if form.expense_category.errors %}
-                                        <div class="text-danger">
-                                            {% for error in form.expense_category.errors %}
-                                                <small>{{ error }}</small>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                
-                                <div class="mb-2">
-                                    {{ form.expense_amount.label(class="form-label") }}
-                                    {{ form.expense_amount(class="form-control") }}
-                                    {% if form.expense_amount.errors %}
-                                        <div class="text-danger">
-                                            {% for error in form.expense_amount.errors %}
-                                                <small>{{ error }}</small>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
+                                    
+                                    <div class="mb-3">
+                                        {{ form.expense_description.label(class="form-label fw-medium") }}
+                                        {{ form.expense_description(class="form-control") }}
+                                        {% if form.expense_description.errors %}
+                                            <div class="text-danger mt-1">
+                                                {% for error in form.expense_description.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        {{ form.expense_category.label(class="form-label fw-medium") }}
+                                        {{ form.expense_category(class="form-control") }}
+                                        {% if form.expense_category.errors %}
+                                            <div class="text-danger mt-1">
+                                                {% for error in form.expense_category.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="mb-0">
+                                        {{ form.expense_amount.label(class="form-label fw-medium") }}
+                                        {{ form.expense_amount(class="form-control") }}
+                                        {% if form.expense_amount.errors %}
+                                            <div class="text-danger mt-1">
+                                                {% for error in form.expense_amount.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="mb-3">
-                            {{ form.description.label(class="form-label") }}
+                        <!-- Receipt Description -->
+                        <div class="mb-4">
+                            {{ form.description.label(class="form-label fw-medium") }}
                             {{ form.description(class="form-control", rows=3, placeholder="Add notes about this receipt...") }}
                             {% if form.description.errors %}
-                                <div class="text-danger">
+                                <div class="text-danger mt-1">
                                     {% for error in form.description.errors %}
                                         <small>{{ error }}</small>
                                     {% endfor %}
@@ -121,8 +143,9 @@
                             {% endif %}
                         </div>
                         
+                        <!-- Submit Button -->
                         <div class="d-grid">
-                            {{ form.submit(class="btn btn-primary") }}
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
                         </div>
                     </form>
                 </div>
@@ -259,6 +282,39 @@
                     window.location.href = '{{ url_for("receipts") }}?all_users=true';
                 } else {
                     window.location.href = '{{ url_for("receipts") }}';
+                }
+            });
+        }
+        
+        // Custom file input
+        const fileInput = document.getElementById('receipt_file');
+        const selectFileBtn = document.getElementById('selectFileBtn');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        
+        if (selectFileBtn) {
+            selectFileBtn.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            fileInput.addEventListener('change', function() {
+                if (fileInput.files.length > 0) {
+                    fileNameDisplay.textContent = fileInput.files[0].name;
+                    
+                    // Add a selected class to indicate file is chosen
+                    const uploadCard = selectFileBtn.closest('.card');
+                    uploadCard.classList.add('border-primary');
+                    
+                    // Change button text
+                    selectFileBtn.textContent = 'Change File';
+                } else {
+                    fileNameDisplay.textContent = 'No file chosen';
+                    
+                    // Remove selected class
+                    const uploadCard = selectFileBtn.closest('.card');
+                    uploadCard.classList.remove('border-primary');
+                    
+                    // Reset button text
+                    selectFileBtn.textContent = 'Choose File';
                 }
             });
         }
