@@ -192,6 +192,12 @@ def index():
     """Homepage with expense list and form"""
     form = ExpenseForm()
     form.date.data = datetime.today()
+    
+    # Initialize receipt form for the home page
+    receipt_form = ReceiptUploadForm()
+    
+    # Set default date to today for new expense in receipt form
+    receipt_form.expense_date.data = datetime.today()
 
     if current_user.is_authenticated:
         # Get search, sort, and pagination parameters
@@ -203,6 +209,23 @@ def index():
         
         # Base query for expenses filtered by current user
         base_query = Expense.query.filter_by(user_id=current_user.id)
+        
+        # Get all user's expenses for receipt form dropdown selection
+        user_expenses = Expense.query.filter_by(user_id=current_user.id).order_by(Expense.date.desc()).all()
+        
+        # Populate expense dropdown with user's expenses
+        if user_expenses:
+            receipt_form.expense_id.choices = [(expense.id, f"{expense.date.strftime('%Y-%m-%d')} - {expense.description} (${expense.amount:.2f})") 
+                                for expense in user_expenses]
+        else:
+            # If no expenses, display a placeholder message
+            receipt_form.expense_id.choices = [(-1, "No expenses found. Please create a new expense.")]
+        
+        # Get all user's receipts
+        if current_user.is_admin and request.args.get('all_users') == 'true':
+            receipts = Receipt.query.order_by(Receipt.upload_date.desc()).all()
+        else:
+            receipts = Receipt.query.filter_by(user_id=current_user.id).order_by(Receipt.upload_date.desc()).all()
         
         # Apply search filter if provided
         if search_query:
@@ -268,6 +291,9 @@ def index():
                            categories=category_list,
                            today_date=today_date,
                            form=form,
+                           # Receipt form and data
+                           receipt_form=receipt_form,
+                           receipts=receipts if current_user.is_authenticated else [],
                            # Pagination and search variables
                            page=page,
                            total_pages=total_pages,
