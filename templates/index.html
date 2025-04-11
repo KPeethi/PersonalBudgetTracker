@@ -6,27 +6,7 @@
 <div class="row">
     {% if current_user.is_authenticated %}
         <div class="col-md-4">
-            <!-- Tabs for switching between expense and receipt forms -->
-            <ul class="nav nav-tabs mb-3" id="expenseTab" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="expense-tab" data-bs-toggle="tab" data-bs-target="#expense-content" 
-                            type="button" role="tab" aria-controls="expense-content" aria-selected="true">
-                        <i class="bi bi-plus-circle me-1"></i> Add Expense
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="receipt-tab" data-bs-toggle="tab" data-bs-target="#receipt-content" 
-                            type="button" role="tab" aria-controls="receipt-content" aria-selected="false">
-                        <i class="bi bi-receipt me-1"></i> Upload Receipt
-                    </button>
-                </li>
-            </ul>
-            
-            <!-- Tab content -->
-            <div class="tab-content" id="expenseTabContent">
-                <!-- Expense Form Tab -->
-                <div class="tab-pane fade show active" id="expense-content" role="tabpanel" aria-labelledby="expense-tab">
-                    <div class="card mb-4 shadow-sm">
+            <div class="card mb-4 shadow-sm">
                         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
                         <i class="bi bi-plus-circle me-2"></i>Add New Expense
@@ -70,133 +50,6 @@
                             {{ form.submit(class="btn btn-primary shadow-sm") }}
                         </div>
                     </form>
-                </div>
-            </div>
-                </div>
-                
-                <!-- Receipt Upload Tab -->
-                <div class="tab-pane fade" id="receipt-content" role="tabpanel" aria-labelledby="receipt-tab">
-                    <div class="card mb-4 shadow-sm">
-                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">
-                                <i class="bi bi-receipt me-2"></i>Upload Receipt
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <form method="POST" action="{{ url_for('upload_receipt') }}" enctype="multipart/form-data">
-                                {{ receipt_form.hidden_tag() }}
-                                
-                                <div class="mb-3">
-                                    {{ receipt_form.receipt_file.label(class="form-label fw-bold") }}
-                                    {{ receipt_form.receipt_file(class="form-control shadow-sm") }}
-                                    <small class="form-text text-muted">Accepted formats: JPG, PNG, PDF. Max size: 5MB</small>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <div class="form-check mb-2">
-                                        {{ receipt_form.create_new_expense(class="form-check-input") }}
-                                        {{ receipt_form.create_new_expense.label(class="form-check-label fw-bold") }}
-                                    </div>
-                                    
-                                    <!-- Existing expense selection (shown when create_new_expense is unchecked) -->
-                                    <div id="existingExpenseSection">
-                                        {{ receipt_form.expense_id.label(class="form-label fw-bold") }}
-                                        {{ receipt_form.expense_id(class="form-select shadow-sm") }}
-                                        <small class="form-text text-muted">Link this receipt to an existing expense</small>
-                                    </div>
-                                    
-                                    <!-- New expense fields (shown when create_new_expense is checked) -->
-                                    <div id="newExpenseSection" class="mt-3 border-top pt-3" style="display: none;">
-                                        <h6 class="mb-3">New Expense Details</h6>
-                                        
-                                        <div class="mb-2">
-                                            {{ receipt_form.expense_date.label(class="form-label fw-bold") }}
-                                            {{ receipt_form.expense_date(class="form-control shadow-sm", type="date") }}
-                                        </div>
-                                        
-                                        <div class="mb-2">
-                                            {{ receipt_form.expense_description.label(class="form-label fw-bold") }}
-                                            {{ receipt_form.expense_description(class="form-control shadow-sm") }}
-                                        </div>
-                                        
-                                        <div class="mb-2">
-                                            {{ receipt_form.expense_category.label(class="form-label fw-bold") }}
-                                            {{ receipt_form.expense_category(class="form-control shadow-sm", list="categories-list") }}
-                                        </div>
-                                        
-                                        <div class="mb-2">
-                                            {{ receipt_form.expense_amount.label(class="form-label fw-bold") }}
-                                            <div class="input-group shadow-sm">
-                                                <span class="input-group-text bg-secondary"><i class="bi bi-currency-dollar"></i></span>
-                                                {{ receipt_form.expense_amount(class="form-control", placeholder="0.00") }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    {{ receipt_form.description.label(class="form-label fw-bold") }}
-                                    {{ receipt_form.description(class="form-control shadow-sm", rows=3, placeholder="Add notes about this receipt...") }}
-                                </div>
-                                
-                                <div class="d-grid">
-                                    {{ receipt_form.submit(class="btn btn-primary shadow-sm") }}
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Recent Receipts -->
-            <div class="card mb-4 shadow-sm">
-                <div class="card-header bg-white">
-                    <h5 class="card-title mb-0"><i class="bi bi-receipt me-2"></i>Recent Receipts</h5>
-                </div>
-                <div class="card-body p-0">
-                    {% if receipts %}
-                        <div class="list-group list-group-flush">
-                            {% for receipt in receipts[:3] %}
-                                <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="d-flex align-items-center">
-                                            {% if receipt.file_type.startswith('image/') %}
-                                                <i class="bi bi-file-image text-primary me-2"></i>
-                                            {% elif receipt.file_type == 'application/pdf' %}
-                                                <i class="bi bi-file-pdf text-danger me-2"></i>
-                                            {% else %}
-                                                <i class="bi bi-file-earmark text-secondary me-2"></i>
-                                            {% endif %}
-                                            <div>
-                                                <small class="d-block text-muted">{{ receipt.upload_date.strftime('%b %d, %Y') }}</small>
-                                                <span>
-                                                    {% if receipt.expense %}
-                                                        {{ receipt.expense.description }}
-                                                    {% else %}
-                                                        {{ receipt.filename }}
-                                                    {% endif %}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <a href="{{ url_for('view_receipt', receipt_id=receipt.id) }}" 
-                                       class="btn btn-sm btn-outline-primary" target="_blank">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                </div>
-                            {% endfor %}
-                        </div>
-                        {% if receipts|length > 3 %}
-                            <div class="card-footer bg-light text-center">
-                                <a href="{{ url_for('receipts') }}" class="btn btn-sm btn-outline-primary">View All Receipts</a>
-                            </div>
-                        {% endif %}
-                    {% else %}
-                        <div class="text-center py-4">
-                            <i class="bi bi-receipt text-muted mb-2" style="font-size: 2rem;"></i>
-                            <p class="text-muted mb-0">No receipts uploaded yet</p>
-                        </div>
-                    {% endif %}
                 </div>
             </div>
             
@@ -467,42 +320,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Toggle between existing expense selection and new expense fields
-        const createNewExpenseCheckbox = document.getElementById('create_new_expense');
-        const existingExpenseSection = document.getElementById('existingExpenseSection');
-        const newExpenseSection = document.getElementById('newExpenseSection');
-        
-        if (createNewExpenseCheckbox) {
-            // Set initial state
-            toggleExpenseSections();
-            
-            // Add event listener for changes
-            createNewExpenseCheckbox.addEventListener('change', toggleExpenseSections);
-            
-            function toggleExpenseSections() {
-                if (createNewExpenseCheckbox.checked) {
-                    existingExpenseSection.style.display = 'none';
-                    newExpenseSection.style.display = 'block';
-                    // Make new expense fields required and existing expense optional
-                    document.getElementById('expense_date').required = true;
-                    document.getElementById('expense_description').required = true;
-                    document.getElementById('expense_category').required = true;
-                    document.getElementById('expense_amount').required = true;
-                    document.getElementById('expense_id').required = false;
-                } else {
-                    existingExpenseSection.style.display = 'block';
-                    newExpenseSection.style.display = 'none';
-                    // Make existing expense required and new expense fields optional
-                    document.getElementById('expense_id').required = true;
-                    document.getElementById('expense_date').required = false;
-                    document.getElementById('expense_description').required = false;
-                    document.getElementById('expense_category').required = false;
-                    document.getElementById('expense_amount').required = false;
-                }
-            }
-        }
-    });
-</script>
+<!-- Scripts can be added here if needed in the future -->
 {% endblock %}
