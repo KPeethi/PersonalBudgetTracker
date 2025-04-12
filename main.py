@@ -506,12 +506,13 @@ def monthly_summary():
                     db.func.extract('year', Expense.date).desc(),
                     db.func.extract('month', Expense.date).desc()).all()
 
-        # Get expenses grouped by category for each month
+        # Get expenses grouped by category for each month, excluding Excel imports
         category_data = db.session.query(
             db.func.extract('month', Expense.date).label('month'),
             db.func.extract('year', Expense.date).label('year'),
             Expense.category,
-            db.func.sum(Expense.amount).label('category_amount')).group_by(
+            db.func.sum(Expense.amount).label('category_amount')).filter(
+                Expense.excel_import_id == None).group_by(
                 db.func.extract('year', Expense.date),
                 db.func.extract('month', Expense.date),
                 Expense.category).order_by(
@@ -532,13 +533,14 @@ def monthly_summary():
                         db.func.extract('year', Expense.date).desc(),
                         db.func.extract('month', Expense.date).desc()).all()
 
-        # Get expenses grouped by category for each month
+        # Get expenses grouped by category for each month, excluding Excel imports
         category_data = db.session.query(
             db.func.extract('month', Expense.date).label('month'),
             db.func.extract('year', Expense.date).label('year'),
             Expense.category,
             db.func.sum(Expense.amount).label('category_amount')).filter(
-                Expense.user_id == user_id).group_by(
+                Expense.user_id == user_id,
+                Expense.excel_import_id == None).group_by(
                     db.func.extract('year', Expense.date),
                     db.func.extract('month', Expense.date),
                     Expense.category).order_by(
@@ -586,11 +588,13 @@ def monthly_summary():
 
     if current_user.is_admin and request.args.get('all_users') == 'true':
         ytd_total = db.session.query(db.func.sum(Expense.amount)).filter(
-            db.extract('year', Expense.date) == today.year).scalar() or 0
+            db.extract('year', Expense.date) == today.year,
+            Expense.excel_import_id == None).scalar() or 0
     else:
         ytd_total = db.session.query(db.func.sum(Expense.amount)).filter(
-            db.extract('year', Expense.date) == today.year, Expense.user_id
-            == current_user.id).scalar() or 0
+            db.extract('year', Expense.date) == today.year, 
+            Expense.user_id == current_user.id,
+            Expense.excel_import_id == None).scalar() or 0
 
     return render_template('summary.html',
                            summaries=summary_data,
@@ -709,18 +713,19 @@ def dashboard():
 
     # Get monthly summary data for the relevant expenses
     if current_user.is_admin and not request.args.get('user_id'):
-        # For admin viewing all expenses
+        # For admin viewing all expenses, excluding Excel imports
         monthly_data_query = db.session.query(
             db.func.extract('month', Expense.date).label('month'),
             db.func.extract('year', Expense.date).label('year'),
             db.func.sum(Expense.amount).label('total_amount'),
-            db.func.count(Expense.id).label('count')).group_by(
+            db.func.count(Expense.id).label('count')).filter(
+                Expense.excel_import_id == None).group_by(
                 db.func.extract('year', Expense.date),
                 db.func.extract('month', Expense.date)).order_by(
                     db.func.extract('year', Expense.date).desc(),
                     db.func.extract('month', Expense.date).desc())
     else:
-        # For regular users or admin viewing specific user
+        # For regular users or admin viewing specific user, excluding Excel imports
         user_id = request.args.get(
             'user_id') if current_user.is_admin else current_user.id
         monthly_data_query = db.session.query(
@@ -728,7 +733,8 @@ def dashboard():
             db.func.extract('year', Expense.date).label('year'),
             db.func.sum(Expense.amount).label('total_amount'),
             db.func.count(Expense.id).label('count')).filter(
-                Expense.user_id == user_id).group_by(
+                Expense.user_id == user_id,
+                Expense.excel_import_id == None).group_by(
                     db.func.extract('year', Expense.date),
                     db.func.extract('month', Expense.date)).order_by(
                         db.func.extract('year', Expense.date).desc(),
