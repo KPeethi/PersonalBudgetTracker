@@ -1477,7 +1477,7 @@ def get_suggestions():
 
 
 # AI Assistant Routes
-@app.route('/ai')
+@app.route('/ai/assistant')
 @login_required
 def ai_assistant_home():
     """Show AI assistant homepage with analysis options"""

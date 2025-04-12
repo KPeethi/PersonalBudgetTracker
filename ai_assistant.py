@@ -444,7 +444,7 @@ def generate_expense_insights_fallback(expenses: List[Dict[str, Any]], period_de
         period_description: Description of the time period analyzed
         
     Returns:
-        String containing manually generated insights
+        String containing manually generated insights with HTML formatting
     """
     if not expenses:
         return "No expense data available for analysis."
@@ -476,35 +476,44 @@ def generate_expense_insights_fallback(expenses: List[Dict[str, Any]], period_de
     # Calculate average per expense
     avg_amount = total_amount / len(expenses) if expenses else 0
     
-    # Build response
+    # Build response with HTML formatting
     insights = [
-        f"Based on your {period_description}, you've spent a total of ${total_amount:.2f} across {len(expenses)} transactions.",
-        f"Your average expense is ${avg_amount:.2f}."
+        f"<strong>Spending Overview for {period_description}</strong>",
+        f"Total spending: <strong>${total_amount:.2f}</strong> across {len(expenses)} transactions",
+        f"Average transaction: <strong>${avg_amount:.2f}</strong>"
     ]
     
-    # Top categories insights - use the tuples for insights, don't modify top_categories
+    # Top categories insights with better formatting
     if top_category_tuples:
-        insights.append("\nYour top spending categories are:")
+        insights.append("\n<strong>Top Spending Categories:</strong>")
         for i, (category, amount) in enumerate(top_category_tuples, 1):
             percentage = (amount / total_amount) * 100 if total_amount > 0 else 0
-            insights.append(f"{i}. {category}: ${amount:.2f} ({percentage:.1f}% of total)")
+            insights.append(f"{i}. <em>{category}</em>: <strong>${amount:.2f}</strong> ({percentage:.1f}% of total)")
     
     # General recommendation based on top category
     if top_category_tuples:
+        insights.append("\n<strong>Analysis:</strong>")
         top_category, top_amount = top_category_tuples[0]
         percentage = (top_amount / total_amount) * 100 if total_amount > 0 else 0
         
         if percentage > 50:
-            insights.append(f"\nNote that {top_category} represents over half of your spending. Consider setting a budget for this category to better manage your finances.")
+            insights.append(f"• <em>{top_category}</em> represents over half of your spending at {percentage:.1f}%.")
+            insights.append("• Consider setting a specific budget for this category.")
         elif percentage > 30:
-            insights.append(f"\nYour spending in {top_category} is significant. Consider looking for ways to reduce costs in this area.")
+            insights.append(f"• Your spending in <em>{top_category}</em> is significant at {percentage:.1f}%.")
+            insights.append("• Look for potential areas to reduce costs in this category.")
         else:
-            insights.append("\nYour spending appears to be fairly distributed among categories, which is generally a good sign for financial health.")
+            insights.append("• Your spending appears to be well-distributed among categories.")
+            insights.append("• This balanced approach typically indicates good financial health.")
     
-    # General suggestion
-    insights.append("\nSuggestion: Track your expenses consistently to identify patterns and opportunities for saving. Consider setting category-specific budgets for better financial control.")
+    # Actionable recommendations
+    insights.append("\n<strong>Recommendations:</strong>")
+    insights.append("1. Track your expenses consistently to identify patterns and trends")
+    insights.append("2. Set category-specific budgets for better financial control")
+    insights.append("3. Review recurring expenses to identify potential savings")
+    insights.append("4. Consider saving at least 15-20% of your income for future goals")
     
-    # Return the insights text
+    # Return the insights text with proper formatting
     return "\n".join(insights)
 
 def get_expense_insights(expenses: List[Dict[str, Any]], 
