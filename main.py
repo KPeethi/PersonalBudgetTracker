@@ -35,6 +35,15 @@ import excel_processor
 UPLOAD_FOLDER = 'static/uploads/receipts'
 # Ensure the upload directory exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# Directory for Excel uploads
+EXCEL_UPLOAD_FOLDER = 'uploads/excel'
+os.makedirs(EXCEL_UPLOAD_FOLDER, exist_ok=True)
+
+# Directory for templates
+TEMPLATES_FOLDER = 'static/templates'
+os.makedirs(TEMPLATES_FOLDER, exist_ok=True)
+
 # Maximum upload file size (5MB)
 MAX_CONTENT_LENGTH = 5 * 1024 * 1024
 
@@ -2833,6 +2842,59 @@ def last_month_predictions():
             'message': f"Error generating predictions: {str(e)}",
             'data': None
         })
+
+
+# Routes for downloading sample templates
+@app.route('/downloads/excel_template.xlsx')
+def download_excel_template():
+    """Download Excel template for expense import."""
+    try:
+        template_path = os.path.join(TEMPLATES_FOLDER, 'expense_import_template.xlsx')
+        return send_file(template_path, 
+                         as_attachment=True, 
+                         download_name='expense_import_template.xlsx',
+                         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    except Exception as e:
+        logger.error(f"Error downloading Excel template: {str(e)}")
+        flash('Error downloading template. Please try again.', 'danger')
+        return redirect(url_for('business_excel_import'))
+
+@app.route('/downloads/csv_template.csv')
+def download_csv_template():
+    """Download CSV template for expense import."""
+    try:
+        template_path = os.path.join(TEMPLATES_FOLDER, 'expense_import_template.csv')
+        return send_file(template_path, 
+                         as_attachment=True, 
+                         download_name='expense_import_template.csv',
+                         mimetype='text/csv')
+    except Exception as e:
+        logger.error(f"Error downloading CSV template: {str(e)}")
+        flash('Error downloading template. Please try again.', 'danger')
+        return redirect(url_for('business_excel_import'))
+
+
+@app.route('/business/process_pending_imports')
+@login_required
+def process_pending_imports():
+    """Process all pending imports."""
+    if not current_user.is_business_user and not current_user.is_admin:
+        flash('You need business user access to process imports.', 'warning')
+        return redirect(url_for('request_business_upgrade'))
+    
+    try:
+        # Process pending imports
+        count = excel_processor.process_pending_imports()
+        
+        if count > 0:
+            flash(f'Successfully processed {count} pending imports.', 'success')
+        else:
+            flash('No pending imports to process.', 'info')
+    except Exception as e:
+        logger.error(f"Error processing pending imports: {str(e)}")
+        flash(f'Error processing imports: {str(e)}', 'danger')
+    
+    return redirect(url_for('business_excel_import'))
 
 
 if __name__ == "__main__":
