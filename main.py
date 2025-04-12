@@ -2965,6 +2965,43 @@ def funny_chat_process():
             'suggestions': ['How can I create a budget?', 'Tips for saving money', 'What is the 50/30/20 rule?']
         })
     
+    # Get the message from the request data
+    message = request_data.get('message', '').lower().strip()
+    
+    # Handle common financial queries with hardcoded responses
+    # This ensures critical functionality works even when API services are down
+    if "50/30/20" in message or "50 30 20" in message:
+        return jsonify({
+            'success': True,
+            'fallback': True,
+            'response': "The 50/30/20 rule is a budgeting strategy that suggests allocating 50% of your income to needs (housing, food, utilities), 30% to wants (entertainment, dining out), and 20% to savings and debt repayment. This balanced approach helps ensure you're meeting essential needs while still planning for the future.",
+            'suggestions': ['How can I create a budget?', 'Tips for saving money', 'How to reduce spending?']
+        })
+    
+    if "create a budget" in message or "make a budget" in message or "start budget" in message:
+        return jsonify({
+            'success': True,
+            'fallback': True,
+            'response': "To create a budget: 1) Track your income and expenses for a month to understand your spending patterns. 2) Categorize your expenses (needs, wants, savings). 3) Set spending limits for each category using the 50/30/20 rule as a starting point. 4) Regularly review and adjust your budget as needed. 5) Use tools like this expense tracker to help you stay on track.",
+            'suggestions': ['What is the 50/30/20 rule?', 'How to stick to a budget', 'Budgeting apps recommendations']
+        })
+    
+    if "saving money" in message or "save money" in message or "tips for saving" in message:
+        return jsonify({
+            'success': True,
+            'fallback': True,
+            'response': "To save money: 1) Automate savings by setting up transfers on payday. 2) Follow the 24-hour rule for non-essential purchases to avoid impulse buying. 3) Review and cancel unused subscriptions. 4) Meal plan to reduce food waste and dining out. 5) Consider energy-saving measures to reduce utility bills. 6) Compare prices before large purchases.",
+            'suggestions': ['What is the 50/30/20 rule?', 'How to create an emergency fund', 'Setting financial goals']
+        })
+    
+    if "track expenses" in message or "tracking expenses" in message:
+        return jsonify({
+            'success': True,
+            'fallback': True,
+            'response': "Track expenses effectively by: 1) Categorizing all transactions consistently. 2) Recording expenses daily to maintain accuracy. 3) Using this expense tracker to automate the process. 4) Reviewing weekly to catch any unusual spending. 5) Looking for patterns and trends monthly. 6) Adjusting your budget based on actual spending patterns.",
+            'suggestions': ['What is the 50/30/20 rule?', 'How to create a budget', 'Reducing spending tips']
+        })
+    
     # Check if OpenAI or Perplexity API is available
     openai_available = openai_service.check_api_availability()
     perplexity_available = perplexity_service.check_api_availability()
