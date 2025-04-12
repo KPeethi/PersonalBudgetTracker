@@ -199,6 +199,9 @@ def index():
     # Set default date to today for new expense in receipt form
     receipt_form.expense_date.data = datetime.today()
 
+    # Initialize receipts variable
+    receipts = []
+
     if current_user.is_authenticated:
         # Get search, sort, and pagination parameters
         search_query = request.args.get('search', '')
@@ -221,11 +224,11 @@ def index():
             # If no expenses, display a placeholder message
             receipt_form.expense_id.choices = [(-1, "No expenses found. Please create a new expense.")]
         
-        # Get all user's receipts
+        # Get all user's receipts for display at the bottom of the home page
         if current_user.is_admin and request.args.get('all_users') == 'true':
-            receipts = Receipt.query.order_by(Receipt.upload_date.desc()).all()
+            receipts = Receipt.query.order_by(Receipt.upload_date.desc()).limit(10).all()
         else:
-            receipts = Receipt.query.filter_by(user_id=current_user.id).order_by(Receipt.upload_date.desc()).all()
+            receipts = Receipt.query.filter_by(user_id=current_user.id).order_by(Receipt.upload_date.desc()).limit(10).all()
         
         # Apply search filter if provided
         if search_query:
@@ -370,11 +373,11 @@ def expenses_by_category(category):
             # If no expenses, display a placeholder message
             receipt_form.expense_id.choices = [(-1, "No expenses found. Please create a new expense.")]
         
-        # Get all user's receipts
+        # Get all user's receipts for display at the bottom of the home page
         if current_user.is_admin and request.args.get('all_users') == 'true':
-            receipts = Receipt.query.order_by(Receipt.upload_date.desc()).all()
+            receipts = Receipt.query.order_by(Receipt.upload_date.desc()).limit(10).all()
         else:
-            receipts = Receipt.query.filter_by(user_id=current_user.id).order_by(Receipt.upload_date.desc()).all()
+            receipts = Receipt.query.filter_by(user_id=current_user.id).order_by(Receipt.upload_date.desc()).limit(10).all()
         
         # Apply search filter if provided
         if search_query:
@@ -659,11 +662,11 @@ def dashboard():
         # If no expenses, display a placeholder message
         receipt_form.expense_id.choices = [(-1, "No expenses found. Please create a new expense.")]
     
-    # Get all user's receipts
+    # Get all user's receipts for dashboard
     if current_user.is_admin and request.args.get('all_users') == 'true':
-        receipts = Receipt.query.order_by(Receipt.upload_date.desc()).all()
+        receipts = Receipt.query.order_by(Receipt.upload_date.desc()).limit(10).all()
     else:
-        receipts = Receipt.query.filter_by(user_id=current_user.id).order_by(Receipt.upload_date.desc()).all()
+        receipts = Receipt.query.filter_by(user_id=current_user.id).order_by(Receipt.upload_date.desc()).limit(10).all()
 
     # Calculate total expenses
     total_expenses = sum(expense.amount for expense in expenses)
