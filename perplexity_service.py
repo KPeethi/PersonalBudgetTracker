@@ -25,7 +25,11 @@ def check_api_availability() -> bool:
     """
     if not PERPLEXITY_API_KEY:
         logger.warning("Perplexity API key not found in environment variables")
+        print("ERROR: PERPLEXITY_API_KEY is not set in environment variables")
         return False
+    
+    print(f"Perplexity API key is configured (length: {len(PERPLEXITY_API_KEY)})")
+    logger.info(f"Perplexity API key is configured (length: {len(PERPLEXITY_API_KEY)})")
     return True
 
 

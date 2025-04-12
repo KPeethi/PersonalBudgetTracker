@@ -2910,13 +2910,27 @@ def funny_chatbot():
 @login_required
 def funny_chat_process():
     """Process a query to the professional financial assistant."""
-    data = request.get_json()
+    # Add console output for debugging
+    print("===== FUNNY CHAT PROCESS =====")
+    print("Received request!")
     
-    if not data or 'message' not in data:
+    try:
+        data = request.get_json()
+        print(f"Request data: {data}")
+        
+        if not data or 'message' not in data:
+            print("Error: Missing message in request")
+            return jsonify({
+                'success': False,
+                'error': 'Missing message',
+                'response': 'Please provide a message.'
+            })
+    except Exception as e:
+        print(f"Error parsing request: {str(e)}")
         return jsonify({
             'success': False,
-            'error': 'Missing message',
-            'response': 'Please provide a message.'
+            'error': f'Failed to parse request: {str(e)}',
+            'response': 'There was an error processing your request. Please try again.'
         })
     
     message = data.get('message', '')

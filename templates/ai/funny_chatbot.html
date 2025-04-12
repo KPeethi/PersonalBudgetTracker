@@ -287,6 +287,12 @@ document.addEventListener('DOMContentLoaded', function() {
             // Get the current humor level
             const humorLevel = humorToggle.getAttribute('data-level') || 'medium';
             
+            console.log('Sending message to server:', message);
+            
+            // Create an AbortController to handle timeouts
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+            
             // Send message to server
             fetch('/ai/funny-chat', {
                 method: 'POST',
@@ -297,11 +303,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     message: message,
                     humor_level: humorLevel
                 }),
+                signal: controller.signal
             })
-            .then(response => response.json())
+            .then(response => {
+                clearTimeout(timeoutId);
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`Server responded with status: ${response.status}`);
+                }
+                
+                return response.json();
+            })
             .then(data => {
                 // Remove loading indicator
                 removeLoading();
+                console.log('Response data:', data);
                 
                 if (data.success) {
                     // Check if this is a fallback response
@@ -345,16 +362,25 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
                     }
                 } else {
-                    addAssistantMessage("Sorry, I'm having trouble right now. Please try again later.");
+                    addAssistantMessage(`Sorry, I'm having trouble right now: ${data.error || 'Unknown error'}. Please try again later.`);
                 }
                 
                 scrollToBottom();
             })
             .catch(error => {
+                clearTimeout(timeoutId);
                 console.error('Error:', error);
                 removeLoading();
-                addAssistantMessage("Sorry, something went wrong. Please try again. Check browser console for details.");
-                addSystemMessage("Error details: " + error.toString());
+                
+                let errorMessage = error.toString();
+                
+                // Check if this is an abort error (timeout)
+                if (error.name === 'AbortError') {
+                    errorMessage = "Request timed out. The server took too long to respond.";
+                }
+                
+                addAssistantMessage("Sorry, something went wrong. Please try again.");
+                addSystemMessage("Error details: " + errorMessage);
                 scrollToBottom();
             });
         }
