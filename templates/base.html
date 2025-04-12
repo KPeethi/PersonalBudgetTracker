@@ -129,13 +129,25 @@
         }
         
         .sidebar-category {
-            font-size: 0.75rem;
+            font-size: 0.68rem;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #6c757d;
+            letter-spacing: 1px;
+            color: #8e959e;
             padding: 0 20px;
-            margin: 15px 0 5px 0;
-            font-weight: 500;
+            margin: 20px 0 8px 0;
+            font-weight: 400;
+            display: flex;
+            align-items: center;
+            opacity: 0.8;
+        }
+        
+        .sidebar-category::before {
+            content: '';
+            height: 1px;
+            width: 15px;
+            background-color: #8e959e;
+            opacity: 0.5;
+            margin-right: 8px;
         }
         
         /* Mobile responsive */
@@ -180,6 +192,10 @@
         
         [data-bs-theme="dark"] .sidebar-category {
             color: #6c757d;
+        }
+        
+        [data-bs-theme="dark"] .sidebar-category::before {
+            background-color: #6c757d;
         }
         
         [data-bs-theme="dark"] .card-header {
