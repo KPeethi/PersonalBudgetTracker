@@ -2923,5 +2923,179 @@ def import_details(import_id):
                            title='Import Details')
 
 
+@app.route('/business/excel_visualize', methods=['GET', 'POST'])
+@login_required
+def excel_visualize():
+    """Excel visualization for business users."""
+    # Check if user has business access
+    if not current_user.is_business_user and not current_user.is_admin:
+        flash('You need business user access to visualize Excel data.', 'warning')
+        return redirect(url_for('request_business_upgrade'))
+    
+    form = ExcelImportForm()
+    result = None
+    
+    # Get all completed imports for this user
+    imports = ExcelImport.query.filter_by(
+        user_id=current_user.id, 
+        status='completed'
+    ).order_by(ExcelImport.upload_date.desc()).all()
+    
+    if form.validate_on_submit():
+        try:
+            # Handle file upload
+            file = form.excel_file.data
+            filename = secure_filename(file.filename)
+            
+            # Create upload directory if it doesn't exist
+            os.makedirs(EXCEL_UPLOAD_FOLDER, exist_ok=True)
+            
+            # Create a unique filename
+            timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+            unique_filename = f"{timestamp}_{filename}"
+            file_path = os.path.join(EXCEL_UPLOAD_FOLDER, unique_filename)
+            
+            # Save the file
+            file.save(file_path)
+            
+            # Process the file for visualization
+            output_file = excel_visualizer.analyze_excel_file(file_path)
+            
+            if output_file:
+                # Prepare chart data for display
+                temp_dir = 'temp_charts'
+                chart_paths = [
+                    {'title': 'Expenses by Category', 'path': f'/{temp_dir}/category_pie.png'},
+                    {'title': 'Daily Expenses Over Time', 'path': f'/{temp_dir}/time_series.png'},
+                    {'title': 'Expenses by Payment Method', 'path': f'/{temp_dir}/payment_method.png'},
+                    {'title': 'Top Merchants by Expense', 'path': f'/{temp_dir}/merchant.png'},
+                    {'title': 'Category Expense Trends', 'path': f'/{temp_dir}/category_trend.png'}
+                ]
+                
+                # Filter out any charts that weren't generated
+                chart_paths = [chart for chart in chart_paths if os.path.exists(chart['path'][1:])]
+                
+                result = {
+                    'filename': os.path.basename(output_file),
+                    'path': output_file,
+                    'charts': chart_paths
+                }
+                
+                flash('Excel file analyzed successfully!', 'success')
+            else:
+                flash('Error analyzing the Excel file. Please check the file format.', 'danger')
+                
+        except Exception as e:
+            logger.exception("Error visualizing Excel file")
+            flash(f'Error analyzing Excel file: {str(e)}', 'danger')
+    
+    return render_template(
+        'business/excel_visualize.html',
+        form=form,
+        imports=imports,
+        result=result
+    )
+
+
+@app.route('/business/excel_visualize/import/<int:import_id>')
+@login_required
+def excel_visualize_from_import(import_id):
+    """Visualize an existing Excel import."""
+    # Check if user has business access
+    if not current_user.is_business_user and not current_user.is_admin:
+        flash('You need business user access to visualize Excel data.', 'warning')
+        return redirect(url_for('request_business_upgrade'))
+    
+    # Get the import record
+    excel_import = ExcelImport.query.get_or_404(import_id)
+    
+    # Ensure user can only access their own imports (unless admin)
+    if excel_import.user_id != current_user.id and not current_user.is_admin:
+        flash('You do not have permission to visualize this import.', 'danger')
+        return redirect(url_for('business_excel_import'))
+    
+    # Check if import status is completed
+    if excel_import.status != 'completed':
+        flash('This import is not completed yet. Cannot generate visualizations.', 'warning')
+        return redirect(url_for('excel_visualize'))
+    
+    try:
+        # Get the file path
+        file_path = os.path.join(EXCEL_UPLOAD_FOLDER, excel_import.filename)
+        
+        # Check if file exists
+        if not os.path.exists(file_path):
+            flash('Excel file not found. The file may have been deleted.', 'danger')
+            return redirect(url_for('excel_visualize'))
+        
+        # Process the file for visualization
+        output_file = excel_visualizer.analyze_excel_file(file_path)
+        
+        if output_file:
+            # Prepare chart data for display
+            temp_dir = 'temp_charts'
+            chart_paths = [
+                {'title': 'Expenses by Category', 'path': f'/{temp_dir}/category_pie.png'},
+                {'title': 'Daily Expenses Over Time', 'path': f'/{temp_dir}/time_series.png'},
+                {'title': 'Expenses by Payment Method', 'path': f'/{temp_dir}/payment_method.png'},
+                {'title': 'Top Merchants by Expense', 'path': f'/{temp_dir}/merchant.png'},
+                {'title': 'Category Expense Trends', 'path': f'/{temp_dir}/category_trend.png'}
+            ]
+            
+            # Filter out any charts that weren't generated
+            chart_paths = [chart for chart in chart_paths if os.path.exists(chart['path'][1:])]
+            
+            result = {
+                'filename': os.path.basename(output_file),
+                'path': output_file,
+                'charts': chart_paths
+            }
+            
+            # Get all completed imports for this user (for the sidebar)
+            imports = ExcelImport.query.filter_by(
+                user_id=current_user.id, 
+                status='completed'
+            ).order_by(ExcelImport.upload_date.desc()).all()
+            
+            form = ExcelImportForm()
+            
+            flash('Excel file analyzed successfully!', 'success')
+            return render_template(
+                'business/excel_visualize.html',
+                form=form,
+                imports=imports,
+                result=result
+            )
+        else:
+            flash('Error analyzing the Excel file. Please check the file format.', 'danger')
+            return redirect(url_for('excel_visualize'))
+            
+    except Exception as e:
+        logger.exception("Error visualizing Excel file")
+        flash(f'Error analyzing Excel file: {str(e)}', 'danger')
+        return redirect(url_for('excel_visualize'))
+
+
+@app.route('/business/excel_visualize/download/<filename>')
+@login_required
+def download_visualization(filename):
+    """Download a visualization Excel file."""
+    # Check if user has business access
+    if not current_user.is_business_user and not current_user.is_admin:
+        flash('You need business user access to download visualization files.', 'warning')
+        return redirect(url_for('request_business_upgrade'))
+    
+    try:
+        return send_from_directory(
+            EXCEL_UPLOAD_FOLDER,
+            filename,
+            as_attachment=True
+        )
+    except Exception as e:
+        logger.exception("Error downloading visualization file")
+        flash(f'Error downloading file: {str(e)}', 'danger')
+        return redirect(url_for('excel_visualize'))
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True)
