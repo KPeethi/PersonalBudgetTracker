@@ -22,8 +22,8 @@
                         <h6 class="fw-bold">Top Categories</h6>
                         {% if top_categories %}
                             <ol class="ps-3">
-                                {% for category, amount in top_categories %}
-                                <li>{{ category }}: ${{ "%.2f"|format(amount) }}</li>
+                                {% for category in top_categories %}
+                                <li>{{ category.name }}: ${{ "%.2f"|format(category.amount) }} ({{ "%.1f"|format(category.percentage) }}%)</li>
                                 {% endfor %}
                             </ol>
                         {% else %}
