@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Finny - Your Witty Financial BFF{% endblock %}
+{% block title %}Financial Assistant{% endblock %}
 
 {% block content %}
 <div class="container py-4">
@@ -9,14 +9,8 @@
             <div class="card shadow">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="bi bi-chat-dots-fill me-2"></i> Finny - Your Witty Financial BFF
+                        <i class="bi bi-chat-dots-fill me-2"></i> Financial Assistant
                     </h5>
-                    <div>
-                        <button class="btn btn-sm btn-light" id="humor-toggle" data-level="medium" title="Adjust humor level">
-                            <i class="bi bi-emoji-laughing"></i>
-                            <span>Medium Humor</span>
-                        </button>
-                    </div>
                 </div>
                 <div class="card-body">
                     <div class="d-flex flex-column">
@@ -26,14 +20,12 @@
                                     <div class="message-content p-3 rounded shadow-sm">
                                         <div class="message-avatar-container mb-2">
                                             <i class="bi bi-robot message-avatar bg-primary text-white p-2 rounded-circle"></i>
-                                            <strong>Finny</strong>
+                                            <strong>Financial Assistant</strong>
                                         </div>
                                         <div>
-                                            <p>Hi there! I'm Finny, your witty financial BFF! 💸
-                                            I'm here to make money talks actually fun and helpful! 
-                                            Ask me about your expenses, budgeting tips, or anything finance-related... 
-                                            My advice is the real flex (my jokes are pretty fire too)! 
-                                            How can I help you level up your money game today?</p>
+                                            <p>Hello. I'm your personal financial assistant, here to help you understand your spending patterns and financial options.</p>
+                                            <p>I can answer questions about your expenses, income patterns, and provide personalized budgeting advice based on your data.</p>
+                                            <p>How can I assist you with your financial questions today?</p>
                                         </div>
                                     </div>
                                 </div>
@@ -48,13 +40,13 @@
                                 <i class="bi bi-lightbulb"></i> How can I reduce my food expenses?
                             </button>
                             <button class="btn btn-sm btn-outline-primary suggestion-btn">
-                                <i class="bi bi-lightbulb"></i> Give me a funny savings tip
+                                <i class="bi bi-lightbulb"></i> Explain the 50/30/20 budget rule
                             </button>
                             <button class="btn btn-sm btn-outline-primary suggestion-btn">
-                                <i class="bi bi-lightbulb"></i> What's the 50/30/20 budget rule?
+                                <i class="bi bi-lightbulb"></i> What's a good saving strategy?
                             </button>
                             <button class="btn btn-sm btn-outline-primary suggestion-btn">
-                                <i class="bi bi-lightbulb"></i> How's my spending this month?
+                                <i class="bi bi-lightbulb"></i> Analyze my spending this month
                             </button>
                         </div>
                     </div>
@@ -66,7 +58,7 @@
                                 type="text" 
                                 id="user-input" 
                                 class="form-control" 
-                                placeholder="Ask Finny anything about your finances..." 
+                                placeholder="Ask a question about your finances..." 
                                 autocomplete="off"
                             >
                             <button class="btn btn-primary" type="submit">
@@ -78,8 +70,8 @@
                 
                 <div class="card-footer bg-light">
                     <small class="text-muted">
-                        <i class="bi bi-info-circle"></i> Finny is an AI assistant - while witty and knowledgeable, 
-                        don't rely on it for professional financial advice. 💸
+                        <i class="bi bi-info-circle"></i> This is an AI assistant designed to provide personalized financial guidance based on your data. 
+                        For complex financial situations, consider consulting with a qualified financial advisor.
                     </small>
                 </div>
             </div>
@@ -122,8 +114,8 @@
                         <div class="col-md-6">
                             <div class="border rounded p-3 h-100">
                                 <h6 class="mb-3">
-                                    <i class="bi bi-magic text-info me-2"></i> 
-                                    Finny's Tip of the Day ✨
+                                    <i class="bi bi-lightbulb text-info me-2"></i> 
+                                    Financial Tip of the Day
                                 </h6>
                                 <div id="finny-tip" class="p-3 bg-light rounded">
                                     <div class="d-flex align-items-start">
@@ -220,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="message-content p-3 rounded shadow-sm" style="max-width: 80%; background-color: var(--bs-body-bg);">
                 <div class="message-avatar-container mb-2">
                     <i class="bi bi-robot message-avatar bg-primary text-white p-2 rounded-circle"></i>
-                    <strong>Finny</strong>
+                    <strong>Financial Assistant</strong>
                 </div>
                 <div>
                     <p>${message}</p>
@@ -257,7 +249,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="message-content p-3 rounded shadow-sm" style="max-width: 80%; background-color: var(--bs-body-bg);">
                 <div class="message-avatar-container mb-2">
                     <i class="bi bi-robot message-avatar bg-primary text-white p-2 rounded-circle"></i>
-                    <strong>Finny</strong>
+                    <strong>Financial Assistant</strong>
                 </div>
                 <div>
                     <div class="typing-indicator">

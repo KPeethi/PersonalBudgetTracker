@@ -3022,23 +3022,23 @@ def funny_chat_process():
     if not result.get('success', False):
         logger.warning(f"Perplexity API call failed, using fallback response for: {message}")
         
-        # Finny-style fallback responses based on query topic (with emojis and Gen Z lingo)
+        # Professional financial assistant fallback responses
         if "food" in message.lower() or "groceries" in message.lower():
-            response = "Your grocery game could use a glow-up! 🥑 Try meal planning, buying in bulk, and cooking that TikTok pasta instead of DoorDashing every night. Your wallet will thank you for the serve! ✨"
+            response = "Consider implementing meal planning and bulk purchasing to reduce your grocery expenses. Preparing meals at home instead of ordering takeout can save up to 60-70% of your food costs. Creating a shopping list and sticking to it will help avoid impulse purchases."
         elif "budget" in message.lower():
-            response = "Budgeting isn't the vibe killer you think it is! 💅 Try the 50/30/20 rule — 50% on needs, 30% on wants, 20% on savings — it's giving financial freedom! No cap, your future self will be so grateful. 💰"
+            response = "The 50/30/20 budgeting approach is effective for many households: allocate 50% of income to necessities, 30% to discretionary spending, and 20% to savings and debt reduction. Regular budget reviews help identify areas where adjustments can improve your financial stability."
         elif "save" in message.lower() or "saving" in message.lower():
-            response = "Saving money? It's giving main character energy! 💫 Try the 24-hour rule before impulse buys, automate your savings (set it and forget it!), and cut those sus subscriptions. That daily $5 latte adds up to vacation money real quick! 🏝️"
+            response = "Automating your savings is one of the most effective strategies. Set up automatic transfers to your savings account on payday. Consider implementing a 24-hour waiting period for non-essential purchases over $50 to reduce impulse buying and review subscription services regularly."
         elif "invest" in message.lower():
-            response = "Investing is literally your money making money while you sleep — we love a passive income moment! 💤💸 Start with index funds (they're lowkey the easiest), and remember time in the market > timing the market. Financial girlboss/boyboss behavior! 📈"
+            response = "For beginning investors, diversified index funds typically offer lower risk with reasonable returns. Remember that time in the market is typically more beneficial than trying to time market fluctuations. Consider consulting with a financial advisor for personalized investment strategies."
         elif "expensive" in message.lower() or "spending" in message.lower():
-            response = "Your spending is a bit extra rn! 😅 Try cash-only for a week (old school, I know), or the 'screenshot and wait' method before buying online. Track everything for a month and you'll be shook at where your coins are going! Target trips are the real villain. 🎯"
+            response = "To manage spending effectively, try tracking all expenses for 30 days to identify patterns. Using cash for discretionary spending can create more awareness of purchases. Setting specific spending limits for each category and reviewing them weekly helps maintain financial discipline."
         elif "credit" in message.lower() or "debt" in message.lower():
-            response = "Credit cards can be your bestie or your toxic ex! 💳 Pay them off in full each month (no ghosting!), use them for points/cashback, and never max them out. Your credit score will be so slay and future you will stan yourself! ⭐"
+            response = "To use credit cards responsibly: pay the full balance each month, keep utilization below 30% of your limit, make payments on time, and select cards with benefits that match your spending patterns. Regularly reviewing your credit report helps maintain your financial reputation."
         elif "coffee" in message.lower() or "latte" in message.lower():
-            response = "The latte debate is so 2019! ☕ If that morning cup is your serotonin boost, keep it! Just find other places to cut back like those random subscriptions you forgor about. Balance is key, bestie! ✨"
+            response = "Small regular purchases like coffee can be maintained if they provide value and fit within your overall budget. Focus on larger expenses and recurring subscriptions for more significant savings. The key is balancing daily enjoyment with long-term financial goals."
         else:
-            response = "My calculator app is glitching rn! 🔄 While we wait, here's the tea: pay yourself first by auto-transferring money to savings on payday before you can spend it. Future you is already gasping at how financially responsible you're being! 💅💰"
+            response = "I apologize for the technical difficulty. While we resolve this, here's a helpful tip: establishing automatic transfers to your savings account on payday ensures consistent progress toward your financial goals before you have a chance to spend those funds."
         
         # Always return true success for fallback responses
         return jsonify({
