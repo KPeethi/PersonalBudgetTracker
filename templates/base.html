@@ -129,32 +129,30 @@
         }
         
         .sidebar-category {
-            font-size: 0.68rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #8e959e;
-            padding: 8px 20px;
-            margin: 20px 0 0 0;
-            font-weight: 400;
+            letter-spacing: 0.8px;
+            color: #adb5bd;
+            padding: 12px 20px;
+            margin: 8px 0 2px 0;
+            font-weight: 300;
             display: flex;
             align-items: center;
-            opacity: 0.8;
             cursor: pointer;
             transition: all 0.2s ease;
             user-select: none;
         }
         
         .sidebar-category:hover {
-            background-color: rgba(13, 110, 253, 0.03);
             color: #6c757d;
         }
         
         .sidebar-category::before {
             content: '';
             height: 1px;
-            width: 15px;
-            background-color: #8e959e;
-            opacity: 0.5;
+            width: 8px;
+            background-color: #adb5bd;
+            opacity: 0.4;
             margin-right: 8px;
         }
         
@@ -162,6 +160,7 @@
             margin-left: auto;
             font-size: 0.7rem;
             transition: transform 0.2s ease;
+            opacity: 0.5;
         }
         
         .sidebar-category.collapsed .category-icon {
@@ -383,7 +382,7 @@
     <div class="sidebar">
         <!-- Main Navigation -->
         <div class="sidebar-category" data-category="main">
-            Main <i class="bi bi-chevron-down category-icon"></i>
+            MAIN <i class="bi bi-chevron-right category-icon"></i>
         </div>
         <div class="sidebar-submenu" id="sidebar-main">
             <a href="{{ url_for('index') }}" class="sidebar-link {% if request.path == url_for('index') %}active{% endif %}">
@@ -399,7 +398,7 @@
 
         <!-- Financial Management -->
         <div class="sidebar-category" data-category="financial">
-            Financial <i class="bi bi-chevron-down category-icon"></i>
+            FINANCIAL <i class="bi bi-chevron-right category-icon"></i>
         </div>
         <div class="sidebar-submenu" id="sidebar-financial">
             <a href="{{ url_for('monthly_summary') }}" class="sidebar-link {% if request.path == url_for('monthly_summary') %}active{% endif %}">
@@ -415,7 +414,7 @@
         
         <!-- Assistance & Settings -->
         <div class="sidebar-category" data-category="tools">
-            Tools <i class="bi bi-chevron-down category-icon"></i>
+            TOOLS <i class="bi bi-chevron-right category-icon"></i>
         </div>
         <div class="sidebar-submenu" id="sidebar-tools">
             <a href="{{ url_for('ai_assistant_home') }}" class="sidebar-link {% if request.path == url_for('ai_assistant_home') %}active{% endif %}">
@@ -431,7 +430,7 @@
         
         {% if current_user.is_business_user or current_user.is_admin %}
         <div class="sidebar-category" data-category="business">
-            Business Features <i class="bi bi-chevron-down category-icon"></i>
+            BUSINESS FEATURES <i class="bi bi-chevron-right category-icon"></i>
         </div>
         <div class="sidebar-submenu" id="sidebar-business">
             <a href="{{ url_for('business_excel_import') }}" class="sidebar-link {% if request.path == url_for('business_excel_import') %}active{% endif %}">
@@ -441,7 +440,7 @@
         </div>
         {% elif not current_user.is_business_user %}
         <div class="sidebar-category" data-category="business">
-            Business Features <i class="bi bi-chevron-down category-icon"></i>
+            BUSINESS FEATURES <i class="bi bi-chevron-right category-icon"></i>
         </div>
         <div class="sidebar-submenu" id="sidebar-business">
             <a href="{{ url_for('request_business_upgrade') }}" class="sidebar-link {% if request.path == url_for('request_business_upgrade') %}active{% endif %}">
@@ -454,7 +453,7 @@
         
         {% if current_user.is_admin %}
         <div class="sidebar-category" data-category="admin">
-            Administration <i class="bi bi-chevron-down category-icon"></i>
+            ADMINISTRATION <i class="bi bi-chevron-right category-icon"></i>
         </div>
         <div class="sidebar-submenu" id="sidebar-admin">
             <a href="{{ url_for('admin_panel') }}" class="sidebar-link {% if request.path == url_for('admin_panel') %}active{% endif %}">
@@ -470,7 +469,7 @@
         {% endif %}
         
         <div class="sidebar-category" data-category="user">
-            User <i class="bi bi-chevron-down category-icon"></i>
+            USER <i class="bi bi-chevron-right category-icon"></i>
         </div>
         <div class="sidebar-submenu" id="sidebar-user">
             <a href="{{ url_for('profile') }}" class="sidebar-link {% if request.path == url_for('profile') %}active{% endif %}">
