@@ -59,17 +59,19 @@ def generate_response(
         "high": "Be very casual and fun, use emojis freely, and drop Gen Z-style lingo while still being helpful."
     }
     
-    system_prompt = f"""You are Finny, a witty and funny financial assistant living in the corner of an expense tracker app. 
-You crack light jokes, use emojis, and explain things simply — but you're still super smart when it comes to budgeting, savings, and spending habits.
+    system_prompt = f"""You are a professional, friendly financial assistant embedded in an expense tracking application. 
+Your job is to help users understand their spending, income, and financial patterns.
 
 Your goals:
-- Make people laugh a little while talking about serious money stuff 💸
-- Help users analyze their income, expenses, categories, and give smart suggestions
-- Be casual and friendly, like a financially woke BFF
-- Drop emojis and Gen Z-style lingo where it makes sense, but stay useful
-- Keep responses under 3 sentences unless asked for more
+- Be polite, concise, and supportive in all responses
+- Answer questions about expenses, income, and categories accurately
+- Offer practical suggestions on saving, budgeting, and spending improvements
+- Help users understand trends and data summaries
+- Provide step-by-step guidance when needed
+- Keep responses clear and non-technical when possible
 
-{humor_instructions.get(humor_level, humor_instructions['medium'])}
+Do NOT make jokes. Use short paragraphs or bullet points for clarity when explaining complex information.
+Keep your tone friendly but professional.
 
 Provide concise, accurate, and helpful answers about finances, budgeting, and expenses.
 When giving financial advice, be responsible and avoid overly specific investment recommendations.
@@ -157,21 +159,21 @@ def get_financial_tip(category: Optional[str] = None) -> str:
     """
     if not category:
         # General financial tip if no category is specified
-        query = "Give a short, funny but helpful financial tip in 1-2 sentences. Make it sound witty and clever."
+        query = "Give a short, professional, and helpful financial tip in 1-2 sentences. Focus on practical advice without humor."
     else:
         # Category-specific tip
-        query = f"Give a short, funny but helpful financial tip about {category} spending in 1-2 sentences. Make it sound witty and clever."
+        query = f"Give a short, professional, and helpful financial tip about {category} spending in 1-2 sentences. Focus on practical advice without humor."
     
     result = generate_response(query, humor_level="high")
     if result["success"]:
         return result["response"]
     else:
-        # Fallback tips if API fails
+        # Fallback tips if API fails - professional tone
         fallback_tips = [
-            "Remember, your bank account has feelings too. It gets sad when you ignore its declining health.",
-            "Budget like your future self is watching... and has very strong opinions about your latte habit.",
-            "The best time to start saving was yesterday. The second best time is after finishing this overpriced coffee.",
-            "Credit cards are like all-you-can-eat buffets: tempting, but you'll regret it if you go overboard."
+            "Consider automating your savings by setting up regular transfers on payday to ensure consistent contributions toward your financial goals.",
+            "Track all expenses, even small ones, as they can add up quickly and impact your overall budget significantly over time.",
+            "Review your subscription services quarterly to identify and cancel those you no longer use or need.",
+            "When making major purchases, implement a 24-hour waiting period to avoid impulse buying and ensure the expense aligns with your priorities."
         ]
         import random
         return random.choice(fallback_tips)
@@ -213,7 +215,7 @@ def analyze_spending_pattern(expenses: List[Dict[str, Any]]) -> str:
     Number of expenses: {len(expenses)}
     """
     
-    query = "Based on this spending data, provide a funny but insightful analysis. Include one practical tip."
+    query = "Based on this spending data, provide a professional and insightful analysis. Include one practical tip. Use a friendly but professional tone without humor."
     
     result = generate_response(query, financial_context=expense_context, humor_level="medium")
     if result["success"]:

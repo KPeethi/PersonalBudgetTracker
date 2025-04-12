@@ -308,7 +308,7 @@ def generate_ai_analysis(analysis_type: str,
                 response = openai_client.chat.completions.create(
                     model=OPENAI_MODEL,
                     messages=[
-                        {"role": "system", "content": "You are a helpful financial advisor specializing in personal expense analysis."},
+                        {"role": "system", "content": "You are a professional, friendly financial assistant specializing in personal expense analysis. Provide clear, concise, and supportive guidance without jokes. Use short paragraphs or bullet points for clarity when explaining complex information. Keep your tone friendly but professional."},
                         {"role": "user", "content": prompt}
                     ]
                 )
@@ -593,7 +593,7 @@ def get_expense_insights(expenses: List[Dict[str, Any]],
             response = openai_client.chat.completions.create(
                 model=OPENAI_MODEL,
                 messages=[
-                    {"role": "system", "content": "You are a helpful financial advisor specializing in personal expense analysis."},
+                    {"role": "system", "content": "You are a professional, friendly financial assistant specializing in personal expense analysis. Provide clear, concise, and supportive guidance without jokes. Use short paragraphs or bullet points for clarity when explaining complex information. Keep your tone friendly but professional."},
                     {"role": "user", "content": prompt}
                 ]
             )
