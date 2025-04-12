@@ -526,6 +526,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 average: 950.00,
                 trend: "stable",
                 breakdown: "• Rent/mortgage: $950.00 (100%)"
+            },
+            "education": {
+                amount: 85.30,
+                percentage: 3.1,
+                monthly: 85.30,
+                average: 85.30,
+                trend: "stable",
+                breakdown: "• Tuition: $55.00 (64%)\n  - Books: $20.30 (24%)\n  - Online courses: $10.00 (12%)"
             }
         };
 
@@ -604,7 +612,8 @@ document.addEventListener('DOMContentLoaded', function() {
                          "• Entertainment (includes streaming services, events, hobbies)\n" +
                          "• Shopping (includes clothing, electronics, household items)\n" +
                          "• Travel (includes flights, accommodations, local transport)\n" +
-                         "• Subscriptions (includes digital services, memberships)\n\n" +
+                         "• Subscriptions (includes digital services, memberships)\n" +
+                         "• Education (includes tuition, books, online courses)\n\n" +
                          "You can ask about any of these categories such as 'How much did I spend on dining?' or 'Show me my travel expenses'.",
                 suggestions: ["Food expenses", "Housing expenses", "Transportation expenses", "Entertainment expenses"]
             };
@@ -654,31 +663,38 @@ document.addEventListener('DOMContentLoaded', function() {
             };
         }
         
-        // Common patterns for asking about category data 
-        const expenseDataPatterns = [
-            /how much (.+) (spend|spent|cost|costs|pay|pays|paid)/i,
-            /what (is|are|was|were) my (.+) expenses/i,
-            /(.+) expenses/i,
-            /(.+) spending/i,
-            /money (spent|spend|spending) on (.+)/i,
-            /how much did i spend on (.+)/i,
-            /tell me about (.+) expenses/i
-        ];
-        
-        // Check if query is asking about expense data for any category
-        let categoryMatch = null;
+        // Variable to hold extracted category 
         let extractedCategory = null;
         
-        for (const pattern of expenseDataPatterns) {
-            const match = lowerMessage.match(pattern);
-            if (match) {
-                categoryMatch = match;
-                if (match[2]) {
-                    extractedCategory = match[2].toLowerCase().trim();
-                } else if (match[1]) {
-                    extractedCategory = match[1].toLowerCase().trim();
+        // Check first if the message is a standalone word that might be a category
+        // This handles single-word inputs like "education" or "dining"
+        if (!lowerMessage.includes(' ')) {
+            // If it's just a single word, treat it as a potential category
+            extractedCategory = lowerMessage.trim();
+        } else {
+            // Otherwise, check for patterns in the multi-word query
+            // Common patterns for asking about category data 
+            const expenseDataPatterns = [
+                /how much (.+) (spend|spent|cost|costs|pay|pays|paid)/i,
+                /what (is|are|was|were) my (.+) expenses/i,
+                /(.+) expenses/i,
+                /(.+) spending/i,
+                /money (spent|spend|spending) on (.+)/i,
+                /how much did i spend on (.+)/i,
+                /tell me about (.+) expenses/i
+            ];
+            
+            // Check if query is asking about expense data for any category
+            for (const pattern of expenseDataPatterns) {
+                const match = lowerMessage.match(pattern);
+                if (match) {
+                    if (match[2]) {
+                        extractedCategory = match[2].toLowerCase().trim();
+                    } else if (match[1]) {
+                        extractedCategory = match[1].toLowerCase().trim();
+                    }
+                    break;
                 }
-                break;
             }
         }
         
@@ -710,7 +726,12 @@ document.addEventListener('DOMContentLoaded', function() {
             'medical': 'healthcare',
             'health': 'healthcare',
             'subscriptions': 'subscriptions',
-            'subscription': 'subscriptions'
+            'subscription': 'subscriptions',
+            'education': 'education',
+            'school': 'education',
+            'tuition': 'education',
+            'college': 'education',
+            'university': 'education'
         };
         
         // Check for category-related patterns in the query
