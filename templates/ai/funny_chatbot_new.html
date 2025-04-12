@@ -437,6 +437,53 @@ document.addEventListener('DOMContentLoaded', function() {
         // Convert to lowercase for easier matching
         const lowerMessage = message.toLowerCase();
         
+        // Pre-process special queries that mix multiple intents
+        if (lowerMessage === "food expenses or try 'give me in numbers'") {
+            return {
+                response: "Here are your food expense numbers for the past month:\n\n" +
+                         "• Total food expenses: $450.75\n" +
+                         "• Breakdown:\n" +
+                         "  - Groceries: $285.25 (63%)\n" +
+                         "  - Restaurants: $138.50 (31%)\n" +
+                         "  - Coffee shops: $27.00 (6%)\n\n" +
+                         "This represents 16.5% of your total monthly spending ($2,724.00).\n" +
+                         "Compared to your 3-month average of $475.20, you spent $24.45 less this month.",
+                suggestions: ["Compare to budget", "Food saving tips", "See spending trend", "Other expense categories"]
+            };
+        }
+        
+        // Also handle when user simply types "food expenses"
+        if (lowerMessage === "food expenses") {
+            return {
+                response: "Here are your food expense numbers for the past month:\n\n" +
+                         "• Total food expenses: $450.75\n" +
+                         "• Breakdown:\n" +
+                         "  - Groceries: $285.25 (63%)\n" +
+                         "  - Restaurants: $138.50 (31%)\n" +
+                         "  - Coffee shops: $27.00 (6%)\n\n" +
+                         "This represents 16.5% of your total monthly spending ($2,724.00).\n" +
+                         "Compared to your 3-month average of $475.20, you spent $24.45 less this month.",
+                suggestions: ["Compare to budget", "Food saving tips", "See spending trend", "Other expense categories"]
+            };
+        }
+        
+        // Handle when food expenses with any mention of numbers
+        if (lowerMessage.includes('food expenses') && 
+            (lowerMessage.includes('numbers') || lowerMessage.includes('number') || 
+            lowerMessage.includes('give me') || lowerMessage.includes('show me'))) {
+            return {
+                response: "Here are your food expense numbers for the past month:\n\n" +
+                         "• Total food expenses: $450.75\n" +
+                         "• Breakdown:\n" +
+                         "  - Groceries: $285.25 (63%)\n" +
+                         "  - Restaurants: $138.50 (31%)\n" +
+                         "  - Coffee shops: $27.00 (6%)\n\n" +
+                         "This represents 16.5% of your total monthly spending ($2,724.00).\n" +
+                         "Compared to your 3-month average of $475.20, you spent $24.45 less this month.",
+                suggestions: ["Compare to budget", "Food saving tips", "See spending trend", "Other expense categories"]
+            };
+        }
+        
         // Check for greetings and basic questions first
         if (['hi', 'hello', 'hey', 'greetings', 'howdy', 'yo', 'hiya'].includes(lowerMessage)) {
             return {
