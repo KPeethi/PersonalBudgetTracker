@@ -7,7 +7,28 @@
     <h1 class="mb-4">AI Financial Assistant</h1>
     
     <div class="row">
-        <!-- Left column with analysis options and data summary -->
+        <!-- Left column with AI analysis -->
+        <div class="col-md-8">
+            <!-- AI Analysis Results -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">{{ current_analysis.title }}</h5>
+                    <span class="badge bg-primary">{{ time_period|title }}</span>
+                </div>
+                <div class="card-body">
+                    {% if analysis_results %}
+                        <p class="card-text">{{ analysis_results|safe }}</p>
+                    {% else %}
+                        <div class="text-center p-4">
+                            <i class="bi bi-robot fs-1 text-muted mb-3"></i>
+                            <p class="mb-0">Select analysis options and click "Generate Analysis" to get AI-powered insights about your expenses.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right column with analysis options and data summary -->
         <div class="col-md-4">
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-primary text-white">
@@ -63,27 +84,6 @@
                             <p class="text-muted">No category data available.</p>
                         {% endif %}
                     </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Right column with AI analysis -->
-        <div class="col-md-8">
-            <!-- AI Analysis Results -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">{{ current_analysis.title }}</h5>
-                    <span class="badge bg-primary">{{ time_period|title }}</span>
-                </div>
-                <div class="card-body">
-                    {% if analysis_results %}
-                        <p class="card-text">{{ analysis_results|safe }}</p>
-                    {% else %}
-                        <div class="text-center p-4">
-                            <i class="bi bi-robot fs-1 text-muted mb-3"></i>
-                            <p class="mb-0">Select analysis options and click "Generate Analysis" to get AI-powered insights about your expenses.</p>
-                        </div>
-                    {% endif %}
                 </div>
             </div>
         </div>
