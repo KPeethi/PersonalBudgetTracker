@@ -7,32 +7,8 @@
     <h1 class="mb-4">AI Financial Assistant</h1>
     
     <div class="row">
-        <!-- Left column with data summary and analysis options -->
+        <!-- Left column with analysis options and data summary -->
         <div class="col-md-4">
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="card-title mb-0">Data Summary</h5>
-                </div>
-                <div class="card-body">
-                    <p><strong>Total Expenses:</strong> ${{ "%.2f"|format(total_amount) }}</p>
-                    <p><strong>Expense Records:</strong> {{ expense_count }}</p>
-                    <p><strong>Unique Categories:</strong> {{ category_count }}</p>
-                    
-                    <div class="mt-3">
-                        <h6 class="fw-bold">Top Categories</h6>
-                        {% if top_categories %}
-                            <ol class="ps-3">
-                                {% for category in top_categories %}
-                                <li>{{ category.name }}: ${{ "%.2f"|format(category.amount) }} ({{ "%.1f"|format(category.percentage) }}%)</li>
-                                {% endfor %}
-                            </ol>
-                        {% else %}
-                            <p class="text-muted">No category data available.</p>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-primary text-white">
                     <h5 class="card-title mb-0">Analysis Options</h5>
@@ -63,6 +39,30 @@
                             <button type="submit" class="btn btn-primary">Generate Analysis</button>
                         </div>
                     </form>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Data Summary</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Total Expenses:</strong> ${{ "%.2f"|format(total_amount) }}</p>
+                    <p><strong>Expense Records:</strong> {{ expense_count }}</p>
+                    <p><strong>Unique Categories:</strong> {{ category_count }}</p>
+                    
+                    <div class="mt-3">
+                        <h6 class="fw-bold">Top Categories</h6>
+                        {% if top_categories %}
+                            <ol class="ps-3">
+                                {% for category in top_categories %}
+                                <li>{{ category.name }}: ${{ "%.2f"|format(category.amount) }} ({{ "%.1f"|format(category.percentage) }}%)</li>
+                                {% endfor %}
+                            </ol>
+                        {% else %}
+                            <p class="text-muted">No category data available.</p>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
