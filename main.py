@@ -2861,7 +2861,7 @@ def last_month_predictions():
 @app.route('/ai/funny-chatbot')
 @login_required
 def funny_chatbot():
-    """Show the funny financial chatbot interface (FinWit)."""
+    """Show the funny financial chatbot interface (Finny)."""
     # Check if Perplexity API is available
     api_available = perplexity_service.check_api_availability()
     
@@ -2899,7 +2899,7 @@ def funny_chatbot():
     
     return render_template(
         'ai/funny_chatbot.html',
-        title='FinWit - Your Witty Financial Assistant',
+        title='Finny - Your Witty Financial BFF',
         api_available=api_available,
         categories_data=categories_data,
         daily_tip=daily_tip
@@ -2909,7 +2909,7 @@ def funny_chatbot():
 @app.route('/ai/funny-chat', methods=['POST'])
 @login_required
 def funny_chat_process():
-    """Process a query to the funny financial chatbot (FinWit)."""
+    """Process a query to the funny financial chatbot (Finny)."""
     data = request.get_json()
     
     if not data or 'message' not in data:
