@@ -2984,6 +2984,9 @@ def funny_chat_process():
         humor_level=humor_level
     )
     
+    # Log detailed API result for debugging
+    logger.debug(f"Perplexity API result: {result}")
+    
     # Add follow-up suggestions based on the query type
     suggestions = []
     if "budget" in message.lower():

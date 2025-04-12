@@ -70,6 +70,14 @@ When giving financial advice, be responsible and avoid overly specific investmen
         system_prompt += f"\nHere is some context about the user's finances: {financial_context}"
 
     try:
+        # Simulate API error for testing the fallback mechanism
+        # We'll uncomment the real code after testing
+        return {
+            "success": False,
+            "error": "Simulated API error for testing fallback mechanism",
+            "response": "Sorry, I encountered an issue. Please try again later."
+        }
+        
         # Prepare the request headers and payload
         headers = {
             "Authorization": f"Bearer {PERPLEXITY_API_KEY}",
