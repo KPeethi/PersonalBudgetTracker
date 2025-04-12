@@ -1,0 +1,415 @@
+{% extends 'base.html' %}
+
+{% block title %}FinWit - Your Witty Financial Assistant{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-chat-dots-fill me-2"></i> FinWit - Your Witty Financial Assistant
+                    </h5>
+                    <div>
+                        <button class="btn btn-sm btn-light" id="humor-toggle" data-level="medium" title="Adjust humor level">
+                            <i class="bi bi-emoji-laughing"></i>
+                            <span>Medium Humor</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-column">
+                        <div id="chat-container" class="mb-3" style="height: 350px; overflow-y: auto; border-radius: 5px;">
+                            <div id="chat-messages" class="p-3">
+                                <div class="message assistant mb-3">
+                                    <div class="message-content p-3 rounded shadow-sm">
+                                        <div class="message-avatar-container mb-2">
+                                            <i class="bi bi-robot message-avatar bg-primary text-white p-2 rounded-circle"></i>
+                                            <strong>FinWit</strong>
+                                        </div>
+                                        <div>
+                                            <p>Hi there! I'm FinWit, your witty financial assistant. 
+                                            I'm here to make talking about money less boring and more helpful! 
+                                            Ask me about your expenses, budgeting tips, or anything finance-related... 
+                                            I promise my advice is better than my jokes (but not by much)! 
+                                            How can I help you manage your money today?</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick prompt suggestions -->
+                    <div class="mb-3">
+                        <div class="d-flex flex-wrap gap-2">
+                            <button class="btn btn-sm btn-outline-primary suggestion-btn">
+                                <i class="bi bi-lightbulb"></i> How can I reduce my food expenses?
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary suggestion-btn">
+                                <i class="bi bi-lightbulb"></i> Give me a funny savings tip
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary suggestion-btn">
+                                <i class="bi bi-lightbulb"></i> What's the 50/30/20 budget rule?
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary suggestion-btn">
+                                <i class="bi bi-lightbulb"></i> How's my spending this month?
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- User input form -->
+                    <form id="chat-form" class="d-flex">
+                        <div class="input-group">
+                            <input 
+                                type="text" 
+                                id="user-input" 
+                                class="form-control" 
+                                placeholder="Ask FinWit anything about your finances..." 
+                                autocomplete="off"
+                            >
+                            <button class="btn btn-primary" type="submit">
+                                <i class="bi bi-send-fill"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="card-footer bg-light">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle"></i> FinWit is an AI assistant - while witty and knowledgeable, 
+                        don't rely on it for professional financial advice.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Card -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up me-2"></i> Your Spending Insights
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="border rounded p-3 h-100">
+                                <h6 class="mb-3">
+                                    <i class="bi bi-cash-coin text-success me-2"></i> 
+                                    Top Spending Categories
+                                </h6>
+                                <div id="top-categories">
+                                    {% if categories_data %}
+                                        <ol class="list-group list-group-numbered">
+                                            {% for category in categories_data %}
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                <div>{{ category.name }}</div>
+                                                <span class="badge bg-primary rounded-pill">${{ category.amount|round(2) }}</span>
+                                            </li>
+                                            {% endfor %}
+                                        </ol>
+                                    {% else %}
+                                        <p class="text-muted">No spending data available</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="border rounded p-3 h-100">
+                                <h6 class="mb-3">
+                                    <i class="bi bi-magic text-info me-2"></i> 
+                                    FinWit's Tip of the Day
+                                </h6>
+                                <div id="finwit-tip" class="p-3 bg-light rounded">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-lightbulb-fill text-warning me-2 fs-4"></i>
+                                        <div>
+                                            {% if daily_tip %}
+                                                <p>{{ daily_tip|safe }}</p>
+                                            {% else %}
+                                                <p>Loading your personalized tip...</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatForm = document.getElementById('chat-form');
+    const userInput = document.getElementById('user-input');
+    const chatMessages = document.getElementById('chat-messages');
+    const chatContainer = document.getElementById('chat-container');
+    const suggestionBtns = document.querySelectorAll('.suggestion-btn');
+    const humorToggle = document.getElementById('humor-toggle');
+    
+    // Humor level cycling
+    humorToggle.addEventListener('click', function() {
+        const currentLevel = this.getAttribute('data-level');
+        let newLevel, newText;
+        
+        if (currentLevel === 'low') {
+            newLevel = 'medium';
+            newText = 'Medium Humor';
+        } else if (currentLevel === 'medium') {
+            newLevel = 'high';
+            newText = 'High Humor';
+        } else {
+            newLevel = 'low';
+            newText = 'Low Humor';
+        }
+        
+        this.setAttribute('data-level', newLevel);
+        this.querySelector('span').textContent = newText;
+        
+        // Add a message about the humor change
+        const changeMessage = `Humor level set to: ${newText}`;
+        addSystemMessage(changeMessage);
+    });
+    
+    // Handle suggestion button clicks
+    suggestionBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const text = this.textContent.trim();
+            userInput.value = text;
+            
+            // Submit the form
+            const event = new Event('submit');
+            chatForm.dispatchEvent(event);
+        });
+    });
+    
+    // Function to add user message to chat
+    function addUserMessage(message) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message user mb-3';
+        messageDiv.innerHTML = `
+            <div class="message-content p-3 rounded shadow-sm ms-auto" style="max-width: 80%; background-color: var(--bs-primary-bg-subtle);">
+                <div class="message-avatar-container mb-2 text-end">
+                    <strong>You</strong>
+                    <i class="bi bi-person-circle message-avatar bg-secondary text-white p-2 rounded-circle ms-2"></i>
+                </div>
+                <div>
+                    <p>${message}</p>
+                </div>
+            </div>
+        `;
+        chatMessages.appendChild(messageDiv);
+        scrollToBottom();
+    }
+    
+    // Function to add assistant message to chat
+    function addAssistantMessage(message) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message assistant mb-3';
+        messageDiv.innerHTML = `
+            <div class="message-content p-3 rounded shadow-sm" style="max-width: 80%; background-color: var(--bs-body-bg);">
+                <div class="message-avatar-container mb-2">
+                    <i class="bi bi-robot message-avatar bg-primary text-white p-2 rounded-circle"></i>
+                    <strong>FinWit</strong>
+                </div>
+                <div>
+                    <p>${message}</p>
+                </div>
+            </div>
+        `;
+        chatMessages.appendChild(messageDiv);
+        scrollToBottom();
+    }
+    
+    // Function to add system message to chat
+    function addSystemMessage(message) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message system text-center mb-3';
+        messageDiv.innerHTML = `
+            <small class="text-muted bg-body-secondary px-3 py-1 rounded-pill">
+                ${message}
+            </small>
+        `;
+        chatMessages.appendChild(messageDiv);
+        scrollToBottom();
+    }
+    
+    // Function to scroll chat to bottom
+    function scrollToBottom() {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+    
+    // Function to show loading indicator
+    function showLoading() {
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'message assistant mb-3 loading-message';
+        loadingDiv.innerHTML = `
+            <div class="message-content p-3 rounded shadow-sm" style="max-width: 80%; background-color: var(--bs-body-bg);">
+                <div class="message-avatar-container mb-2">
+                    <i class="bi bi-robot message-avatar bg-primary text-white p-2 rounded-circle"></i>
+                    <strong>FinWit</strong>
+                </div>
+                <div>
+                    <div class="typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            </div>
+        `;
+        chatMessages.appendChild(loadingDiv);
+        scrollToBottom();
+    }
+    
+    // Function to remove loading indicator
+    function removeLoading() {
+        const loadingMessage = document.querySelector('.loading-message');
+        if (loadingMessage) {
+            loadingMessage.remove();
+        }
+    }
+    
+    // Handle form submission
+    chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const message = userInput.value.trim();
+        
+        if (message) {
+            addUserMessage(message);
+            userInput.value = '';
+            
+            // Show loading indicator
+            showLoading();
+            
+            // Get the current humor level
+            const humorLevel = humorToggle.getAttribute('data-level') || 'medium';
+            
+            // Send message to server
+            fetch('/ai/funny-chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    message: message,
+                    humor_level: humorLevel
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Remove loading indicator
+                removeLoading();
+                
+                if (data.success) {
+                    addAssistantMessage(data.response);
+                    
+                    // If there are follow-up suggestions
+                    if (data.suggestions && data.suggestions.length > 0) {
+                        // Add suggestions
+                        const suggestionsDiv = document.createElement('div');
+                        suggestionsDiv.className = 'follow-up-suggestions my-2 ms-5';
+                        
+                        let suggestionsHTML = '<div class="d-flex flex-wrap gap-2">';
+                        data.suggestions.forEach(suggestion => {
+                            suggestionsHTML += `
+                                <button class="btn btn-sm btn-outline-secondary suggestion-btn">
+                                    ${suggestion}
+                                </button>
+                            `;
+                        });
+                        suggestionsHTML += '</div>';
+                        
+                        suggestionsDiv.innerHTML = suggestionsHTML;
+                        chatMessages.appendChild(suggestionsDiv);
+                        
+                        // Add event listeners to new suggestion buttons
+                        const newSuggestionBtns = suggestionsDiv.querySelectorAll('.suggestion-btn');
+                        newSuggestionBtns.forEach(btn => {
+                            btn.addEventListener('click', function() {
+                                const text = this.textContent.trim();
+                                userInput.value = text;
+                                
+                                // Submit the form
+                                const event = new Event('submit');
+                                chatForm.dispatchEvent(event);
+                            });
+                        });
+                    }
+                } else {
+                    addAssistantMessage("Sorry, I'm having trouble right now. Please try again later.");
+                }
+                
+                scrollToBottom();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                removeLoading();
+                addAssistantMessage("Sorry, something went wrong. Please try again.");
+                scrollToBottom();
+            });
+        }
+    });
+    
+    // Focus input field on page load
+    userInput.focus();
+    
+    // Add special styling for the chat
+    const style = document.createElement('style');
+    style.textContent = `
+        .message-avatar-container {
+            display: flex;
+            align-items: center;
+        }
+        
+        .message.user .message-avatar-container {
+            justify-content: flex-end;
+        }
+        
+        .message.user .message-content {
+            margin-left: auto;
+            background-color: rgba(var(--bs-primary-rgb), 0.1);
+        }
+        
+        .typing-indicator {
+            display: flex;
+            padding: 8px 0;
+        }
+        
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            background-color: #bbb;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+            animation: bounce 1.5s infinite;
+        }
+        
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+    `;
+    document.head.appendChild(style);
+});
+</script>
+{% endblock %}
