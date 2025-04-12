@@ -149,10 +149,13 @@
             </div>
             
             <div class="card shadow-sm mb-4">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
                         <i class="bi bi-tags me-2"></i>Categories
                     </h5>
+                    <button type="button" class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#receiptUploadModal">
+                        <i class="bi bi-receipt me-1"></i> Upload Receipt
+                    </button>
                 </div>
                 <div class="card-body">
                     {% if categories %}
@@ -487,5 +490,132 @@
             }
         }
     });
+    
+    // Modal receipt form functionality
+    const modalCreateNewExpenseCheck = document.getElementById('create_new_expense');
+    const modalExistingExpenseSection = document.getElementById('existingExpenseModalSection');
+    const modalNewExpenseSection = document.getElementById('newExpenseModalSection');
+    
+    if (modalCreateNewExpenseCheck) {
+        modalCreateNewExpenseCheck.addEventListener('change', function() {
+            if (this.checked) {
+                modalExistingExpenseSection.style.display = 'none';
+                modalNewExpenseSection.style.display = 'block';
+            } else {
+                modalExistingExpenseSection.style.display = 'block';
+                modalNewExpenseSection.style.display = 'none';
+            }
+        });
+    }
+    
+    // Modal file upload handling
+    const modalFileInput = document.getElementById('modal_receipt_file');
+    const modalSelectFileBtn = document.getElementById('modalSelectFileBtn');
+    const modalFileNameDisplay = document.getElementById('modalFileNameDisplay');
+    const modalFilePreview = document.getElementById('modalFilePreview');
+    
+    if (modalSelectFileBtn && modalFileInput) {
+        modalSelectFileBtn.addEventListener('click', function() {
+            modalFileInput.click();
+        });
+        
+        modalFileInput.addEventListener('change', function() {
+            if (modalFileInput.files.length > 0) {
+                modalFileNameDisplay.textContent = modalFileInput.files[0].name;
+                modalFilePreview.style.display = 'block';
+                modalSelectFileBtn.classList.add('btn-success');
+                modalSelectFileBtn.classList.remove('btn-outline-secondary');
+                modalSelectFileBtn.querySelector('span').textContent = 'File Selected';
+            }
+        });
+    }
 </script>
+
+<!-- Receipt Upload Modal -->
+<div class="modal fade" id="receiptUploadModal" tabindex="-1" aria-labelledby="receiptUploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="receiptUploadModalLabel">
+                    <i class="bi bi-receipt me-2"></i>Upload Receipt
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('upload_receipt') }}" method="post" enctype="multipart/form-data">
+                    {{ receipt_form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ receipt_form.description.label(class="form-label fw-bold") }}
+                        {{ receipt_form.description(class="form-control shadow-sm") }}
+                        <small class="form-text text-muted">Brief description of this receipt</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="modal_receipt_file" class="form-label fw-bold">Receipt Image</label>
+                        <div class="input-group">
+                            <input type="file" class="form-control d-none" name="receipt_file" id="modal_receipt_file" accept="image/*,.pdf">
+                            <button type="button" class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center" id="modalSelectFileBtn">
+                                <i class="bi bi-upload me-2"></i> 
+                                <span>Select File</span>
+                            </button>
+                        </div>
+                        <div class="mt-2" id="modalFilePreview" style="display: none;">
+                            <div class="card p-2">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-file-earmark-image text-primary fs-4 me-2"></i>
+                                    <span id="modalFileNameDisplay">No file selected</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check mb-2">
+                            {{ receipt_form.create_new_expense(class="form-check-input") }}
+                            {{ receipt_form.create_new_expense.label(class="form-check-label fw-bold") }}
+                        </div>
+                    </div>
+                    
+                    <!-- Existing expense selection (shown when create_new_expense is unchecked) -->
+                    <div id="existingExpenseModalSection" class="mb-3">
+                        {{ receipt_form.expense_id.label(class="form-label fw-bold") }}
+                        {{ receipt_form.expense_id(class="form-select shadow-sm") }}
+                        <small class="form-text text-muted">Link this receipt to an existing expense</small>
+                    </div>
+                    
+                    <!-- New expense fields (shown when create_new_expense is checked) -->
+                    <div id="newExpenseModalSection" class="mt-3 border-top pt-3" style="display: none;">
+                        <h6 class="mb-3">New Expense Details</h6>
+                        
+                        <div class="mb-2">
+                            {{ receipt_form.expense_date.label(class="form-label fw-bold") }}
+                            {{ receipt_form.expense_date(class="form-control shadow-sm", type="date") }}
+                        </div>
+                        
+                        <div class="mb-2">
+                            {{ receipt_form.expense_description.label(class="form-label fw-bold") }}
+                            {{ receipt_form.expense_description(class="form-control shadow-sm") }}
+                        </div>
+                        
+                        <div class="mb-2">
+                            {{ receipt_form.expense_category.label(class="form-label fw-bold") }}
+                            {{ receipt_form.expense_category(class="form-control shadow-sm", list="categories-list") }}
+                        </div>
+                        
+                        <div class="mb-2">
+                            {{ receipt_form.expense_amount.label(class="form-label fw-bold") }}
+                            {{ receipt_form.expense_amount(class="form-control shadow-sm", type="number", step="0.01") }}
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 d-grid">
+                        {{ receipt_form.submit(class="btn btn-primary shadow-sm") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
