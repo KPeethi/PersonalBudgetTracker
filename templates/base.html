@@ -240,11 +240,6 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {% if request.path == url_for('receipts') %}active-nav-item{% endif %}" href="{{ url_for('receipts') }}">
-                                    <i class="bi bi-receipt me-1"></i> Receipts
-                                </a>
-                            </li>
-                            <li class="nav-item">
                                 <a class="nav-link {% if request.path == url_for('preferences') %}active-nav-item{% endif %}" href="{{ url_for('preferences') }}">
                                     <i class="bi bi-gear me-1"></i> Preferences
                                 </a>
@@ -382,11 +377,6 @@
         <a href="{{ url_for('chat_assistant') }}" class="sidebar-link {% if request.path == url_for('chat_assistant') %}active{% endif %}">
             <i class="bi bi-chat-dots"></i>
             <span>Chat Assistant</span>
-        </a>
-        
-        <a href="{{ url_for('receipts') }}" class="sidebar-link {% if request.path == url_for('receipts') %}active{% endif %}">
-            <i class="bi bi-receipt"></i>
-            <span>Receipts</span>
         </a>
         
         <a href="{{ url_for('preferences') }}" class="sidebar-link {% if request.path == url_for('preferences') %}active{% endif %}">
