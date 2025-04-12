@@ -27,4 +27,5 @@ dependencies = [
     "pymysql>=1.1.1",
     "twilio>=9.5.2",
     "trafilatura>=2.0.0",
+    "openpyxl>=3.1.5",
 ]
