@@ -3022,19 +3022,23 @@ def funny_chat_process():
     if not result.get('success', False):
         logger.warning(f"Perplexity API call failed, using fallback response for: {message}")
         
-        # Fallback responses based on query topic
+        # Finny-style fallback responses based on query topic (with emojis and Gen Z lingo)
         if "food" in message.lower() or "groceries" in message.lower():
-            response = "To reduce food expenses, try meal planning, buying in bulk, using grocery store loyalty programs, and cooking at home more often. And remember, the freezer is your friend - unlike those 'friends' who always suggest expensive restaurants!"
+            response = "Your grocery game could use a glow-up! 🥑 Try meal planning, buying in bulk, and cooking that TikTok pasta instead of DoorDashing every night. Your wallet will thank you for the serve! ✨"
         elif "budget" in message.lower():
-            response = "Creating a budget is like making a sandwich - you need the right ingredients! Start with your income (the bread), subtract fixed expenses (the filling), and what's left is your discretionary spending (the condiments). The 50/30/20 rule is popular: 50% for needs, 30% for wants, 20% for savings."
+            response = "Budgeting isn't the vibe killer you think it is! 💅 Try the 50/30/20 rule — 50% on needs, 30% on wants, 20% on savings — it's giving financial freedom! No cap, your future self will be so grateful. 💰"
         elif "save" in message.lower() or "saving" in message.lower():
-            response = "Want to save more money? Try the 24-hour rule for purchases, automate your savings, cut subscriptions you barely use, and remember: your coffee habit costs more than you think. That $5 daily latte is around $1,825 annually - enough for a vacation or a small emergency fund!"
+            response = "Saving money? It's giving main character energy! 💫 Try the 24-hour rule before impulse buys, automate your savings (set it and forget it!), and cut those sus subscriptions. That daily $5 latte adds up to vacation money real quick! 🏝️"
         elif "invest" in message.lower():
-            response = "Investing is like planting a money tree, but with less dirt under your fingernails. Start with low-cost index funds, max out tax-advantaged accounts like 401(k)s, and remember - time in the market beats timing the market. Your future self will thank you!"
+            response = "Investing is literally your money making money while you sleep — we love a passive income moment! 💤💸 Start with index funds (they're lowkey the easiest), and remember time in the market > timing the market. Financial girlboss/boyboss behavior! 📈"
         elif "expensive" in message.lower() or "spending" in message.lower():
-            response = "To curb expensive spending habits, try using cash instead of cards, implement a 'cooling off' period before big purchases, and track every expense for a month - you'll be shocked where your money goes! As they say, a dollar saved is a dollar that won't mysteriously disappear at Target."
+            response = "Your spending is a bit extra rn! 😅 Try cash-only for a week (old school, I know), or the 'screenshot and wait' method before buying online. Track everything for a month and you'll be shook at where your coins are going! Target trips are the real villain. 🎯"
+        elif "credit" in message.lower() or "debt" in message.lower():
+            response = "Credit cards can be your bestie or your toxic ex! 💳 Pay them off in full each month (no ghosting!), use them for points/cashback, and never max them out. Your credit score will be so slay and future you will stan yourself! ⭐"
+        elif "coffee" in message.lower() or "latte" in message.lower():
+            response = "The latte debate is so 2019! ☕ If that morning cup is your serotonin boost, keep it! Just find other places to cut back like those random subscriptions you forgor about. Balance is key, bestie! ✨"
         else:
-            response = "I'm having a bit of trouble with my financial calculator right now. While my AI brain reboots, here's a classic tip: pay yourself first! Set up automatic transfers to savings on payday before you have a chance to spend it. Your future self will be so grateful they might even forgive your current self's questionable fashion choices."
+            response = "My calculator app is glitching rn! 🔄 While we wait, here's the tea: pay yourself first by auto-transferring money to savings on payday before you can spend it. Future you is already gasping at how financially responsible you're being! 💅💰"
         
         # Always return true success for fallback responses
         return jsonify({
