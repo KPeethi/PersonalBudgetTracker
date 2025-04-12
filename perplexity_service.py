@@ -87,11 +87,14 @@ When giving financial advice, be responsible and avoid overly specific investmen
     try:
         print(f"DEBUG - Starting Perplexity API request for query: {query[:30]}...")
         logger.info(f"DEBUG - Perplexity API request initiated. API Key exists: {bool(PERPLEXITY_API_KEY)}")
+        
         # Prepare the request headers and payload
         headers = {
             "Authorization": f"Bearer {PERPLEXITY_API_KEY}",
             "Content-Type": "application/json"
         }
+        
+        print(f"DEBUG - Headers prepared (without showing actual key)")
         
         payload = {
             "model": "llama-3.1-sonar-small-128k-online",
@@ -105,18 +108,34 @@ When giving financial advice, be responsible and avoid overly specific investmen
             "frequency_penalty": 0.5
         }
         
+        print(f"DEBUG - Payload prepared, system prompt length: {len(system_prompt)}, query length: {len(query)}")
+        
         # Log the request for debugging purposes
         logger.debug(f"Perplexity API request: {payload}")
         
         # Make the API request
-        response = requests.post(
-            PERPLEXITY_API_URL,
-            headers=headers,
-            json=payload
-        )
+        print(f"DEBUG - Making request to API endpoint: {PERPLEXITY_API_URL}")
+        print(f"DEBUG - Request timeout set to default")
         
-        # Log the response for debugging
-        logger.debug(f"Perplexity API response code: {response.status_code}")
+        try:
+            response = requests.post(
+                PERPLEXITY_API_URL,
+                headers=headers,
+                json=payload,
+                timeout=25  # Set a 25-second timeout
+            )
+            print(f"DEBUG - Received response with status code: {response.status_code}")
+            
+            # Log the response for debugging
+            logger.debug(f"Perplexity API response code: {response.status_code}")
+            
+            # Log response headers for debugging
+            logger.debug(f"Response headers: {dict(response.headers)}")
+            print(f"DEBUG - Response headers received: Content-Type={response.headers.get('Content-Type')}")
+        except requests.exceptions.Timeout:
+            print("DEBUG - Request timed out after 25 seconds")
+            logger.error("Perplexity API request timed out after 25 seconds")
+            raise Exception("Request timed out. The server took too long to respond.")
         
         # Parse and return the response
         if response.status_code == 200:

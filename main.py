@@ -2913,6 +2913,19 @@ def funny_chat_process():
     # Add console output for debugging
     print("===== FUNNY CHAT PROCESS =====")
     print("Received request!")
+    print(f"PERPLEXITY_API_KEY configured: {bool(os.environ.get('PERPLEXITY_API_KEY'))}")
+    
+    # Verify if Perplexity API is available before proceeding
+    api_available = perplexity_service.check_api_availability()
+    if not api_available:
+        print("ERROR: Perplexity API not available - key missing")
+        return jsonify({
+            'success': True,  # Set to True to use fallback
+            'fallback': True,
+            'error': 'API not configured',
+            'response': 'The financial assistant is currently operating in offline mode. For personalized advice, please ensure the Perplexity API is properly configured.',
+            'suggestions': ['Tell me about budgeting', 'How can I save money?', 'What are good financial habits?']
+        })
     
     try:
         data = request.get_json()
