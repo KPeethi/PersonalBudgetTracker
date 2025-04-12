@@ -97,96 +97,185 @@
                 </div>
             </div>
             
-            <!-- Financial tips based on analysis -->
+            <!-- Financial Arcade - Gamified money tips -->
             {% if analysis_results %}
             <div class="card shadow-sm mb-4 border-0">
-                <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #4e54c8, #8f94fb);">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-lightbulb me-2"></i>
-                        Financial Power-Ups
-                    </h5>
+                <div class="card-header text-white position-relative overflow-hidden" 
+                     style="background-color: #2b2d42; height: 80px;">
+                    <div class="position-absolute top-0 start-0 w-100 h-100" 
+                         style="background: repeating-linear-gradient(45deg, rgba(0,0,0,0.05), rgba(0,0,0,0.05) 10px, rgba(0,0,0,0) 10px, rgba(0,0,0,0) 20px);">
+                    </div>
+                    <div class="position-absolute" style="top: -15px; right: -15px; width: 80px; height: 80px; 
+                                                         background: rgba(255,255,255,0.1); border-radius: 50%;">
+                    </div>
+                    <div class="position-absolute" style="bottom: -20px; left: 20px; width: 40px; height: 40px; 
+                                                         background: rgba(255,255,255,0.1); border-radius: 50%;">
+                    </div>
+                    <div class="d-flex align-items-center position-relative">
+                        <div class="p-2 me-3 rounded text-white" 
+                             style="background-color: #ef233c; transform: rotate(-3deg); box-shadow: 3px 3px 0 rgba(0,0,0,0.2);">
+                            <i class="bi bi-joystick fs-3"></i>
+                        </div>
+                        <h5 class="card-title mb-0 fw-bold" style="font-family: 'Courier New', monospace; letter-spacing: 1px; text-shadow: 2px 2px 0 rgba(0,0,0,0.3);">
+                            MONEY ARCADE
+                        </h5>
+                        <div class="ms-auto">
+                            <span class="badge rounded-pill" style="background-color: #ef233c; transform: rotate(3deg);">
+                                <i class="bi bi-stars me-1"></i> LEVEL UP
+                            </span>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <p class="lead mb-4">Your personalized financial journey map based on your unique spending DNA:</p>
+                
+                <div class="card-body p-0">
+                    <div class="p-3 text-center" style="background-color: #edf2f4;">
+                        <span class="badge bg-warning me-2 position-relative" style="top: -2px;">NEW!</span>
+                        <span class="fw-bold">Select your financial challenge below to earn Money Master points!</span>
+                    </div>
                     
-                    <div class="row g-4">
-                        <!-- Tip 1 -->
-                        <div class="col-md-6">
-                            <div class="card h-100 border-0 bg-light rounded-4">
-                                <div class="card-body p-4">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
-                                            <i class="bi bi-graph-up-arrow text-primary fs-4"></i>
+                    <div class="p-4">
+                        <!-- Challenge 1: Expense Tracking -->
+                        <div class="mb-4 position-relative">
+                            <div class="border border-2 rounded p-3 pb-2" style="border-color: #8d99ae !important; transition: all 0.3s;">
+                                <div class="position-absolute top-0 end-0 translate-middle">
+                                    <span class="badge rounded-pill bg-success px-3 py-2 shadow-sm">
+                                        <i class="bi bi-trophy me-1"></i> 25 PTS
+                                    </span>
+                                </div>
+                                
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <div class="rounded-circle p-3" style="background-color: #2b2d42;">
+                                            <i class="bi bi-eye fs-3 text-white"></i>
                                         </div>
-                                        <h5 class="card-title mb-0">Money Detective</h5>
                                     </div>
-                                    <p class="card-text">Become a financial detective by tracking every dollar. Small clues (expenses) reveal the bigger mystery of where your money vanishes!</p>
-                                    <div class="text-end">
-                                        <a href="#" class="btn btn-sm btn-primary rounded-pill px-3">Try This</a>
+                                    <div class="col">
+                                        <h5 class="fw-bold mb-1" style="color: #2b2d42;">Expense Visibility Challenge</h5>
+                                        <p class="mb-2 text-muted">Track all expenses for 7 consecutive days - no exceptions!</p>
+                                        <div class="progress mb-2" style="height: 8px;">
+                                            <div class="progress-bar" role="progressbar" style="width: 35%; background-color: #ef233c;" 
+                                                 aria-valuenow="35" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">Progress: 35%</small>
+                                            <button class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-plus-circle me-1"></i> Log Today
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Tip 2 -->
-                        <div class="col-md-6">
-                            <div class="card h-100 border-0 bg-light rounded-4">
-                                <div class="card-body p-4">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
-                                            <i class="bi bi-map text-success fs-4"></i>
+                        <!-- Challenge 2: Budget Creation -->
+                        <div class="mb-4 position-relative">
+                            <div class="border border-2 rounded p-3 pb-2" style="border-color: #8d99ae !important; transition: all 0.3s;">
+                                <div class="position-absolute top-0 end-0 translate-middle">
+                                    <span class="badge rounded-pill bg-success px-3 py-2 shadow-sm">
+                                        <i class="bi bi-trophy me-1"></i> 50 PTS
+                                    </span>
+                                </div>
+                                
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <div class="rounded-circle p-3" style="background-color: #2b2d42;">
+                                            <i class="bi bi-map fs-3 text-white"></i>
                                         </div>
-                                        <h5 class="card-title mb-0">Budget Blueprint</h5>
                                     </div>
-                                    <p class="card-text">Your money needs a roadmap! Create category budgets like giving each dollar a job description before it gets spent on a shopping spree.</p>
-                                    <div class="text-end">
-                                        <a href="#" class="btn btn-sm btn-success rounded-pill px-3">Create Plan</a>
+                                    <div class="col">
+                                        <h5 class="fw-bold mb-1" style="color: #2b2d42;">Budget Blueprint Mission</h5>
+                                        <p class="mb-2 text-muted">Create budget targets for your top 5 spending categories.</p>
+                                        <div class="progress mb-2" style="height: 8px;">
+                                            <div class="progress-bar" role="progressbar" style="width: 0%; background-color: #ef233c;" 
+                                                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">Not started</small>
+                                            <button class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-play-fill me-1"></i> Start Quest
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Tip 3 -->
-                        <div class="col-md-6">
-                            <div class="card h-100 border-0 bg-light rounded-4">
-                                <div class="card-body p-4">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="rounded-circle bg-danger bg-opacity-10 p-3 me-3">
-                                            <i class="bi bi-scissors text-danger fs-4"></i>
+                        <!-- Challenge 3: Spending Reduction -->
+                        <div class="mb-4 position-relative">
+                            <div class="border border-2 rounded p-3 pb-2" style="border-color: #8d99ae !important; transition: all 0.3s;">
+                                <div class="position-absolute top-0 end-0 translate-middle">
+                                    <span class="badge rounded-pill bg-success px-3 py-2 shadow-sm">
+                                        <i class="bi bi-trophy me-1"></i> 75 PTS
+                                    </span>
+                                </div>
+                                
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <div class="rounded-circle p-3" style="background-color: #2b2d42;">
+                                            <i class="bi bi-scissors fs-3 text-white"></i>
                                         </div>
-                                        <h5 class="card-title mb-0">Expense Trimmer</h5>
                                     </div>
-                                    <p class="card-text">Your top spending categories are like garden weeds - they'll grow wild unless pruned regularly. Challenge yourself to trim just 5% this month!</p>
-                                    <div class="text-end">
-                                        <a href="#" class="btn btn-sm btn-danger rounded-pill px-3">Start Trimming</a>
+                                    <div class="col">
+                                        <h5 class="fw-bold mb-1" style="color: #2b2d42;">Expense Slasher Battle</h5>
+                                        <p class="mb-2 text-muted">Reduce your top category spending by 5% this month.</p>
+                                        <div class="progress mb-2" style="height: 8px;">
+                                            <div class="progress-bar" role="progressbar" style="width: 0%; background-color: #ef233c;" 
+                                                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">Locked</small>
+                                            <button class="btn btn-sm btn-outline-secondary" disabled>
+                                                <i class="bi bi-lock me-1"></i> Complete previous
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Tip 4 -->
-                        <div class="col-md-6">
-                            <div class="card h-100 border-0 bg-light rounded-4">
-                                <div class="card-body p-4">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="rounded-circle bg-warning bg-opacity-10 p-3 me-3">
-                                            <i class="bi bi-piggy-bank text-warning fs-4"></i>
+                        <!-- Challenge 4: Savings -->
+                        <div class="mb-0 position-relative">
+                            <div class="border border-2 rounded p-3 pb-2" style="border-color: #8d99ae !important; transition: all 0.3s;">
+                                <div class="position-absolute top-0 end-0 translate-middle">
+                                    <span class="badge rounded-pill bg-success px-3 py-2 shadow-sm">
+                                        <i class="bi bi-trophy me-1"></i> 100 PTS
+                                    </span>
+                                </div>
+                                
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <div class="rounded-circle p-3" style="background-color: #2b2d42;">
+                                            <i class="bi bi-piggy-bank fs-3 text-white"></i>
                                         </div>
-                                        <h5 class="card-title mb-0">Future You Fund</h5>
                                     </div>
-                                    <p class="card-text">Future You will be thrilled that Present You set aside 10-15% for them! It's like sending a surprise gift package to your future self.</p>
-                                    <div class="text-end">
-                                        <a href="#" class="btn btn-sm btn-warning rounded-pill px-3">Start Saving</a>
+                                    <div class="col">
+                                        <h5 class="fw-bold mb-1" style="color: #2b2d42;">Future Fortune Quest</h5>
+                                        <p class="mb-2 text-muted">Set up automatic savings of 10% of your income.</p>
+                                        <div class="progress mb-2" style="height: 8px;">
+                                            <div class="progress-bar" role="progressbar" style="width: 0%; background-color: #ef233c;" 
+                                                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">Locked</small>
+                                            <button class="btn btn-sm btn-outline-secondary" disabled>
+                                                <i class="bi bi-lock me-1"></i> Complete previous
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="alert alert-primary mt-4 d-flex align-items-center" role="alert">
-                        <i class="bi bi-info-circle-fill me-2 fs-4"></i>
+                    <div class="card-footer p-3 d-flex justify-content-between align-items-center" style="background-color: #edf2f4;">
                         <div>
-                            <strong>Pro Tip:</strong> Small, consistent changes create massive results over time. Focus on progress, not perfection!
+                            <i class="bi bi-stars text-warning fs-4 me-1"></i>
+                            <span class="fw-bold">Your Points: 35</span>
+                        </div>
+                        <div>
+                            <button class="btn btn-primary py-1 px-3">
+                                <i class="bi bi-trophy me-1"></i> View Rewards
+                            </button>
                         </div>
                     </div>
                 </div>
