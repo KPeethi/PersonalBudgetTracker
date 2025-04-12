@@ -392,6 +392,9 @@
                 <a href="{{ url_for('business_excel_import') }}" class="sidebar-link {% if request.path == url_for('business_excel_import') %}active{% endif %}">
                     <span>Excel Import</span>
                 </a>
+                <a href="{{ url_for('excel_visualize') }}" class="sidebar-link {% if request.path == url_for('excel_visualize') %}active{% endif %}">
+                    <span>Excel Visualization</span>
+                </a>
                 {% elif not current_user.is_business_user %}
                 <a href="{{ url_for('request_business_upgrade') }}" class="sidebar-link {% if request.path == url_for('request_business_upgrade') %}active{% endif %}">
                     <span>Request Upgrade <span class="badge bg-primary rounded-pill ms-2">PRO</span></span>
