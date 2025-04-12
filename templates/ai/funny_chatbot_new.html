@@ -290,9 +290,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     suggestionsDiv.className = 'follow-up-suggestions my-2 ms-5';
                     suggestionsDiv.innerHTML = `
                         <div class="d-flex flex-wrap gap-2">
-                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">How can I reduce my spending?</button>
-                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">What's a good budget breakdown?</button>
-                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">Tips for tracking expenses</button>
+                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">Where am I overspending?</button>
+                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">How to set category limits</button>
+                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">Tips for expense tracking</button>
                         </div>
                     `;
                     chatMessages.appendChild(suggestionsDiv);
@@ -311,154 +311,122 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 
-                if (text.includes("emergency fund") || text.includes("build an emergency")) {
-                    addAssistantMessage("To build an emergency fund: 1) Start with a goal of saving 3-6 months of essential expenses. 2) Open a dedicated high-yield savings account that's easily accessible but separate from your checking account. 3) Set up automatic transfers on payday, even if it's just a small amount. 4) Gradually increase your contributions as your financial situation improves. 5) Use windfalls like tax refunds or bonuses to accelerate your progress.");
-                    
-                    // Add follow-up suggestions
+                // If we get here, we don't have a hardcoded response for this question
+                const localResponse = generateLocalResponse(text);
+                
+                // Add system message about offline mode
+                addSystemMessage("Using offline response mode");
+                
+                // Display the response
+                addAssistantMessage(localResponse.response);
+                
+                // Add follow-up suggestions
+                if (localResponse.suggestions && localResponse.suggestions.length > 0) {
                     const suggestionsDiv = document.createElement('div');
                     suggestionsDiv.className = 'follow-up-suggestions my-2 ms-5';
-                    suggestionsDiv.innerHTML = `
-                        <div class="d-flex flex-wrap gap-2">
-                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">Best savings accounts</button>
-                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">How to automate savings</button>
-                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">What expenses are essential?</button>
-                        </div>
-                    `;
+                    
+                    let suggestionsHTML = '<div class="d-flex flex-wrap gap-2">';
+                    localResponse.suggestions.forEach(suggestion => {
+                        suggestionsHTML += `
+                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">
+                                ${suggestion}
+                            </button>
+                        `;
+                    });
+                    suggestionsHTML += '</div>';
+                    
+                    suggestionsDiv.innerHTML = suggestionsHTML;
                     chatMessages.appendChild(suggestionsDiv);
                     
                     // Add event listeners to new suggestion buttons
-                    suggestionsDiv.querySelectorAll('.suggestion-btn').forEach(newBtn => {
-                        newBtn.addEventListener('click', function() {
+                    suggestionsDiv.querySelectorAll('.suggestion-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
                             const newText = this.textContent.trim();
                             userInput.value = newText;
                             const newEvent = new Event('submit');
                             chatForm.dispatchEvent(newEvent);
                         });
                     });
-                    
-                    scrollToBottom();
-                    return;
                 }
                 
-                if (text.includes("reduce my spending") || text.includes("reduce spending") || text.includes("spend less")) {
-                    addAssistantMessage("To reduce spending: 1) Track all expenses for 30 days to identify patterns and areas to cut. 2) Create a realistic budget and set spending limits for each category. 3) Use cash for discretionary spending to increase awareness. 4) Implement a 24-hour waiting period for non-essential purchases over $50. 5) Review and cancel unused subscriptions and memberships. 6) Compare prices before making major purchases and look for discount opportunities.");
-                    
-                    // Add follow-up suggestions
-                    const suggestionsDiv = document.createElement('div');
-                    suggestionsDiv.className = 'follow-up-suggestions my-2 ms-5';
-                    suggestionsDiv.innerHTML = `
-                        <div class="d-flex flex-wrap gap-2">
-                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">Tips for tracking expenses</button>
-                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">How to create a budget</button>
-                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">What is the 50/30/20 rule?</button>
-                        </div>
-                    `;
-                    chatMessages.appendChild(suggestionsDiv);
-                    
-                    // Add event listeners to new suggestion buttons
-                    suggestionsDiv.querySelectorAll('.suggestion-btn').forEach(newBtn => {
-                        newBtn.addEventListener('click', function() {
-                            const newText = this.textContent.trim();
-                            userInput.value = newText;
-                            const newEvent = new Event('submit');
-                            chatForm.dispatchEvent(newEvent);
-                        });
-                    });
-                    
-                    scrollToBottom();
-                    return;
-                }
-                
-                // If not a hardcoded response, submit the form
-                userInput.value = text;
-                const event = new Event('submit');
-                chatForm.dispatchEvent(event);
-            }, 1000); // Show loading for 1 second before displaying response
+                scrollToBottom();
+            }, 1000);
         });
     });
     
-    // Function to add user message to chat
+    // Function to add a user message to the chat
     function addUserMessage(message) {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'message user mb-3';
         messageDiv.innerHTML = `
-            <div class="message-content p-3 rounded shadow-sm ms-auto" style="max-width: 80%; background-color: var(--bs-primary-bg-subtle);">
-                <div class="message-avatar-container mb-2 text-end">
-                    <strong>You</strong>
-                    <i class="bi bi-person-circle message-avatar bg-secondary text-white p-2 rounded-circle ms-2"></i>
-                </div>
-                <div>
-                    <p>${message}</p>
-                </div>
+            <div class="message-content p-3 rounded shadow-sm">
+                <p>${message}</p>
             </div>
         `;
         chatMessages.appendChild(messageDiv);
         scrollToBottom();
     }
     
-    // Function to add assistant message to chat
+    // Function to add an assistant message to the chat
     function addAssistantMessage(message) {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'message assistant mb-3';
         messageDiv.innerHTML = `
-            <div class="message-content p-3 rounded shadow-sm" style="max-width: 80%; background-color: var(--bs-body-bg);">
+            <div class="message-content p-3 rounded shadow-sm">
                 <div class="message-avatar-container mb-2">
                     <i class="bi bi-robot message-avatar bg-primary text-white p-2 rounded-circle"></i>
                     <strong>Financial Assistant</strong>
                 </div>
-                <div>
-                    <p>${message}</p>
-                </div>
+                <div>${message}</div>
             </div>
         `;
         chatMessages.appendChild(messageDiv);
         scrollToBottom();
     }
     
-    // Function to add system message to chat
+    // Function to add a system message to the chat
     function addSystemMessage(message) {
         const messageDiv = document.createElement('div');
-        messageDiv.className = 'message system text-center mb-3';
+        messageDiv.className = 'message system mb-3';
         messageDiv.innerHTML = `
-            <small class="text-muted bg-body-secondary px-3 py-1 rounded-pill">
-                ${message}
-            </small>
+            <div class="message-content system-message p-2 rounded">
+                <small class="text-muted"><i class="bi bi-info-circle me-1"></i>${message}</small>
+            </div>
         `;
         chatMessages.appendChild(messageDiv);
         scrollToBottom();
     }
     
-    // Function to scroll chat to bottom
+    // Function to scroll to the bottom of the chat
     function scrollToBottom() {
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
     
-    // Function to show loading indicator
+    // Function to show the loading indicator
     function showLoading() {
-        const loadingDiv = document.createElement('div');
-        loadingDiv.className = 'message assistant mb-3 loading-message';
-        loadingDiv.innerHTML = `
-            <div class="message-content p-3 rounded shadow-sm" style="max-width: 80%; background-color: var(--bs-body-bg);">
+        const loadingMessage = document.createElement('div');
+        loadingMessage.className = 'message loading mb-3';
+        loadingMessage.id = 'loading-indicator';
+        loadingMessage.innerHTML = `
+            <div class="message-content p-3 rounded shadow-sm">
                 <div class="message-avatar-container mb-2">
                     <i class="bi bi-robot message-avatar bg-primary text-white p-2 rounded-circle"></i>
                     <strong>Financial Assistant</strong>
                 </div>
-                <div>
-                    <div class="typing-indicator">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </div>
+                <div class="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
                 </div>
             </div>
         `;
-        chatMessages.appendChild(loadingDiv);
+        chatMessages.appendChild(loadingMessage);
         scrollToBottom();
     }
     
-    // Function to remove loading indicator
+    // Function to remove the loading indicator
     function removeLoading() {
-        const loadingMessage = document.querySelector('.loading-message');
+        const loadingMessage = document.getElementById('loading-indicator');
         if (loadingMessage) {
             loadingMessage.remove();
         }
@@ -577,9 +545,9 @@ document.addEventListener('DOMContentLoaded', function() {
             showLoading();
             
             // Get the current humor level
-            const humorLevel = humorToggle.getAttribute('data-level') || 'medium';
+            const humorLevel = humorToggle.getAttribute('data-level') || 'low';
             
-            // Only use local responses, don't even try API calls
+            // Get response from local function
             const localResponse = generateLocalResponse(message);
             
             // Set a timeout to show loading briefly
@@ -624,140 +592,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 scrollToBottom();
             }, 1000); // Show loading for 1 second before displaying response
             
-            // Log the interaction but don't make any API calls
+            // Log the interaction
             console.log('Using local response for message:', message);
-            .then(response => {
-                clearTimeout(timeoutId);
-                console.log('Response status:', response.status);
-                
-                if (!response.ok) {
-                    throw new Error(`Server responded with status: ${response.status}`);
-                }
-                
-                return response.json();
-            })
-            .then(data => {
-                // Remove loading indicator
-                removeLoading();
-                console.log('Response data:', data);
-                
-                if (data.success) {
-                    // Check if this is a fallback response
-                    if (data.fallback) {
-                        // Add a note that we're using a fallback
-                        addSystemMessage("Using offline response mode");
-                    }
-                    
-                    addAssistantMessage(data.response);
-                    
-                    // If there are follow-up suggestions
-                    if (data.suggestions && data.suggestions.length > 0) {
-                        // Add suggestions
-                        const suggestionsDiv = document.createElement('div');
-                        suggestionsDiv.className = 'follow-up-suggestions my-2 ms-5';
-                        
-                        let suggestionsHTML = '<div class="d-flex flex-wrap gap-2">';
-                        data.suggestions.forEach(suggestion => {
-                            suggestionsHTML += `
-                                <button class="btn btn-sm btn-outline-secondary suggestion-btn">
-                                    ${suggestion}
-                                </button>
-                            `;
-                        });
-                        suggestionsHTML += '</div>';
-                        
-                        suggestionsDiv.innerHTML = suggestionsHTML;
-                        chatMessages.appendChild(suggestionsDiv);
-                        
-                        // Add event listeners to new suggestion buttons
-                        const newSuggestionBtns = suggestionsDiv.querySelectorAll('.suggestion-btn');
-                        newSuggestionBtns.forEach(btn => {
-                            btn.addEventListener('click', function() {
-                                const text = this.textContent.trim();
-                                userInput.value = text;
-                                
-                                // Submit the form
-                                const event = new Event('submit');
-                                chatForm.dispatchEvent(event);
-                            });
-                        });
-                    }
-                } else {
-                    addAssistantMessage(`Sorry, I'm having trouble right now: ${data.error || 'Unknown error'}. Please try again later.`);
-                }
-                
-                scrollToBottom();
-            })
-            .catch(error => {
-                clearTimeout(timeoutId);
-                console.error('Error:', error);
-                removeLoading();
-                
-                let errorMessage = error.toString();
-                let responseMessage = "Sorry, something went wrong. Please try again.";
-                
-                // Check if this is an abort error (timeout)
-                if (error.name === 'AbortError') {
-                    errorMessage = "Request timed out. The server took too long to respond.";
-                }
-                
-                // Provide helpful fallback responses based on the user's question
-                const lowerMessage = message.toLowerCase();
-                if (lowerMessage.includes('food') || lowerMessage.includes('grocery') || lowerMessage.includes('eat')) {
-                    responseMessage = "To reduce food expenses, consider meal planning, buying in bulk, using grocery store loyalty programs, and cooking at home more often. Creating a shopping list before going to the grocery store can help avoid impulse purchases.";
-                } else if (lowerMessage.includes('budget') || lowerMessage.includes('50/30/20')) {
-                    responseMessage = "The 50/30/20 rule is a budgeting strategy that suggests allocating 50% of your income to needs (housing, food, utilities), 30% to wants (entertainment, dining out), and 20% to savings and debt repayment. This balanced approach helps ensure you're meeting essential needs while still planning for the future.";
-                } else if (lowerMessage.includes('save') || lowerMessage.includes('saving')) {
-                    responseMessage = "Effective saving strategies include automating your savings, following the 'pay yourself first' principle, tracking expenses to identify areas to cut back, and setting specific financial goals with deadlines. Even small, consistent contributions add up over time.";
-                }
-                
-                // Add system message about operating in offline mode
-                addSystemMessage("Using offline mode due to connectivity issues");
-                
-                // Display the fallback response
-                addAssistantMessage(responseMessage);
-                
-                // Add error details for debugging
-                addSystemMessage("Error details: " + errorMessage);
-                
-                // Add some helpful follow-up suggestions
-                const suggestionsDiv = document.createElement('div');
-                suggestionsDiv.className = 'follow-up-suggestions my-2 ms-5';
-                
-                let suggestionsHTML = '<div class="d-flex flex-wrap gap-2">';
-                const fallbackSuggestions = [
-                    "How can I create a budget?", 
-                    "Tips for saving money", 
-                    "What is the 50/30/20 rule?",
-                    "How to track expenses effectively?"
-                ];
-                
-                fallbackSuggestions.forEach(suggestion => {
-                    suggestionsHTML += `
-                        <button class="btn btn-sm btn-outline-secondary suggestion-btn">
-                            ${suggestion}
-                        </button>
-                    `;
-                });
-                suggestionsHTML += '</div>';
-                
-                suggestionsDiv.innerHTML = suggestionsHTML;
-                chatMessages.appendChild(suggestionsDiv);
-                
-                // Add event listeners to the new suggestion buttons
-                suggestionsDiv.querySelectorAll('.suggestion-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const text = this.textContent.trim();
-                        userInput.value = text;
-                        
-                        // Submit the form
-                        const event = new Event('submit');
-                        chatForm.dispatchEvent(event);
-                    });
-                });
-                
-                scrollToBottom();
-            });
         }
     });
     
