@@ -98,19 +98,12 @@
         }
         
         .sidebar-link:before {
-            content: '›';
-            font-size: 22px;
-            line-height: 1;
-            margin-right: 10px;
-            color: #adb5bd;
+            content: '';
+            display: none;
         }
         
         .sidebar-link:hover {
             background-color: rgba(13, 110, 253, 0.05);
-            color: #0d6efd;
-        }
-        
-        .sidebar-link:hover:before {
             color: #0d6efd;
         }
         
@@ -124,9 +117,7 @@
             border-left: none;
         }
         
-        .sidebar-link.active:before {
-            color: #0d6efd;
-        }
+        /* No pseudo-element for active state */
         
         .content-wrapper {
             margin-left: 220px;
@@ -201,25 +192,13 @@
             border-color: transparent;
         }
         
-        [data-bs-theme="dark"] .sidebar-link:before {
-            color: #6c757d;
-        }
-        
         [data-bs-theme="dark"] .sidebar-link:hover {
             color: #fff;
             background-color: rgba(255, 255, 255, 0.05);
         }
         
-        [data-bs-theme="dark"] .sidebar-link:hover:before {
-            color: #fff;
-        }
-        
         [data-bs-theme="dark"] .sidebar-link.active {
             background-color: rgba(121, 204, 172, 0.2);
-            color: #79cca9;
-        }
-        
-        [data-bs-theme="dark"] .sidebar-link.active:before {
             color: #79cca9;
         }
         
