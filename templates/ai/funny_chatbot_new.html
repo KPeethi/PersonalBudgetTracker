@@ -486,6 +486,46 @@ document.addEventListener('DOMContentLoaded', function() {
                 average: 220.75,
                 trend: "lower",
                 breakdown: "• Streaming services: $45.80 (25%)\n  - Movies/events: $85.50 (46%)\n  - Hobbies: $54.00 (29%)"
+            },
+            "travel": {
+                amount: 125.00,
+                percentage: 4.6,
+                monthly: 125.00,
+                average: 75.50,
+                trend: "much higher",
+                breakdown: "• Flights: $80.00 (64%)\n  - Accommodations: $30.00 (24%)\n  - Local transport: $15.00 (12%)"
+            },
+            "shopping": {
+                amount: 145.65,
+                percentage: 5.3,
+                monthly: 145.65,
+                average: 225.40,
+                trend: "much lower",
+                breakdown: "• Clothing: $85.75 (59%)\n  - Electronics: $35.90 (25%)\n  - Household items: $24.00 (16%)"
+            },
+            "healthcare": {
+                amount: 95.80,
+                percentage: 3.5,
+                monthly: 95.80,
+                average: 93.25,
+                trend: "stable",
+                breakdown: "• Insurance premium: $65.00 (68%)\n  - Prescriptions: $20.80 (22%)\n  - Co-pays: $10.00 (10%)"
+            },
+            "subscriptions": {
+                amount: 65.45,
+                percentage: 2.4,
+                monthly: 65.45,
+                average: 55.60,
+                trend: "higher",
+                breakdown: "• Streaming services: $35.95 (55%)\n  - Software: $15.50 (24%)\n  - Other memberships: $14.00 (21%)"
+            },
+            "housing": {
+                amount: 950.00,
+                percentage: 35.0,
+                monthly: 950.00,
+                average: 950.00,
+                trend: "stable",
+                breakdown: "• Rent/mortgage: $950.00 (100%)"
             }
         };
 
@@ -591,6 +631,98 @@ document.addEventListener('DOMContentLoaded', function() {
                 response: "I can help you with various financial topics including: creating and managing budgets, developing saving strategies, understanding investment basics, managing debt, reducing expenses, setting financial goals, improving credit scores, and analyzing your spending patterns. What would you like to know about?",
                 suggestions: ["Create a budget", "Saving strategies", "Investment basics", "Debt management"]
             };
+        }
+        
+        // Common patterns for asking about category data 
+        const expenseDataPatterns = [
+            /how much (.+) (spend|spent|cost|costs|pay|pays|paid)/i,
+            /what (is|are|was|were) my (.+) expenses/i,
+            /(.+) expenses/i,
+            /(.+) spending/i,
+            /money (spent|spend|spending) on (.+)/i,
+            /how much did i spend on (.+)/i,
+            /tell me about (.+) expenses/i
+        ];
+        
+        // Check if query is asking about expense data for any category
+        let categoryMatch = null;
+        let extractedCategory = null;
+        
+        for (const pattern of expenseDataPatterns) {
+            const match = lowerMessage.match(pattern);
+            if (match) {
+                categoryMatch = match;
+                if (match[2]) {
+                    extractedCategory = match[2].toLowerCase().trim();
+                } else if (match[1]) {
+                    extractedCategory = match[1].toLowerCase().trim();
+                }
+                break;
+            }
+        }
+        
+        // Map common category terms to our standardized categories
+        const categoryMapping = {
+            'food': 'food',
+            'dining': 'dining',
+            'restaurants': 'dining',
+            'eating out': 'dining',
+            'groceries': 'groceries',
+            'grocery': 'groceries',
+            'housing': 'housing',
+            'rent': 'rent',
+            'mortgage': 'housing',
+            'home': 'housing',
+            'utilities': 'utilities',
+            'utility': 'utilities',
+            'bills': 'utilities',
+            'car': 'transportation',
+            'gas': 'transportation',
+            'transportation': 'transportation',
+            'travel': 'travel',
+            'entertainment': 'entertainment',
+            'fun': 'entertainment',
+            'shopping': 'shopping',
+            'clothes': 'shopping',
+            'clothing': 'shopping',
+            'healthcare': 'healthcare',
+            'medical': 'healthcare',
+            'health': 'healthcare',
+            'subscriptions': 'subscriptions',
+            'subscription': 'subscriptions'
+        };
+        
+        // If we found a category in the query, map it to our standard categories
+        if (extractedCategory && categoryMapping[extractedCategory]) {
+            const standardCategory = categoryMapping[extractedCategory];
+            
+            // Check if we have data for this category
+            if (oneWordCategories[standardCategory]) {
+                const category = oneWordCategories[standardCategory];
+                return {
+                    response: `Here are your ${extractedCategory} expense numbers for the past month:\n\n` +
+                             `• Total ${extractedCategory} expenses: $${category.amount.toFixed(2)}\n` +
+                             `• Breakdown:\n  ${category.breakdown}\n\n` +
+                             `This represents ${category.percentage}% of your total monthly spending ($2,724.00).\n` +
+                             `Compared to your 3-month average of $${category.average.toFixed(2)}, your ${extractedCategory} spending is ${category.trend} this month.`,
+                    suggestions: [`Compare ${extractedCategory} to budget`, `${extractedCategory} saving tips`, "See spending trend", "Other expense categories"]
+                };
+            }
+            
+            // Special case for food expenses since it combines multiple categories
+            if (standardCategory === 'food' || extractedCategory === 'food') {
+                return {
+                    response: "Here are your food expense numbers for the past month:\n\n" +
+                             "• Total food expenses: $450.75\n" +
+                             "• Breakdown:\n" +
+                             "  - Groceries: $285.25 (63%)\n" +
+                             "  - Restaurants: $138.50 (31%)\n" +
+                             "  - Coffee shops: $27.00 (6%)\n\n" +
+                             "This represents 16.5% of your total monthly spending ($2,724.00).\n" +
+                             "Compared to your 3-month average of $475.20, you spent $24.45 less this month.",
+                    suggestions: ["Compare to budget", "Food saving tips", "See spending trend", "Other expense categories"]
+                };
+            }
         }
         
         // Define topics and keywords for matching
