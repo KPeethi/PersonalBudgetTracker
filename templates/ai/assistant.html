@@ -97,186 +97,119 @@
                 </div>
             </div>
             
-            <!-- Financial Arcade - Gamified money tips -->
+            <!-- Financial insights in a minimalist, magazine-style design -->
             {% if analysis_results %}
             <div class="card shadow-sm mb-4 border-0">
-                <div class="card-header text-white position-relative overflow-hidden" 
-                     style="background-color: #2b2d42; height: 80px;">
-                    <div class="position-absolute top-0 start-0 w-100 h-100" 
-                         style="background: repeating-linear-gradient(45deg, rgba(0,0,0,0.05), rgba(0,0,0,0.05) 10px, rgba(0,0,0,0) 10px, rgba(0,0,0,0) 20px);">
-                    </div>
-                    <div class="position-absolute" style="top: -15px; right: -15px; width: 80px; height: 80px; 
-                                                         background: rgba(255,255,255,0.1); border-radius: 50%;">
-                    </div>
-                    <div class="position-absolute" style="bottom: -20px; left: 20px; width: 40px; height: 40px; 
-                                                         background: rgba(255,255,255,0.1); border-radius: 50%;">
-                    </div>
-                    <div class="d-flex align-items-center position-relative">
-                        <div class="p-2 me-3 rounded text-white" 
-                             style="background-color: #ef233c; transform: rotate(-3deg); box-shadow: 3px 3px 0 rgba(0,0,0,0.2);">
-                            <i class="bi bi-joystick fs-3"></i>
-                        </div>
-                        <h5 class="card-title mb-0 fw-bold" style="font-family: 'Courier New', monospace; letter-spacing: 1px; text-shadow: 2px 2px 0 rgba(0,0,0,0.3);">
-                            MONEY ARCADE
-                        </h5>
-                        <div class="ms-auto">
-                            <span class="badge rounded-pill" style="background-color: #ef233c; transform: rotate(3deg);">
-                                <i class="bi bi-stars me-1"></i> LEVEL UP
-                            </span>
-                        </div>
-                    </div>
+                <div class="card-header bg-white border-0 pt-4 pb-0">
+                    <h5 class="display-6 fw-light mb-0" style="letter-spacing: -0.5px;">
+                        Financial Insights
+                    </h5>
+                    <p class="text-muted small fst-italic">Curated recommendations based on your spending patterns</p>
                 </div>
                 
-                <div class="card-body p-0">
-                    <div class="p-3 text-center" style="background-color: #edf2f4;">
-                        <span class="badge bg-warning me-2 position-relative" style="top: -2px;">NEW!</span>
-                        <span class="fw-bold">Select your financial challenge below to earn Money Master points!</span>
-                    </div>
+                <div class="card-body pt-2">
+                    <hr class="mt-0 mb-4" style="width: 50px; border-width: 2px; opacity: 1;">
                     
-                    <div class="p-4">
-                        <!-- Challenge 1: Expense Tracking -->
-                        <div class="mb-4 position-relative">
-                            <div class="border border-2 rounded p-3 pb-2" style="border-color: #8d99ae !important; transition: all 0.3s;">
-                                <div class="position-absolute top-0 end-0 translate-middle">
-                                    <span class="badge rounded-pill bg-success px-3 py-2 shadow-sm">
-                                        <i class="bi bi-trophy me-1"></i> 25 PTS
-                                    </span>
+                    <div class="row gy-4">
+                        <!-- Insight 1 -->
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start">
+                                <div class="flex-shrink-0 me-3">
+                                    <span class="display-3 fw-light text-black-50" style="font-family: 'Georgia', serif;">01</span>
                                 </div>
-                                
-                                <div class="row align-items-center">
-                                    <div class="col-auto">
-                                        <div class="rounded-circle p-3" style="background-color: #2b2d42;">
-                                            <i class="bi bi-eye fs-3 text-white"></i>
-                                        </div>
-                                    </div>
-                                    <div class="col">
-                                        <h5 class="fw-bold mb-1" style="color: #2b2d42;">Expense Visibility Challenge</h5>
-                                        <p class="mb-2 text-muted">Track all expenses for 7 consecutive days - no exceptions!</p>
-                                        <div class="progress mb-2" style="height: 8px;">
-                                            <div class="progress-bar" role="progressbar" style="width: 35%; background-color: #ef233c;" 
-                                                 aria-valuenow="35" aria-valuemin="0" aria-valuemax="100"></div>
-                                        </div>
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <small class="text-muted">Progress: 35%</small>
-                                            <button class="btn btn-sm btn-outline-primary">
-                                                <i class="bi bi-plus-circle me-1"></i> Log Today
-                                            </button>
-                                        </div>
+                                <div>
+                                    <h4 class="fw-normal mb-2" style="letter-spacing: -0.5px;">Financial Awareness</h4>
+                                    <p class="text-muted mb-1">The journey to financial freedom begins with awareness of where your money goes.</p>
+                                    <p class="small">
+                                        Maintain a consistent record of expenses to gain insights that can transform your relationship with money.
+                                    </p>
+                                    <div class="mt-2">
+                                        <a href="#" class="text-decoration-none text-black small">
+                                            <span class="border-bottom border-1 pb-1">Learn more about expense tracking</span>
+                                            <i class="bi bi-arrow-right ms-1"></i>
+                                        </a>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Challenge 2: Budget Creation -->
-                        <div class="mb-4 position-relative">
-                            <div class="border border-2 rounded p-3 pb-2" style="border-color: #8d99ae !important; transition: all 0.3s;">
-                                <div class="position-absolute top-0 end-0 translate-middle">
-                                    <span class="badge rounded-pill bg-success px-3 py-2 shadow-sm">
-                                        <i class="bi bi-trophy me-1"></i> 50 PTS
-                                    </span>
+                        <!-- Insight 2 -->
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start">
+                                <div class="flex-shrink-0 me-3">
+                                    <span class="display-3 fw-light text-black-50" style="font-family: 'Georgia', serif;">02</span>
                                 </div>
-                                
-                                <div class="row align-items-center">
-                                    <div class="col-auto">
-                                        <div class="rounded-circle p-3" style="background-color: #2b2d42;">
-                                            <i class="bi bi-map fs-3 text-white"></i>
-                                        </div>
-                                    </div>
-                                    <div class="col">
-                                        <h5 class="fw-bold mb-1" style="color: #2b2d42;">Budget Blueprint Mission</h5>
-                                        <p class="mb-2 text-muted">Create budget targets for your top 5 spending categories.</p>
-                                        <div class="progress mb-2" style="height: 8px;">
-                                            <div class="progress-bar" role="progressbar" style="width: 0%; background-color: #ef233c;" 
-                                                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                                        </div>
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <small class="text-muted">Not started</small>
-                                            <button class="btn btn-sm btn-outline-primary">
-                                                <i class="bi bi-play-fill me-1"></i> Start Quest
-                                            </button>
-                                        </div>
+                                <div>
+                                    <h4 class="fw-normal mb-2" style="letter-spacing: -0.5px;">Intentional Budgeting</h4>
+                                    <p class="text-muted mb-1">A budget isn't a restriction; it's a plan for your money to work for your priorities.</p>
+                                    <p class="small">
+                                        Create thoughtful category limits that align with your values and long-term goals.
+                                    </p>
+                                    <div class="mt-2">
+                                        <a href="#" class="text-decoration-none text-black small">
+                                            <span class="border-bottom border-1 pb-1">Explore budgeting techniques</span>
+                                            <i class="bi bi-arrow-right ms-1"></i>
+                                        </a>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Challenge 3: Spending Reduction -->
-                        <div class="mb-4 position-relative">
-                            <div class="border border-2 rounded p-3 pb-2" style="border-color: #8d99ae !important; transition: all 0.3s;">
-                                <div class="position-absolute top-0 end-0 translate-middle">
-                                    <span class="badge rounded-pill bg-success px-3 py-2 shadow-sm">
-                                        <i class="bi bi-trophy me-1"></i> 75 PTS
-                                    </span>
+                        <!-- Insight 3 -->
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start">
+                                <div class="flex-shrink-0 me-3">
+                                    <span class="display-3 fw-light text-black-50" style="font-family: 'Georgia', serif;">03</span>
                                 </div>
-                                
-                                <div class="row align-items-center">
-                                    <div class="col-auto">
-                                        <div class="rounded-circle p-3" style="background-color: #2b2d42;">
-                                            <i class="bi bi-scissors fs-3 text-white"></i>
-                                        </div>
-                                    </div>
-                                    <div class="col">
-                                        <h5 class="fw-bold mb-1" style="color: #2b2d42;">Expense Slasher Battle</h5>
-                                        <p class="mb-2 text-muted">Reduce your top category spending by 5% this month.</p>
-                                        <div class="progress mb-2" style="height: 8px;">
-                                            <div class="progress-bar" role="progressbar" style="width: 0%; background-color: #ef233c;" 
-                                                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                                        </div>
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <small class="text-muted">Locked</small>
-                                            <button class="btn btn-sm btn-outline-secondary" disabled>
-                                                <i class="bi bi-lock me-1"></i> Complete previous
-                                            </button>
-                                        </div>
+                                <div>
+                                    <h4 class="fw-normal mb-2" style="letter-spacing: -0.5px;">Mindful Consumption</h4>
+                                    <p class="text-muted mb-1">The areas where you spend most reveal your priorities. Are they aligned with your values?</p>
+                                    <p class="small">
+                                        Challenge yourself to reduce spending in top categories by evaluating each purchase's true value.
+                                    </p>
+                                    <div class="mt-2">
+                                        <a href="#" class="text-decoration-none text-black small">
+                                            <span class="border-bottom border-1 pb-1">Discover mindful spending practices</span>
+                                            <i class="bi bi-arrow-right ms-1"></i>
+                                        </a>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Challenge 4: Savings -->
-                        <div class="mb-0 position-relative">
-                            <div class="border border-2 rounded p-3 pb-2" style="border-color: #8d99ae !important; transition: all 0.3s;">
-                                <div class="position-absolute top-0 end-0 translate-middle">
-                                    <span class="badge rounded-pill bg-success px-3 py-2 shadow-sm">
-                                        <i class="bi bi-trophy me-1"></i> 100 PTS
-                                    </span>
+                        <!-- Insight 4 -->
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start">
+                                <div class="flex-shrink-0 me-3">
+                                    <span class="display-3 fw-light text-black-50" style="font-family: 'Georgia', serif;">04</span>
                                 </div>
-                                
-                                <div class="row align-items-center">
-                                    <div class="col-auto">
-                                        <div class="rounded-circle p-3" style="background-color: #2b2d42;">
-                                            <i class="bi bi-piggy-bank fs-3 text-white"></i>
-                                        </div>
-                                    </div>
-                                    <div class="col">
-                                        <h5 class="fw-bold mb-1" style="color: #2b2d42;">Future Fortune Quest</h5>
-                                        <p class="mb-2 text-muted">Set up automatic savings of 10% of your income.</p>
-                                        <div class="progress mb-2" style="height: 8px;">
-                                            <div class="progress-bar" role="progressbar" style="width: 0%; background-color: #ef233c;" 
-                                                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                                        </div>
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <small class="text-muted">Locked</small>
-                                            <button class="btn btn-sm btn-outline-secondary" disabled>
-                                                <i class="bi bi-lock me-1"></i> Complete previous
-                                            </button>
-                                        </div>
+                                <div>
+                                    <h4 class="fw-normal mb-2" style="letter-spacing: -0.5px;">Future Self Investment</h4>
+                                    <p class="text-muted mb-1">Your most important financial relationship is with your future self.</p>
+                                    <p class="small">
+                                        Consistently setting aside 10-15% of income creates freedom and opportunity for your future.
+                                    </p>
+                                    <div class="mt-2">
+                                        <a href="#" class="text-decoration-none text-black small">
+                                            <span class="border-bottom border-1 pb-1">Calculate your savings potential</span>
+                                            <i class="bi bi-arrow-right ms-1"></i>
+                                        </a>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="card-footer p-3 d-flex justify-content-between align-items-center" style="background-color: #edf2f4;">
-                        <div>
-                            <i class="bi bi-stars text-warning fs-4 me-1"></i>
-                            <span class="fw-bold">Your Points: 35</span>
-                        </div>
-                        <div>
-                            <button class="btn btn-primary py-1 px-3">
-                                <i class="bi bi-trophy me-1"></i> View Rewards
-                            </button>
-                        </div>
+                    <blockquote class="border-start ps-4 my-4" style="border-width: 3px !important; border-color: #f8f9fa !important;">
+                        <p class="mb-0 fst-italic" style="font-family: 'Georgia', serif;">"Financial freedom isn't about wealth accumulation; it's about having options and living intentionally."</p>
+                        <footer class="blockquote-footer mt-1">Financial wisdom</footer>
+                    </blockquote>
+                    
+                    <div class="text-end mt-4">
+                        <a href="#" class="btn btn-outline-dark rounded-0 px-4">
+                            <span>Personalized Action Plan</span>
+                            <i class="bi bi-arrow-right ms-2"></i>
+                        </a>
                     </div>
                 </div>
             </div>
