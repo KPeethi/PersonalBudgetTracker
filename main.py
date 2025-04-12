@@ -28,7 +28,7 @@ import plaid_service
 import visualization
 import suggestions
 import ai_assistant
-import conversation_assistant
+import expense_forecasting
 import excel_processor
 import excel_visualizer
 import perplexity_service
@@ -2716,7 +2716,7 @@ def expense_forecast():
     
     try:
         # Generate the forecast
-        forecast = conversation_assistant.get_expense_forecast(
+        forecast = expense_forecasting.get_expense_forecast(
             user_id=current_user.id,
             months_ahead=3
         )
@@ -2752,7 +2752,7 @@ def last_month_predictions():
     
     try:
         # Generate the predictions
-        predictions = conversation_assistant.get_last_month_predictions(
+        predictions = expense_forecasting.get_last_month_predictions(
             user_id=current_user.id
         )
         
