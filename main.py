@@ -2897,5 +2897,30 @@ def process_pending_imports():
     return redirect(url_for('business_excel_import'))
 
 
+@app.route('/business/import_details/<int:import_id>')
+@login_required
+def import_details(import_id):
+    """Show details of an Excel import including the expenses created."""
+    if not current_user.is_business_user and not current_user.is_admin:
+        flash('You need business user access to view import details.', 'warning')
+        return redirect(url_for('request_business_upgrade'))
+    
+    # Get the import record
+    excel_import = ExcelImport.query.get_or_404(import_id)
+    
+    # Check if the import belongs to the current user or if the user is an admin
+    if excel_import.user_id != current_user.id and not current_user.is_admin:
+        flash('You do not have permission to view this import.', 'danger')
+        return redirect(url_for('business_excel_import'))
+    
+    # Get expenses created by this import
+    expenses = Expense.query.filter_by(excel_import_id=import_id).order_by(Expense.date.desc()).all()
+    
+    return render_template('business/import_details.html', 
+                           excel_import=excel_import,
+                           expenses=expenses,
+                           title='Import Details')
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True)

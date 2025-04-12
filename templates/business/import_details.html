@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Import Details{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>
+            <i class="bi bi-file-earmark-spreadsheet me-2"></i>
+            Import Details
+        </h1>
+        <a href="{{ url_for('business_excel_import') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Imports
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Import Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <dl class="row">
+                        <dt class="col-sm-4">Filename</dt>
+                        <dd class="col-sm-8">{{ excel_import.filename }}</dd>
+                        
+                        <dt class="col-sm-4">Upload Date</dt>
+                        <dd class="col-sm-8">{{ excel_import.upload_date.strftime('%Y-%m-%d %H:%M') }}</dd>
+                        
+                        <dt class="col-sm-4">Status</dt>
+                        <dd class="col-sm-8">
+                            {% if excel_import.status == 'pending' %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                            {% elif excel_import.status == 'processing' %}
+                                <span class="badge bg-info">Processing</span>
+                            {% elif excel_import.status == 'completed' %}
+                                <span class="badge bg-success">Completed</span>
+                            {% else %}
+                                <span class="badge bg-danger">Failed</span>
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+                <div class="col-md-6">
+                    <dl class="row">
+                        <dt class="col-sm-4">Rows</dt>
+                        <dd class="col-sm-8">{{ excel_import.num_rows or 'N/A' }}</dd>
+                        
+                        <dt class="col-sm-4">Expenses Created</dt>
+                        <dd class="col-sm-8">{{ expenses|length }}</dd>
+                        
+                        <dt class="col-sm-4">Completion Time</dt>
+                        <dd class="col-sm-8">
+                            {{ excel_import.completed_date.strftime('%Y-%m-%d %H:%M') if excel_import.completed_date else 'Not completed' }}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+            
+            {% if excel_import.error_message %}
+            <div class="alert alert-danger mt-3">
+                <strong>Error:</strong> {{ excel_import.error_message }}
+            </div>
+            {% endif %}
+            
+            {% if excel_import.notes %}
+            <div class="alert alert-info mt-3">
+                <strong>Notes:</strong> {{ excel_import.notes }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Imported Expenses</h5>
+            <span class="badge bg-light text-dark">{{ expenses|length }} expenses</span>
+        </div>
+        <div class="card-body p-0">
+            {% if expenses %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Category</th>
+                                <th>Amount</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for expense in expenses %}
+                            <tr>
+                                <td>{{ expense.date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ expense.description }}</td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ expense.category }}</span>
+                                </td>
+                                <td>${{ "%.2f"|format(expense.amount) }}</td>
+                                <td>
+                                    <a href="{{ url_for('index', search=expense.description) }}" class="btn btn-sm btn-outline-primary" 
+                                       data-bs-toggle="tooltip" 
+                                       title="View in Expenses">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info m-3">
+                    <i class="bi bi-info-circle me-2"></i>
+                    No expenses were found for this import.
+                    
+                    {% if excel_import.status == 'completed' %}
+                    <div class="mt-2">
+                        <strong>Note:</strong> Despite the import being completed, no expenses were created. This might indicate an issue with the imported file format or that the imported file contained no valid expense data.
+                    </div>
+                    {% elif excel_import.status == 'pending' %}
+                    <div class="mt-2">
+                        <strong>Note:</strong> This import is still pending processing. Click "Process Pending" on the import page to process it manually.
+                    </div>
+                    {% elif excel_import.status == 'failed' %}
+                    <div class="mt-2">
+                        <strong>Note:</strong> This import failed to process. Check the error message above for details.
+                    </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% if excel_import.status == 'pending' %}
+    <div class="d-grid gap-2 mt-3">
+        <a href="{{ url_for('process_pending_imports') }}" class="btn btn-warning">
+            <i class="bi bi-arrow-repeat me-1"></i> Process This Import
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Enable tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    });
+</script>
+{% endblock %}

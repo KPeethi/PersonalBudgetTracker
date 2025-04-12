@@ -138,11 +138,12 @@
                                             {% endif %}
                                         </td>
                                         <td>
-                                            <button class="btn btn-sm btn-outline-secondary" 
-                                                    data-bs-toggle="tooltip" 
-                                                    title="View Details">
+                                            <a href="{{ url_for('import_details', import_id=import.id) }}" 
+                                               class="btn btn-sm btn-outline-secondary" 
+                                               data-bs-toggle="tooltip" 
+                                               title="View Details">
                                                 <i class="bi bi-eye"></i>
-                                            </button>
+                                            </a>
                                         </td>
                                     </tr>
                                     {% endfor %}
