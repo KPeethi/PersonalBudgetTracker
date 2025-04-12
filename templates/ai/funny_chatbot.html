@@ -353,7 +353,8 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 console.error('Error:', error);
                 removeLoading();
-                addAssistantMessage("Sorry, something went wrong. Please try again.");
+                addAssistantMessage("Sorry, something went wrong. Please try again. Check browser console for details.");
+                addSystemMessage("Error details: " + error.toString());
                 scrollToBottom();
             });
         }

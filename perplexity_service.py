@@ -81,6 +81,8 @@ When giving financial advice, be responsible and avoid overly specific investmen
         system_prompt += f"\nHere is some context about the user's finances: {financial_context}"
 
     try:
+        print(f"DEBUG - Starting Perplexity API request for query: {query[:30]}...")
+        logger.info(f"DEBUG - Perplexity API request initiated. API Key exists: {bool(PERPLEXITY_API_KEY)}")
         # Prepare the request headers and payload
         headers = {
             "Authorization": f"Bearer {PERPLEXITY_API_KEY}",
@@ -123,19 +125,23 @@ When giving financial advice, be responsible and avoid overly specific investmen
                 "usage": result.get("usage", {})
             }
         else:
-            logger.error(f"Perplexity API error: {response.status_code}, {response.text}")
+            error_msg = f"Perplexity API error: {response.status_code}, {response.text}"
+            print(error_msg)
+            logger.error(error_msg)
             return {
                 "success": False,
                 "error": f"API Error: {response.status_code}",
-                "response": "Sorry, I encountered an issue. Please try again later."
+                "response": f"Sorry, I encountered an issue with the Perplexity API. Status code: {response.status_code}. Please try again later."
             }
             
     except Exception as e:
-        logger.exception(f"Error generating Perplexity response: {str(e)}")
+        error_message = f"Error generating Perplexity response: {str(e)}"
+        print(error_message)
+        logger.exception(error_message)
         return {
             "success": False,
             "error": str(e),
-            "response": "Sorry, something went wrong. Please try again later."
+            "response": f"Sorry, there was a technical issue: {str(e)}. Please try again later. If the problem persists, contact support."
         }
 
 
