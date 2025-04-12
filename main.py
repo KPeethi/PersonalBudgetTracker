@@ -2914,6 +2914,16 @@ def funny_chat_process():
     print("===== FUNNY CHAT PROCESS =====")
     print("Received request!")
     print(f"PERPLEXITY_API_KEY configured: {bool(os.environ.get('PERPLEXITY_API_KEY'))}")
+    print(f"Current user: {current_user.username}")
+    print(f"Request method: {request.method}")
+    print(f"Request content type: {request.content_type}")
+    print(f"Request headers: {dict(request.headers)}")
+    
+    # Print the raw request data for debugging
+    try:
+        print(f"Raw request data: {request.get_data(as_text=True)}")
+    except Exception as e:
+        print(f"Error getting raw data: {str(e)}")
     
     # Verify if Perplexity API is available before proceeding
     api_available = perplexity_service.check_api_availability()

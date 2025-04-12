@@ -30,7 +30,53 @@ def check_api_availability() -> bool:
     
     print(f"Perplexity API key is configured (length: {len(PERPLEXITY_API_KEY)})")
     logger.info(f"Perplexity API key is configured (length: {len(PERPLEXITY_API_KEY)})")
-    return True
+    
+    # Check if API key has a valid format (length, characters)
+    if len(PERPLEXITY_API_KEY.strip()) < 30:  # Perplexity API keys are typically longer
+        logger.warning(f"Perplexity API key appears to be too short: length={len(PERPLEXITY_API_KEY.strip())}")
+        print(f"WARNING: PERPLEXITY_API_KEY appears too short (length={len(PERPLEXITY_API_KEY.strip())})")
+    
+    # Make a simple test call to the API to check connectivity
+    try:
+        print("Making test request to Perplexity API...")
+        headers = {
+            "Authorization": f"Bearer {PERPLEXITY_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        simple_payload = {
+            "model": "llama-3.1-sonar-small-128k-online",
+            "messages": [
+                {"role": "system", "content": "You respond with only 'OK' for testing purposes."},
+                {"role": "user", "content": "Respond with OK to test API connectivity."}
+            ],
+            "max_tokens": 10,
+            "temperature": 0.0,
+            "stream": False
+        }
+        
+        # Make a simple test request
+        response = requests.post(
+            PERPLEXITY_API_URL,
+            headers=headers,
+            json=simple_payload,
+            timeout=5  # Short timeout for testing
+        )
+        
+        print(f"API test response status code: {response.status_code}")
+        
+        if response.status_code == 200:
+            logger.info("Perplexity API test successful")
+            print("Perplexity API test successful - API is properly configured and responding")
+            return True
+        else:
+            logger.error(f"Perplexity API test failed: {response.status_code}, {response.text[:200]}")
+            print(f"Perplexity API test failed with status code {response.status_code}")
+            print(f"Error response: {response.text[:200]}...")
+            return False
+    except Exception as e:
+        logger.exception(f"Error testing Perplexity API: {str(e)}")
+        print(f"Error testing Perplexity API: {str(e)}")
+        return False
 
 
 def generate_response(
@@ -103,9 +149,13 @@ When giving financial advice, be responsible and avoid overly specific investmen
                 {"role": "user", "content": query}
             ],
             "temperature": 0.7,
+            # Use max_tokens as a number, not a string
             "max_tokens": 300,
             "top_p": 0.9,
-            "frequency_penalty": 0.5
+            # Using standard parameters supported by Perplexity API
+            "presence_penalty": 0.0,  # Instead of frequency_penalty
+            "frequency_penalty": 0.0,
+            "stream": False  # Ensure we're not trying to stream
         }
         
         print(f"DEBUG - Payload prepared, system prompt length: {len(system_prompt)}, query length: {len(query)}")
@@ -141,20 +191,107 @@ When giving financial advice, be responsible and avoid overly specific investmen
         if response.status_code == 200:
             result = response.json()
             logger.debug(f"Successful response received: {result}")
+            
+            try:
+                # Check if the expected fields are present
+                if "choices" not in result or not result["choices"]:
+                    error_msg = "Perplexity API returned empty choices"
+                    print(error_msg)
+                    logger.error(error_msg)
+                    return {
+                        "success": False,
+                        "error": "API returned invalid response format",
+                        "response": "Sorry, I received an unexpected response format from the API. Please try again later."
+                    }
+                
+                # Check if message content is available
+                if "message" not in result["choices"][0] or "content" not in result["choices"][0]["message"]:
+                    error_msg = "Perplexity API response missing message content"
+                    print(error_msg)
+                    logger.error(error_msg)
+                    return {
+                        "success": False,
+                        "error": "API response missing content",
+                        "response": "Sorry, the API response is missing the expected content. Please try again later."
+                    }
+                
+                return {
+                    "success": True,
+                    "response": result["choices"][0]["message"]["content"],
+                    "citations": result.get("citations", []),
+                    "usage": result.get("usage", {})
+                }
+            except Exception as e:
+                error_msg = f"Error parsing successful API response: {str(e)}"
+                print(error_msg)
+                logger.error(error_msg)
+                return {
+                    "success": False,
+                    "error": f"Response parsing error: {str(e)}",
+                    "response": "Sorry, I had trouble processing the API response. Please try again later."
+                }
+        elif response.status_code == 400:
+            # Bad request - likely an issue with our parameters
+            error_text = f"Bad request to Perplexity API: {response.text}"
+            print(error_text)
+            logger.error(error_text)
+            
+            # Try to parse the error response
+            try:
+                error_details = response.json()
+                error_message = error_details.get("error", {}).get("message", "Unknown error")
+                print(f"API error details: {error_message}")
+                
+                return {
+                    "success": False,
+                    "error": f"API Error (400): {error_message}",
+                    "response": "I encountered a technical issue with the API request format. Our team has been notified."
+                }
+            except:
+                return {
+                    "success": False,
+                    "error": f"API Error (400): Could not parse error details",
+                    "response": "I encountered a technical issue with the API request. Our team has been notified."
+                }
+        elif response.status_code == 401:
+            # Authentication error
+            error_msg = "Perplexity API authentication error: Invalid API key"
+            print(error_msg)
+            logger.error(error_msg)
             return {
-                "success": True,
-                "response": result["choices"][0]["message"]["content"],
-                "citations": result.get("citations", []),
-                "usage": result.get("usage", {})
+                "success": False,
+                "error": "API authentication failed",
+                "response": "I'm currently experiencing authentication issues with my AI service. Our team has been notified about this issue."
+            }
+        elif response.status_code == 429:
+            # Rate limit error
+            error_msg = "Perplexity API rate limit exceeded"
+            print(error_msg)
+            logger.error(error_msg)
+            return {
+                "success": False,
+                "error": "API rate limit exceeded",
+                "response": "I've reached my usage limit with the AI service. Please try again later."
+            }
+        elif response.status_code >= 500:
+            # Server error
+            error_msg = f"Perplexity API server error: {response.status_code}"
+            print(error_msg)
+            logger.error(error_msg)
+            return {
+                "success": False,
+                "error": f"API server error: {response.status_code}",
+                "response": "The AI service is currently experiencing technical difficulties. Please try again later."
             }
         else:
+            # Other errors
             error_msg = f"Perplexity API error: {response.status_code}, {response.text}"
             print(error_msg)
             logger.error(error_msg)
             return {
                 "success": False,
                 "error": f"API Error: {response.status_code}",
-                "response": f"Sorry, I encountered an issue with the Perplexity API. Status code: {response.status_code}. Please try again later."
+                "response": f"Sorry, I encountered an issue with the Perplexity API. Please try again later."
             }
             
     except Exception as e:
