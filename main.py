@@ -1521,18 +1521,26 @@ def ai_assistant_home():
 
     # Get top 5 categories by amount
     top_categories = []
-    if categories:
-        sorted_categories = sorted(categories.items(),
-                                   key=lambda x: x[1],
-                                   reverse=True)
-        for name, amount in sorted_categories[:5]:
-            percentage = (amount / total_amount *
-                          100) if total_amount > 0 else 0
-            top_categories.append({
-                'name': name,
-                'amount': amount,
-                'percentage': percentage
-            })
+    try:
+        if categories:
+            sorted_categories = sorted(categories.items(),
+                                       key=lambda x: x[1],
+                                       reverse=True)
+            logger.debug(f"Sorted categories: {sorted_categories[:5]}")
+            for name, amount in sorted_categories[:5]:
+                percentage = (amount / total_amount *
+                              100) if total_amount > 0 else 0
+                cat_data = {
+                    'name': name,
+                    'amount': amount,
+                    'percentage': percentage
+                }
+                logger.debug(f"Adding category: {cat_data}")
+                top_categories.append(cat_data)
+            logger.debug(f"Final top_categories: {top_categories}")
+    except Exception as e:
+        logger.error(f"Error processing top categories: {str(e)}")
+        top_categories = []
 
     # Get general expense insights if there are expenses
     analysis_results = None
@@ -1643,18 +1651,26 @@ def ai_analysis():
 
     # Get top 5 categories by amount
     top_categories = []
-    if categories:
-        sorted_categories = sorted(categories.items(),
-                                   key=lambda x: x[1],
-                                   reverse=True)
-        for name, amount in sorted_categories[:5]:
-            percentage = (amount / total_amount *
-                          100) if total_amount > 0 else 0
-            top_categories.append({
-                'name': name,
-                'amount': amount,
-                'percentage': percentage
-            })
+    try:
+        if categories:
+            sorted_categories = sorted(categories.items(),
+                                      key=lambda x: x[1],
+                                      reverse=True)
+            logger.debug(f"AI analysis - Sorted categories: {sorted_categories[:5]}")
+            for name, amount in sorted_categories[:5]:
+                percentage = (amount / total_amount *
+                              100) if total_amount > 0 else 0
+                cat_data = {
+                    'name': name,
+                    'amount': amount,
+                    'percentage': percentage
+                }
+                logger.debug(f"AI analysis - Adding category: {cat_data}")
+                top_categories.append(cat_data)
+            logger.debug(f"AI analysis - Final top_categories: {top_categories}")
+    except Exception as e:
+        logger.error(f"AI analysis - Error processing top categories: {str(e)}")
+        top_categories = []
 
     return render_template('ai/assistant.html',
                            analysis_options=analysis_options,
