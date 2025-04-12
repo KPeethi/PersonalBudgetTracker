@@ -464,6 +464,106 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Function to generate client-side response for any financial question
+    function generateLocalResponse(message) {
+        // Convert to lowercase for easier matching
+        const lowerMessage = message.toLowerCase();
+        
+        // Define topics and keywords for matching
+        const topics = {
+            budget: ['budget', 'budgeting', 'allocate', 'allocating', '50/30/20', '50 30 20', 'spending plan'],
+            saving: ['save', 'saving', 'savings', 'emergency fund', 'save money', 'put aside'],
+            investing: ['invest', 'investing', 'stocks', 'bonds', 'retirement', 'ira', '401k', 'compound interest'],
+            debt: ['debt', 'loan', 'credit card', 'mortgage', 'student loan', 'interest rate'],
+            food: ['food', 'grocery', 'groceries', 'meal', 'restaurant', 'eating out'],
+            income: ['income', 'salary', 'raise', 'promotion', 'side hustle', 'earn more'],
+            expense: ['expense', 'spending', 'track', 'tracking', 'monitor', 'record'],
+            goals: ['goal', 'target', 'plan', 'planning', 'future', 'aim'],
+            credit: ['credit', 'score', 'fico', 'credit report', 'credit card']
+        };
+        
+        // Check which topic the message matches
+        let matchedTopic = null;
+        for (const [topic, keywords] of Object.entries(topics)) {
+            if (keywords.some(keyword => lowerMessage.includes(keyword))) {
+                matchedTopic = topic;
+                break;
+            }
+        }
+        
+        // Default suggestions
+        let suggestions = [
+            "How do I create a budget?",
+            "What's the 50/30/20 rule?",
+            "Tips for saving money",
+            "How to reduce spending?"
+        ];
+        
+        // Generate response based on matched topic
+        switch (matchedTopic) {
+            case 'budget':
+                return {
+                    response: "Creating an effective budget starts with tracking your expenses for a month to understand your spending patterns. Then categorize your expenses into needs (50%), wants (30%), and savings/debt repayment (20%) using the 50/30/20 rule. Regularly review and adjust your budget as your financial situation changes.",
+                    suggestions: ["What's the 50/30/20 rule?", "How to stick to a budget?", "Best budgeting apps", "How to categorize expenses?"]
+                };
+            
+            case 'saving':
+                return {
+                    response: "The most effective saving strategy is automation - set up automatic transfers to a separate savings account on payday. Start with a small amount if necessary and gradually increase it. Focus on building an emergency fund covering 3-6 months of expenses before saving for other goals.",
+                    suggestions: ["How to build an emergency fund?", "Best savings accounts", "How much should I save each month?", "Short-term vs long-term savings"]
+                };
+                
+            case 'investing':
+                return {
+                    response: "For beginning investors, diversified index funds typically offer lower risk with reasonable returns. Remember that time in the market is typically more beneficial than trying to time market fluctuations. Consider starting with tax-advantaged accounts like a 401(k) or IRA before taxable investments.",
+                    suggestions: ["Investment basics for beginners", "What is compound interest?", "Stock market vs real estate", "Retirement planning strategies"]
+                };
+                
+            case 'debt':
+                return {
+                    response: "When tackling debt, consider either the avalanche method (focusing on highest interest rate debt first) or the snowball method (paying off smallest balances first for psychological wins). Always make minimum payments on all debts, and put extra money toward your target debt.",
+                    suggestions: ["Avalanche vs snowball method", "How to negotiate lower interest rates", "Debt consolidation options", "Building credit while paying off debt"]
+                };
+                
+            case 'food':
+                return {
+                    response: "To reduce food expenses, meal planning is essential. Create a weekly plan, make a shopping list based on that plan, and stick to it at the store. Buy staples in bulk, utilize store loyalty programs, cook at home more often, and use leftovers effectively to minimize waste.",
+                    suggestions: ["Budget-friendly meal ideas", "Grocery shopping tips", "Reducing food waste", "Batch cooking to save money"]
+                };
+                
+            case 'income':
+                return {
+                    response: "To increase your income, consider both short and long-term strategies. Short-term: side gigs, freelancing, or part-time work. Long-term: skill development, education, or certifications that can lead to promotion or career advancement. Regularly negotiate your salary and seek performance reviews.",
+                    suggestions: ["Side hustle ideas", "How to negotiate a raise", "Skills that increase earning potential", "Passive income sources"]
+                };
+                
+            case 'expense':
+                return {
+                    response: "Track expenses effectively by: 1) Categorizing all transactions consistently. 2) Recording expenses daily to maintain accuracy. 3) Using this expense tracker to automate the process. 4) Reviewing weekly to catch any unusual spending. 5) Looking for patterns and trends monthly. 6) Adjusting your budget based on actual spending patterns.",
+                    suggestions: ["Best expense tracking methods", "How to categorize expenses", "Identifying spending leaks", "Monthly expense review process"]
+                };
+                
+            case 'goals':
+                return {
+                    response: "Set SMART financial goals: Specific, Measurable, Achievable, Relevant, and Time-bound. Break larger goals into smaller milestones, track progress regularly, celebrate small wins, and adjust your strategy as needed. Consider both short-term (under 1 year) and long-term goals.",
+                    suggestions: ["Setting SMART financial goals", "Short-term vs long-term planning", "How to prioritize financial goals", "Staying motivated with financial goals"]
+                };
+                
+            case 'credit':
+                return {
+                    response: "To build and maintain good credit: pay bills on time (35% of score), keep credit utilization under 30% (30% of score), maintain a long credit history (15%), limit new credit applications (10%), and have a diverse mix of credit types (10%). Check your credit report regularly for errors.",
+                    suggestions: ["Understanding credit scores", "How to improve your credit", "Credit report errors", "Good vs bad credit utilization"]
+                };
+                
+            default:
+                // General financial advice for unmatched queries
+                return {
+                    response: "I appreciate your financial question. As a general principle, successful financial management involves creating a budget, tracking expenses, saving consistently, minimizing debt, and investing for the future. Is there a specific area of personal finance you'd like to explore further?",
+                    suggestions: ["Creating a budget", "Emergency fund basics", "Debt repayment strategies", "Beginning investing"]
+                };
+        }
+    }
+
     // Handle form submission
     chatForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -479,13 +579,59 @@ document.addEventListener('DOMContentLoaded', function() {
             // Get the current humor level
             const humorLevel = humorToggle.getAttribute('data-level') || 'medium';
             
+            // First try to generate a local response
+            const localResponse = generateLocalResponse(message);
+            
+            // Set a timeout to show loading briefly
+            setTimeout(() => {
+                removeLoading();
+                
+                // Add system message about offline mode
+                addSystemMessage("Using offline response mode");
+                
+                // Display the response
+                addAssistantMessage(localResponse.response);
+                
+                // Add follow-up suggestions
+                if (localResponse.suggestions && localResponse.suggestions.length > 0) {
+                    const suggestionsDiv = document.createElement('div');
+                    suggestionsDiv.className = 'follow-up-suggestions my-2 ms-5';
+                    
+                    let suggestionsHTML = '<div class="d-flex flex-wrap gap-2">';
+                    localResponse.suggestions.forEach(suggestion => {
+                        suggestionsHTML += `
+                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">
+                                ${suggestion}
+                            </button>
+                        `;
+                    });
+                    suggestionsHTML += '</div>';
+                    
+                    suggestionsDiv.innerHTML = suggestionsHTML;
+                    chatMessages.appendChild(suggestionsDiv);
+                    
+                    // Add event listeners to new suggestion buttons
+                    suggestionsDiv.querySelectorAll('.suggestion-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const newText = this.textContent.trim();
+                            userInput.value = newText;
+                            const newEvent = new Event('submit');
+                            chatForm.dispatchEvent(newEvent);
+                        });
+                    });
+                }
+                
+                scrollToBottom();
+            }, 1000); // Show loading for 1 second before displaying response
+            
+            // For debugging purposes, still try the API call but don't depend on it
             console.log('Sending message to server:', message);
             
             // Create an AbortController to handle timeouts
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
             
-            // Send message to server
+            // Send message to server in the background
             fetch('/ai/funny-chat', {
                 method: 'POST',
                 headers: {
