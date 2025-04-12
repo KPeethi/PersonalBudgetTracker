@@ -2856,9 +2856,7 @@ def last_month_predictions():
 
 
 
-@app.route('/ai/funny-chat', methods=['POST'])
-@login_required
-def funny_chat_process():
+
     """Process a query to the professional financial assistant."""
     # Add console output for debugging
     print("===== FUNNY CHAT PROCESS =====")
