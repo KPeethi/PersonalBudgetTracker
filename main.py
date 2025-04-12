@@ -2978,14 +2978,25 @@ def funny_chat_process():
         })
     
     # Process regular query
-    result = perplexity_service.generate_response(
-        query=message,
-        financial_context=financial_context,
-        humor_level=humor_level
-    )
-    
-    # Log detailed API result for debugging
-    logger.debug(f"Perplexity API result: {result}")
+    try:
+        # Log request details for debugging
+        logger.info(f"Sending query to Perplexity API: {message[:50]}...")
+        
+        result = perplexity_service.generate_response(
+            query=message,
+            financial_context=financial_context,
+            humor_level=humor_level
+        )
+        
+        # Log detailed API result for debugging
+        logger.debug(f"Perplexity API result: {result}")
+    except Exception as e:
+        logger.error(f"Error in funny_chat_process: {str(e)}", exc_info=True)
+        result = {
+            'success': False,
+            'error': str(e),
+            'response': f"I encountered a technical error: {str(e)}. Please try again later."
+        }
     
     # Add follow-up suggestions based on the query type
     suggestions = []
