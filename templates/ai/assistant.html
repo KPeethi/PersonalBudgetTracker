@@ -99,30 +99,96 @@
             
             <!-- Financial tips based on analysis -->
             {% if analysis_results %}
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-info text-white">
-                    <h5 class="card-title mb-0">Tips & Recommendations</h5>
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #4e54c8, #8f94fb);">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-lightbulb me-2"></i>
+                        Financial Power-Ups
+                    </h5>
                 </div>
                 <div class="card-body">
-                    <p>Based on your spending patterns, here are some tailored financial tips:</p>
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item">
-                            <i class="fas fa-chart-pie me-2 text-primary"></i>
-                            Track your expenses regularly to maintain better financial control.
-                        </li>
-                        <li class="list-group-item">
-                            <i class="fas fa-piggy-bank me-2 text-success"></i>
-                            Set up a monthly budget for each spending category.
-                        </li>
-                        <li class="list-group-item">
-                            <i class="fas fa-hand-holding-usd me-2 text-danger"></i>
-                            Focus on reducing expenses in your top spending categories.
-                        </li>
-                        <li class="list-group-item">
-                            <i class="fas fa-coins me-2 text-warning"></i>
-                            Consider setting aside 10-15% of your income for savings.
-                        </li>
-                    </ul>
+                    <p class="lead mb-4">Your personalized financial journey map based on your unique spending DNA:</p>
+                    
+                    <div class="row g-4">
+                        <!-- Tip 1 -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 bg-light rounded-4">
+                                <div class="card-body p-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
+                                            <i class="bi bi-graph-up-arrow text-primary fs-4"></i>
+                                        </div>
+                                        <h5 class="card-title mb-0">Money Detective</h5>
+                                    </div>
+                                    <p class="card-text">Become a financial detective by tracking every dollar. Small clues (expenses) reveal the bigger mystery of where your money vanishes!</p>
+                                    <div class="text-end">
+                                        <a href="#" class="btn btn-sm btn-primary rounded-pill px-3">Try This</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tip 2 -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 bg-light rounded-4">
+                                <div class="card-body p-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
+                                            <i class="bi bi-map text-success fs-4"></i>
+                                        </div>
+                                        <h5 class="card-title mb-0">Budget Blueprint</h5>
+                                    </div>
+                                    <p class="card-text">Your money needs a roadmap! Create category budgets like giving each dollar a job description before it gets spent on a shopping spree.</p>
+                                    <div class="text-end">
+                                        <a href="#" class="btn btn-sm btn-success rounded-pill px-3">Create Plan</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tip 3 -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 bg-light rounded-4">
+                                <div class="card-body p-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="rounded-circle bg-danger bg-opacity-10 p-3 me-3">
+                                            <i class="bi bi-scissors text-danger fs-4"></i>
+                                        </div>
+                                        <h5 class="card-title mb-0">Expense Trimmer</h5>
+                                    </div>
+                                    <p class="card-text">Your top spending categories are like garden weeds - they'll grow wild unless pruned regularly. Challenge yourself to trim just 5% this month!</p>
+                                    <div class="text-end">
+                                        <a href="#" class="btn btn-sm btn-danger rounded-pill px-3">Start Trimming</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tip 4 -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 bg-light rounded-4">
+                                <div class="card-body p-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="rounded-circle bg-warning bg-opacity-10 p-3 me-3">
+                                            <i class="bi bi-piggy-bank text-warning fs-4"></i>
+                                        </div>
+                                        <h5 class="card-title mb-0">Future You Fund</h5>
+                                    </div>
+                                    <p class="card-text">Future You will be thrilled that Present You set aside 10-15% for them! It's like sending a surprise gift package to your future self.</p>
+                                    <div class="text-end">
+                                        <a href="#" class="btn btn-sm btn-warning rounded-pill px-3">Start Saving</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-primary mt-4 d-flex align-items-center" role="alert">
+                        <i class="bi bi-info-circle-fill me-2 fs-4"></i>
+                        <div>
+                            <strong>Pro Tip:</strong> Small, consistent changes create massive results over time. Focus on progress, not perfection!
+                        </div>
+                    </div>
                 </div>
             </div>
             {% endif %}
