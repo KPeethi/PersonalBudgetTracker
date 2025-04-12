@@ -60,16 +60,22 @@
                     <p>Your Excel file should contain the following columns:</p>
                     <ul class="list-group list-group-flush mb-3">
                         <li class="list-group-item">
-                            <strong>Date</strong> - Format: YYYY-MM-DD (e.g., 2025-04-10)
+                            <strong>date</strong> - Format: YYYY-MM-DD (e.g., 2025-04-10)
                         </li>
                         <li class="list-group-item">
-                            <strong>Description</strong> - The expense description
+                            <strong>amount</strong> - The expense amount (numbers only)
                         </li>
                         <li class="list-group-item">
-                            <strong>Category</strong> - The expense category
+                            <strong>category</strong> - The expense category
                         </li>
                         <li class="list-group-item">
-                            <strong>Amount</strong> - The expense amount (numbers only)
+                            <strong>description</strong> - The expense description
+                        </li>
+                        <li class="list-group-item">
+                            <strong>payment_method</strong> - The payment method used (optional)
+                        </li>
+                        <li class="list-group-item">
+                            <strong>merchant</strong> - The vendor or merchant name (optional)
                         </li>
                     </ul>
                     
@@ -79,8 +85,11 @@
                     </div>
                     
                     <div class="d-grid gap-2">
-                        <a href="#" class="btn btn-outline-primary btn-sm" download>
-                            <i class="bi bi-download me-1"></i> Download Sample Template
+                        <a href="{{ url_for('static', filename='templates/expense_import_template.xlsx') }}" class="btn btn-outline-primary btn-sm" download>
+                            <i class="bi bi-download me-1"></i> Download Excel Template
+                        </a>
+                        <a href="{{ url_for('static', filename='templates/expense_import_template.csv') }}" class="btn btn-outline-secondary btn-sm" download>
+                            <i class="bi bi-download me-1"></i> Download CSV Template
                         </a>
                     </div>
                 </div>

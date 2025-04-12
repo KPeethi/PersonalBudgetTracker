@@ -3,6 +3,7 @@ Create an Excel template for expense import.
 """
 
 import pandas as pd
+from openpyxl.styles import Font
 
 # Sample data
 data = {
@@ -26,9 +27,9 @@ with pd.ExcelWriter(excel_path, engine='openpyxl') as writer:
     workbook = writer.book
     worksheet = writer.sheets['Expenses']
     
-    # Format headers
+    # Format headers with bold font
     for col_num, column_title in enumerate(df.columns):
         cell = worksheet.cell(row=1, column=col_num+1)
-        cell.font = workbook.create_font(bold=True)
+        cell.font = Font(bold=True)
 
 print(f"Excel template created at {excel_path}")
