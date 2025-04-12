@@ -2165,7 +2165,7 @@ def upload_receipt():
                 # Create a new expense with the provided details
                 if not form.expense_date.data or not form.expense_description.data or not form.expense_category.data or not form.expense_amount.data:
                     flash('When creating a new expense, all expense fields are required.', 'danger')
-                    return redirect(url_for('receipts'))
+                    return redirect(url_for('index'))
                 
                 # Create the new expense
                 new_expense = Expense(
@@ -2185,13 +2185,13 @@ def upload_receipt():
                 # Use the selected existing expense
                 if not form.expense_id.data:
                     flash('Please select an expense to link the receipt to.', 'danger')
-                    return redirect(url_for('receipts'))
+                    return redirect(url_for('index'))
                 
                 # Verify the expense belongs to the current user
                 expense = Expense.query.filter_by(id=form.expense_id.data, user_id=current_user.id).first()
                 if not expense:
                     flash('The selected expense does not exist or does not belong to you.', 'danger')
-                    return redirect(url_for('receipts'))
+                    return redirect(url_for('index'))
                 
                 expense_id = form.expense_id.data
             
@@ -2210,7 +2210,7 @@ def upload_receipt():
             db.session.commit()
             
             flash('Receipt uploaded successfully!', 'success')
-            return redirect(url_for('receipts'))
+            return redirect(url_for('index'))
             
         except Exception as e:
             logger.exception("Error uploading receipt")
@@ -2235,7 +2235,7 @@ def view_receipt(receipt_id):
     # Check if the user has permission to view this receipt
     if receipt.user_id != current_user.id and not current_user.is_admin:
         flash('You do not have permission to view this receipt.', 'danger')
-        return redirect(url_for('receipts'))
+        return redirect(url_for('index'))
     
     # Send the file from the server
     return send_file(receipt.file_path, 
