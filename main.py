@@ -2863,8 +2863,18 @@ def last_month_predictions():
 @login_required
 def funny_chatbot():
     """Show the professional financial assistant interface."""
-    # Check if Perplexity API is available
-    api_available = perplexity_service.check_api_availability()
+    # Try OpenAI first, then fallback to Perplexity
+    openai_available = openai_service.check_api_availability()
+    perplexity_available = perplexity_service.check_api_availability()
+    api_available = openai_available or perplexity_available
+    
+    # Log which API is being used
+    if openai_available:
+        logger.info("Using OpenAI for financial assistant")
+    elif perplexity_available:
+        logger.info("Using Perplexity for financial assistant")
+    else:
+        logger.warning("No AI API available, using fallback responses")
     
     # Get top spending categories for the current user
     categories_data = []
@@ -2895,8 +2905,20 @@ def funny_chatbot():
     except Exception as e:
         logger.exception("Error fetching category data for funny chatbot")
     
-    # Get a daily financial tip
-    daily_tip = perplexity_service.get_financial_tip() if api_available else "Tip of the day: Remember that the best investment you can make is in yourself. And maybe a good coffee machine."
+    # Get a daily financial tip - prefer OpenAI if available
+    try:
+        if openai_available:
+            daily_tip = openai_service.get_financial_tip()
+            logger.info("Using OpenAI for financial tip")
+        elif perplexity_available:
+            daily_tip = perplexity_service.get_financial_tip()
+            logger.info("Using Perplexity for financial tip")
+        else:
+            daily_tip = "Tip of the day: Remember that the best investment you can make is in yourself. And maybe a good coffee machine."
+            logger.warning("No AI API available for financial tip, using fallback")
+    except Exception as e:
+        logger.error(f"Error getting financial tip: {str(e)}")
+        daily_tip = "Tip of the day: Automating your savings is one of the most effective ways to build wealth consistently over time."
     
     return render_template(
         'ai/funny_chatbot.html',
@@ -2943,10 +2965,15 @@ def funny_chat_process():
             'suggestions': ['How can I create a budget?', 'Tips for saving money', 'What is the 50/30/20 rule?']
         })
     
-    # Verify if Perplexity API is available before proceeding
-    api_available = perplexity_service.check_api_availability()
+    # Check if OpenAI or Perplexity API is available
+    openai_available = openai_service.check_api_availability()
+    perplexity_available = perplexity_service.check_api_availability()
+    api_available = openai_available or perplexity_available
+    
+    print(f"API availability - OpenAI: {openai_available}, Perplexity: {perplexity_available}")
+    
     if not api_available:
-        print("ERROR: Perplexity API not available - test call failed")
+        print("ERROR: No AI API available - both OpenAI and Perplexity test calls failed")
         return jsonify({
             'success': True,  # Set to True to use fallback
             'fallback': True,
@@ -3014,37 +3041,80 @@ def funny_chat_process():
     
     # Special case for spending analysis request
     if "my spending" in message.lower():
-        response = perplexity_service.analyze_spending_pattern(
-            [expense.__dict__ for expense in recent_expenses]
-        )
-        
-        # Add follow-up suggestions
-        suggestions = [
-            "How can I reduce my spending?",
-            "What's my biggest expense?",
-            "Give me a saving tip",
-            "Compare this month to last month"
-        ]
-        
-        return jsonify({
-            'success': True,
-            'response': response,
-            'suggestions': suggestions
-        })
+        try:
+            # Try OpenAI first, then fallback to Perplexity
+            if openai_available:
+                logger.info("Using OpenAI for spending pattern analysis")
+                response = openai_service.analyze_spending_pattern(
+                    [expense.__dict__ for expense in recent_expenses]
+                )
+            elif perplexity_available:
+                logger.info("Using Perplexity for spending pattern analysis")
+                response = perplexity_service.analyze_spending_pattern(
+                    [expense.__dict__ for expense in recent_expenses]
+                )
+            else:
+                # This should not happen as we already checked API availability
+                raise Exception("No AI API available for spending analysis")
+            
+            # Add follow-up suggestions
+            suggestions = [
+                "How can I reduce my spending?",
+                "What's my biggest expense?",
+                "Give me a saving tip",
+                "Compare this month to last month"
+            ]
+            
+            return jsonify({
+                'success': True,
+                'response': response,
+                'suggestions': suggestions
+            })
+        except Exception as e:
+            logger.error(f"Error in spending pattern analysis: {str(e)}", exc_info=True)
+            # Use fallback response instead of completely failing
+            fallback_response = "I see you're interested in your spending patterns. Based on your recent transactions, I recommend reviewing your largest expense categories and looking for opportunities to reduce discretionary spending. Setting specific budget goals for each category can help you track progress over time."
+            return jsonify({
+                'success': True,
+                'fallback': True,
+                'response': fallback_response,
+                'suggestions': [
+                    "How can I create a budget?",
+                    "Tips for tracking expenses",
+                    "Ways to reduce spending"
+                ]
+            })
     
     # Process regular query
     try:
-        # Log request details for debugging
-        logger.info(f"Sending query to Perplexity API: {message[:50]}...")
-        
-        result = perplexity_service.generate_response(
-            query=message,
-            financial_context=financial_context,
-            humor_level=humor_level
-        )
-        
-        # Log detailed API result for debugging
-        logger.debug(f"Perplexity API result: {result}")
+        # Try OpenAI first, then fall back to Perplexity if available
+        if openai_available:
+            # Log request details for debugging
+            logger.info(f"Sending query to OpenAI API: {message[:50]}...")
+            
+            result = openai_service.generate_response(
+                query=message,
+                financial_context=financial_context,
+                humor_level=humor_level
+            )
+            
+            # Log detailed API result for debugging
+            logger.debug(f"OpenAI API result: {result}")
+        elif perplexity_available:
+            # Log request details for debugging
+            logger.info(f"Sending query to Perplexity API: {message[:50]}...")
+            
+            result = perplexity_service.generate_response(
+                query=message,
+                financial_context=financial_context,
+                humor_level=humor_level
+            )
+            
+            # Log detailed API result for debugging
+            logger.debug(f"Perplexity API result: {result}")
+        else:
+            # This should not happen as we check API availability earlier
+            raise Exception("No API service is available")
     except Exception as e:
         logger.error(f"Error in funny_chat_process: {str(e)}", exc_info=True)
         result = {
