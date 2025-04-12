@@ -2921,7 +2921,7 @@ def funny_chatbot():
         daily_tip = "Tip of the day: Automating your savings is one of the most effective ways to build wealth consistently over time."
     
     return render_template(
-        'ai/funny_chatbot.html',
+        'ai/funny_chatbot_new.html',
         title='Financial Assistant',
         api_available=api_available,
         categories_data=categories_data,
