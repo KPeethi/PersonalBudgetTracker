@@ -28,7 +28,7 @@ import plaid_service
 import visualization
 import suggestions
 import ai_assistant
-import expense_forecasting
+import conversation_assistant
 import excel_processor
 import excel_visualizer
 import perplexity_service
@@ -2319,9 +2319,102 @@ def delete_receipt(receipt_id):
 
 
 # Conversational AI Assistant routes
+@app.route('/ai/conversational')
+@login_required
+def chat_assistant():
+    """Show conversational AI assistant interface"""
+    logger.debug(f"Accessing conversational assistant, user: {current_user.username}")
+    
+    return render_template('ai/chat_assistant.html', title='Conversational Assistant')
 
+@app.route('/ai/process_query', methods=['POST'])
+@login_required
+def process_ai_query():
+    """Process a natural language query and return response"""
+    logger.debug(f"Processing AI query, user: {current_user.username}")
+    
+    # Get query from request
+    data = request.json
+    query = data.get('query', '')
+    
+    if not query:
+        return jsonify({
+            'success': False,
+            'response': 'Empty query provided'
+        })
+    
+    try:
+        # Process the query - now returns a dictionary with response and metadata
+        result = conversation_assistant.process_query(query)
+        
+        # Simply return the result dictionary as JSON
+        # It already contains 'success' and 'response' keys
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Error processing query: {str(e)}")
+        return jsonify({
+            'success': False,
+            'response': 'Sorry, there was an error processing your query. Please try again.'
+        })
 
-
+@app.route('/ai/process_audio', methods=['POST'])
+@login_required
+def process_audio():
+    """Process audio recording and convert to text"""
+    logger.debug(f"Processing audio recording, user: {current_user.username}")
+    
+    if 'audio' not in request.files:
+        return jsonify({
+            'success': False,
+            'error': 'No audio file provided'
+        })
+    
+    audio_file = request.files['audio']
+    
+    if not audio_file:
+        return jsonify({
+            'success': False,
+            'error': 'Empty audio file'
+        })
+    
+    # Define temp_filename outside try block so it's accessible in except block
+    temp_filename = os.path.join(UPLOAD_FOLDER, f"temp_audio_{current_user.id}.wav")
+    
+    try:
+        # Save the audio file temporarily
+        audio_file.save(temp_filename)
+        
+        # Use OpenAI Whisper API to transcribe the audio
+        if not conversation_assistant.openai_client:
+            return jsonify({
+                'success': False,
+                'error': 'OpenAI API not configured'
+            })
+        
+        with open(temp_filename, "rb") as audio_file:
+            transcript = conversation_assistant.openai_client.audio.transcriptions.create(
+                model="whisper-1", 
+                file=audio_file
+            )
+            
+        # Clean up the temporary file
+        if os.path.exists(temp_filename):
+            os.remove(temp_filename)
+        
+        return jsonify({
+            'success': True,
+            'text': transcript.text
+        })
+    except Exception as e:
+        logger.error(f"Error processing audio: {str(e)}")
+        # Clean up the temporary file if it exists
+        if os.path.exists(temp_filename):
+            os.remove(temp_filename)
+            
+        return jsonify({
+            'success': False,
+            'error': f"Error processing audio: {str(e)}"
+        })
 
 # Old expense forecast route moved to business features section below
 
@@ -2716,7 +2809,7 @@ def expense_forecast():
     
     try:
         # Generate the forecast
-        forecast = expense_forecasting.get_expense_forecast(
+        forecast = conversation_assistant.get_expense_forecast(
             user_id=current_user.id,
             months_ahead=3
         )
@@ -2752,7 +2845,7 @@ def last_month_predictions():
     
     try:
         # Generate the predictions
-        predictions = expense_forecasting.get_last_month_predictions(
+        predictions = conversation_assistant.get_last_month_predictions(
             user_id=current_user.id
         )
         
@@ -2764,6 +2857,83 @@ def last_month_predictions():
             'message': f"Error generating predictions: {str(e)}",
             'data': None
         })
+
+
+@app.route('/ai/funny-chatbot')
+@login_required
+def funny_chatbot():
+    """Show the professional financial assistant interface."""
+    # Try OpenAI first, then fallback to Perplexity
+    openai_available = openai_service.check_api_availability()
+    perplexity_available = perplexity_service.check_api_availability()
+    api_available = openai_available or perplexity_available
+    
+    # Log which API is being used
+    if openai_available:
+        logger.info("Using OpenAI for financial assistant")
+    elif perplexity_available:
+        logger.info("Using Perplexity for financial assistant")
+    else:
+        logger.warning("No AI API available, using fallback responses")
+    
+    # Get top spending categories for the current user
+    categories_data = []
+    try:
+        # Get the current user's expenses (excluding Excel imports)
+        expenses = Expense.query.filter_by(user_id=current_user.id, excel_import_id=None).all()
+        
+        # Calculate category totals
+        category_totals = {}
+        for expense in expenses:
+            if expense.category in category_totals:
+                category_totals[expense.category] += expense.amount
+            else:
+                category_totals[expense.category] = expense.amount
+        
+        # Sort categories by total amount
+        sorted_categories = sorted(category_totals.items(), key=lambda x: x[1], reverse=True)
+        
+        # Get top 5 categories
+        top_categories = sorted_categories[:5]
+        
+        # Format for template
+        for category, amount in top_categories:
+            categories_data.append({
+                'name': category,
+                'amount': amount
+            })
+    except Exception as e:
+        logger.exception("Error fetching category data for funny chatbot")
+    
+    # Get a daily financial tip - prefer OpenAI if available
+    try:
+        if openai_available:
+            daily_tip = openai_service.get_financial_tip()
+            logger.info("Using OpenAI for financial tip")
+        elif perplexity_available:
+            daily_tip = perplexity_service.get_financial_tip()
+            logger.info("Using Perplexity for financial tip")
+        else:
+            daily_tip = "Tip of the day: Remember that the best investment you can make is in yourself. And maybe a good coffee machine."
+            logger.warning("No AI API available for financial tip, using fallback")
+    except Exception as e:
+        logger.error(f"Error getting financial tip: {str(e)}")
+        daily_tip = "Tip of the day: Automating your savings is one of the most effective ways to build wealth consistently over time."
+    
+    return render_template(
+        'ai/funny_chatbot_new.html',
+        title='Financial Assistant',
+        api_available=api_available,
+        categories_data=categories_data,
+        daily_tip=daily_tip
+    )
+
+
+@app.route('/ai/funny-chat', methods=['POST'])
+@login_required
+def funny_chat_process():
+    """Process a query to the professional financial assistant."""
+    # Add console output for debugging
     print("===== FUNNY CHAT PROCESS =====")
     print("Received request!")
     print(f"PERPLEXITY_API_KEY configured: {bool(os.environ.get('PERPLEXITY_API_KEY'))}")

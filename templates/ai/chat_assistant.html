@@ -1,0 +1,1100 @@
+{% extends "base.html" %}
+
+{% block title %}Chat with Financial Assistant{% endblock %}
+
+{% block styles %}
+<style>
+    body {
+        background-color: #f5f5f5;
+    }
+    
+    .chat-app-container {
+        height: calc(100vh - 120px);
+        margin-top: -20px;
+        display: flex;
+        flex-direction: column;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    }
+    
+    .chat-header {
+        padding: 15px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .agent-info {
+        display: flex;
+        align-items: center;
+    }
+    
+    .agent-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        color: white;
+        font-size: 20px;
+    }
+    
+    .agent-status {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: #28a745;
+        margin-left: 5px;
+    }
+    
+    .chat-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        background-color: #f9f9f9;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .message {
+        max-width: 75%;
+        margin-bottom: 15px;
+        padding: 12px 16px;
+        border-radius: 18px;
+        position: relative;
+        animation: fadeIn 0.3s ease-in-out;
+        line-height: 1.5;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .user-message {
+        background-color: #0d6efd;
+        color: white;
+        align-self: flex-end;
+        border-bottom-right-radius: 5px;
+    }
+    
+    .user-message-container {
+        align-self: flex-end;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        margin-bottom: 20px;
+    }
+    
+    .assistant-message {
+        background-color: white;
+        color: #212529;
+        align-self: flex-start;
+        border-bottom-left-radius: 5px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+    
+    .assistant-message-container {
+        align-self: flex-start;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        max-width: 80%;
+    }
+    
+    .message-time {
+        font-size: 11px;
+        color: #6c757d;
+        margin-top: 5px;
+        margin-left: 10px;
+        margin-right: 10px;
+    }
+    
+    .message-sender {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+    
+    .sender-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 8px;
+        font-size: 14px;
+    }
+    
+    .sender-name {
+        font-weight: 600;
+        font-size: 13px;
+    }
+    
+    .chat-footer {
+        padding: 15px 20px;
+        background-color: white;
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .chat-input-container {
+        display: flex;
+        align-items: center;
+    }
+    
+    .chat-input {
+        flex: 1;
+        padding: 12px 15px;
+        border: 1px solid #ced4da;
+        border-radius: 24px;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+    
+    .chat-input:focus {
+        outline: none;
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+    }
+    
+    .chat-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        margin-left: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+    
+    .typing-indicator {
+        display: none;
+        align-self: flex-start;
+        background-color: white;
+        padding: 12px 16px;
+        border-radius: 18px;
+        border-bottom-left-radius: 5px;
+        margin-bottom: 15px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+    
+    .typing-dots {
+        display: flex;
+    }
+    
+    .typing-dots span {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #6c757d;
+        margin-right: 4px;
+        animation: bounce 1.4s infinite ease-in-out both;
+    }
+    
+    .typing-dots span:nth-child(1) { animation-delay: 0s; }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    
+    @keyframes bounce {
+        0%, 80%, 100% { transform: scale(0.6); }
+        40% { transform: scale(1.0); }
+    }
+    
+    .quick-suggestions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+    }
+    
+    .suggestion-chip {
+        padding: 8px 12px;
+        background-color: rgba(13, 110, 253, 0.1);
+        border-radius: 16px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+        color: #0d6efd;
+    }
+    
+    .suggestion-chip:hover {
+        background-color: rgba(13, 110, 253, 0.2);
+    }
+    
+    .follow-up-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+    }
+    
+    .follow-up-chip {
+        padding: 8px 12px;
+        background-color: rgba(13, 110, 253, 0.1);
+        border-radius: 16px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+        color: #0d6efd;
+    }
+    
+    .follow-up-chip:hover {
+        background-color: rgba(13, 110, 253, 0.2);
+    }
+    
+    /* Voice recording animation */
+    .voice-recording {
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
+    
+    /* Dark mode support */
+    [data-bs-theme="dark"] body {
+        background-color: #212529;
+    }
+    
+    [data-bs-theme="dark"] .chat-app-container {
+        background-color: #2c3034;
+    }
+    
+    [data-bs-theme="dark"] .chat-body {
+        background-color: #212529;
+    }
+    
+    [data-bs-theme="dark"] .assistant-message {
+        background-color: #343a40;
+        color: #f8f9fa;
+    }
+    
+    [data-bs-theme="dark"] .typing-indicator {
+        background-color: #343a40;
+    }
+    
+    [data-bs-theme="dark"] .chat-footer {
+        background-color: #2c3034;
+    }
+    
+    [data-bs-theme="dark"] .suggestion-chip {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: #6ea8fe;
+    }
+    
+    [data-bs-theme="dark"] .suggestion-chip:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    [data-bs-theme="dark"] .follow-up-chip {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: #6ea8fe;
+    }
+    
+    [data-bs-theme="dark"] .follow-up-chip:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .chat-app-container {
+            height: calc(100vh - 90px);
+            margin-top: -10px;
+            border-radius: 0;
+        }
+        
+        .message {
+            max-width: 85%;
+        }
+    }
+    
+    #forecastContainer {
+        margin-top: 30px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="chat-app-container">
+        <!-- Chat Header -->
+        <div class="chat-header bg-primary text-white">
+            <div class="agent-info">
+                <div class="agent-avatar bg-white text-primary">
+                    <i class="bi bi-robot"></i>
+                </div>
+                <div>
+                    <h5 class="mb-0">Financial Assistant</h5>
+                    <div class="d-flex align-items-center">
+                        <small>Online</small>
+                        <span class="agent-status ms-1"></span>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-light" data-bs-toggle="collapse" data-bs-target="#forecastContainer">
+                    <i class="bi bi-graph-up me-1"></i> View Forecast
+                </button>
+            </div>
+        </div>
+        
+        <!-- Chat Body -->
+        <div class="chat-body" id="chatBody">
+            <!-- Welcome message -->
+            <div class="assistant-message-container">
+                <div class="message-sender">
+                    <div class="sender-avatar bg-primary text-white">
+                        <i class="bi bi-robot"></i>
+                    </div>
+                    <span class="sender-name">Financial Assistant</span>
+                </div>
+                <div class="message assistant-message">
+                    <p class="mb-1">👋 Hi there! I'm your AI financial assistant.</p>
+                    <p class="mb-0">I can help you analyze your expenses, track spending patterns, and provide personalized financial insights. What would you like to know about your finances today?</p>
+                </div>
+                <div class="message-time">Just now</div>
+                
+                <div class="follow-up-container">
+                    <div class="follow-up-chip" onclick="document.getElementById('chatInput').value = 'What were my top 5 expenses?'; document.getElementById('chatForm').dispatchEvent(new Event('submit'));">
+                        What were my top 5 expenses?
+                    </div>
+                    <div class="follow-up-chip" onclick="document.getElementById('chatInput').value = 'How much did I spend this month?'; document.getElementById('chatForm').dispatchEvent(new Event('submit'));">
+                        How much did I spend this month?
+                    </div>
+                    <div class="follow-up-chip" onclick="document.getElementById('chatInput').value = 'Which category increased the most?'; document.getElementById('chatForm').dispatchEvent(new Event('submit'));">
+                        Which category increased the most?
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Typing indicator -->
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+            
+            <!-- Messages will be added here dynamically -->
+        </div>
+        
+        <!-- Chat Footer -->
+        <div class="chat-footer">
+            <form id="chatForm">
+                <div class="chat-input-container">
+                    <input type="text" id="chatInput" class="chat-input" placeholder="Ask about your finances..." autocomplete="off">
+                    <button type="button" id="voiceButton" class="chat-btn btn btn-outline-danger">
+                        <i class="bi bi-mic-fill"></i>
+                    </button>
+                    <button type="submit" class="chat-btn btn btn-primary">
+                        <i class="bi bi-send-fill"></i>
+                    </button>
+                </div>
+            </form>
+            
+            <div class="quick-suggestions mt-3">
+                <div class="suggestion-chip" data-query="How much did I spend on food?">
+                    Food expenses
+                </div>
+                <div class="suggestion-chip" data-query="Show my monthly trend">
+                    Monthly trend
+                </div>
+                <div class="suggestion-chip" data-query="What are my top spending categories?">
+                    Top categories
+                </div>
+                <div class="suggestion-chip" data-query="Find unusual expenses">
+                    Unusual expenses
+                </div>
+                <div class="suggestion-chip" data-query="Compare to last month">
+                    Month comparison
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Collapsible Forecast Section -->
+    <div class="collapse mt-4" id="forecastContainer">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Financial Insights</h5>
+                <button type="button" class="btn-close btn-close-white float-end" data-bs-toggle="collapse" data-bs-target="#forecastContainer" aria-label="Close"></button>
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs" id="insightTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="last-month-tab" data-bs-toggle="tab" data-bs-target="#last-month-content" type="button" role="tab">
+                            <i class="bi bi-calendar-check me-1"></i> Last Month Analysis
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="forecast-tab" data-bs-toggle="tab" data-bs-target="#forecast-content" type="button" role="tab">
+                            <i class="bi bi-graph-up me-1"></i> Future Forecast
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content mt-3" id="insightTabContent">
+                    <!-- Last Month Analysis Tab -->
+                    <div class="tab-pane fade show active" id="last-month-content" role="tabpanel">
+                        <div id="lastMonthLoader" class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Analyzing last month's expenses...</p>
+                        </div>
+                        
+                        <div id="lastMonthContent" style="display: none;">
+                            <div class="alert" id="lastMonthAlert" role="alert"></div>
+                            
+                            <h6 class="border-bottom pb-2 mb-3">Month Overview</h6>
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="card bg-light">
+                                        <div class="card-body py-2">
+                                            <p class="small text-muted mb-1">Month Analyzed</p>
+                                            <h5 class="mb-0" id="monthAnalyzed"></h5>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card bg-light">
+                                        <div class="card-body py-2">
+                                            <p class="small text-muted mb-1">Total Spent</p>
+                                            <h5 class="mb-0" id="totalSpentLastMonth"></h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <h6 class="border-bottom pb-2 mb-3">Category Analysis & Projections</h6>
+                            <div id="categoriesList" class="mb-4"></div>
+                            
+                            <h6 class="border-bottom pb-2 mb-3">Savings Suggestions</h6>
+                            <div id="savingsSuggestions"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Forecast Tab -->
+                    <div class="tab-pane fade" id="forecast-content" role="tabpanel">
+                        <div id="forecastChart" style="height: 300px;"></div>
+                        <div id="forecastMessage" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/plotly.js@2.18.2/dist/plotly.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const chatBody = document.getElementById('chatBody');
+        const chatForm = document.getElementById('chatForm');
+        const chatInput = document.getElementById('chatInput');
+        const voiceButton = document.getElementById('voiceButton');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const suggestionChips = document.querySelectorAll('.suggestion-chip');
+        
+        let isRecording = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        
+        // Load forecast and last month prediction data on page load
+        fetchForecastData();
+        fetchLastMonthPredictions();
+        
+        // Form submission
+        chatForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const message = chatInput.value.trim();
+            if (message) {
+                addMessage(message, 'user');
+                processUserMessage(message);
+                chatInput.value = '';
+            }
+        });
+        
+        // Click on suggestion chips
+        suggestionChips.forEach(chip => {
+            chip.addEventListener('click', function() {
+                const query = this.getAttribute('data-query');
+                chatInput.value = query;
+                chatForm.dispatchEvent(new Event('submit'));
+            });
+        });
+        
+        // Voice input handling
+        voiceButton.addEventListener('click', toggleRecording);
+        
+        function toggleRecording() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        }
+        
+        function startRecording() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(function(stream) {
+                    isRecording = true;
+                    voiceButton.classList.add('recording');
+                    voiceButton.innerHTML = '<i class="bi bi-stop-fill"></i>';
+                    
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    
+                    mediaRecorder.addEventListener('dataavailable', function(event) {
+                        audioChunks.push(event.data);
+                    });
+                    
+                    mediaRecorder.addEventListener('stop', function() {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        sendAudioToServer(audioBlob);
+                    });
+                    
+                    mediaRecorder.start();
+                })
+                .catch(function(err) {
+                    console.error('Error accessing microphone:', err);
+                    alert('Could not access your microphone. Please check your permissions.');
+                });
+            } else {
+                alert('Voice input is not supported in your browser.');
+            }
+        }
+        
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                isRecording = false;
+                voiceButton.classList.remove('recording');
+                voiceButton.innerHTML = '<i class="bi bi-mic-fill"></i>';
+                
+                mediaRecorder.stop();
+                
+                // Stop all audio tracks
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+        }
+        
+        function sendAudioToServer(audioBlob) {
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'recording.wav');
+            
+            // Show thinking indicator
+            typingIndicator.style.display = 'block';
+            chatBody.scrollTop = chatBody.scrollHeight;
+            
+            fetch('/ai/process_audio', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Add the transcribed text as a user message
+                    addMessage(data.text, 'user');
+                    
+                    // Process the transcribed message
+                    processUserMessage(data.text);
+                } else {
+                    // Hide thinking indicator
+                    typingIndicator.style.display = 'none';
+                    
+                    // Show error message
+                    addMessage('Sorry, I couldn\'t understand what you said. Please try again.', 'assistant');
+                }
+            })
+            .catch(error => {
+                console.error('Error processing audio:', error);
+                typingIndicator.style.display = 'none';
+                addMessage('Sorry, there was an error processing your voice input.', 'assistant');
+            });
+        }
+        
+        function addMessage(message, sender, includeFollowups = true) {
+            const now = new Date();
+            const timeStr = now.getHours().toString().padStart(2, '0') + ':' + 
+                           now.getMinutes().toString().padStart(2, '0');
+            
+            // Create message container based on sender
+            const messageContainer = document.createElement('div');
+            
+            if (sender === 'user') {
+                // User message
+                messageContainer.className = 'user-message-container';
+                
+                // Message bubble
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message user-message';
+                
+                // Format message with newlines if needed
+                const formattedMessage = message.replace(/\n/g, '<br>');
+                messageDiv.innerHTML = `<p class="mb-0">${formattedMessage}</p>`;
+                
+                // Time indicator
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'message-time';
+                timeDiv.textContent = timeStr;
+                
+                // Add elements to container
+                messageContainer.appendChild(messageDiv);
+                messageContainer.appendChild(timeDiv);
+            } else {
+                // Assistant message
+                messageContainer.className = 'assistant-message-container';
+                
+                // Sender info
+                const senderDiv = document.createElement('div');
+                senderDiv.className = 'message-sender';
+                senderDiv.innerHTML = `
+                    <div class="sender-avatar bg-primary text-white">
+                        <i class="bi bi-robot"></i>
+                    </div>
+                    <span class="sender-name">Financial Assistant</span>
+                `;
+                
+                // Message bubble
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message assistant-message';
+                
+                // Format message with newlines if needed
+                const formattedMessage = message.replace(/\n/g, '<br>');
+                messageDiv.innerHTML = `<p class="mb-0">${formattedMessage}</p>`;
+                
+                // Time indicator
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'message-time';
+                timeDiv.textContent = timeStr;
+                
+                // Add follow-up suggestion chips if requested
+                if (includeFollowups) {
+                    // Generate follow-up suggestions based on the current message
+                    let suggestions = generateFollowupSuggestions(message);
+                    
+                    if (suggestions.length > 0) {
+                        let followupContainer = document.createElement('div');
+                        followupContainer.className = 'follow-up-container';
+                        
+                        suggestions.forEach(suggestion => {
+                            let chip = document.createElement('div');
+                            chip.className = 'follow-up-chip';
+                            chip.textContent = suggestion;
+                            chip.addEventListener('click', function() {
+                                chatInput.value = suggestion;
+                                chatForm.dispatchEvent(new Event('submit'));
+                            });
+                            followupContainer.appendChild(chip);
+                        });
+                        
+                        messageContainer.appendChild(senderDiv);
+                        messageContainer.appendChild(messageDiv);
+                        messageContainer.appendChild(timeDiv);
+                        messageContainer.appendChild(followupContainer);
+                    } else {
+                        messageContainer.appendChild(senderDiv);
+                        messageContainer.appendChild(messageDiv);
+                        messageContainer.appendChild(timeDiv);
+                    }
+                } else {
+                    messageContainer.appendChild(senderDiv);
+                    messageContainer.appendChild(messageDiv);
+                    messageContainer.appendChild(timeDiv);
+                }
+            }
+            
+            // Add to chat body before typing indicator
+            chatBody.insertBefore(messageContainer, typingIndicator);
+            
+            // Scroll to bottom
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+        
+        function generateFollowupSuggestions(message) {
+            const suggestions = [];
+            
+            // Check if message is about expenses
+            if (message.toLowerCase().includes('food')) {
+                suggestions.push("How does my food spending compare to last month?");
+                suggestions.push("What's my average monthly spending on food?");
+            }
+            
+            if (message.toLowerCase().includes('spend') || message.toLowerCase().includes('expense')) {
+                suggestions.push("What are my top spending categories?");
+                suggestions.push("Which category had the biggest increase?");
+            }
+            
+            if (message.toLowerCase().includes('top') || message.toLowerCase().includes('largest')) {
+                suggestions.push("What are my recurring expenses?");
+                suggestions.push("How can I reduce my spending?");
+            }
+            
+            if (message.toLowerCase().includes('month')) {
+                suggestions.push("How much will I spend next month?");
+                suggestions.push("Show me my monthly trend");
+            }
+            
+            // Add default suggestions if none were generated
+            if (suggestions.length === 0) {
+                suggestions.push("What were my top 5 expenses?");
+                suggestions.push("How much did I spend this month?");
+                suggestions.push("Analyze my spending patterns");
+            }
+            
+            // Limit to 3 suggestions max
+            return suggestions.slice(0, 3);
+        }
+        
+        function processUserMessage(message) {
+            // Show thinking indicator
+            typingIndicator.style.display = 'block';
+            chatBody.scrollTop = chatBody.scrollHeight;
+            
+            // Send to server for processing
+            fetch('/ai/process_query', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    query: message
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide thinking indicator
+                typingIndicator.style.display = 'none';
+                
+                if (data.success) {
+                    // Add assistant's response
+                    addMessage(data.response, 'assistant');
+                    
+                    // Refresh forecast if query mentions future or prediction
+                    if (message.toLowerCase().includes('forecast') || 
+                        message.toLowerCase().includes('predict') || 
+                        message.toLowerCase().includes('future')) {
+                        fetchForecastData();
+                    }
+                } else {
+                    // Show error message
+                    addMessage('Sorry, there was an error processing your question. Please try again.', 'assistant');
+                }
+            })
+            .catch(error => {
+                console.error('Error processing query:', error);
+                typingIndicator.style.display = 'none';
+                addMessage('Sorry, there was an error communicating with the server.', 'assistant');
+            });
+        }
+        
+        function fetchForecastData() {
+            fetch('/ai/expense_forecast')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    renderForecastChart(data.data);
+                    updateForecastMessage(data.data);
+                } else {
+                    document.getElementById('forecastChart').innerHTML = 
+                        `<div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            ${data.message}
+                        </div>`;
+                    document.getElementById('forecastMessage').innerHTML = '';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching forecast data:', error);
+                document.getElementById('forecastChart').innerHTML = 
+                    `<div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Error fetching forecast data. Please try again later.
+                    </div>`;
+            });
+        }
+        
+        function renderForecastChart(data) {
+            // Combine historical and forecast data
+            const dates = [...data.historical.map(d => d.date), ...data.forecast.map(d => d.date)];
+            const amounts = [...data.historical.map(d => d.total), ...data.forecast.map(d => d.total)];
+            
+            // Create markers for each point
+            const historicalLen = data.historical.length;
+            const totalLen = dates.length;
+            
+            const historicalMarkers = Array(historicalLen).fill('circle');
+            const forecastMarkers = Array(totalLen - historicalLen).fill('diamond');
+            
+            const trace = {
+                x: dates,
+                y: amounts,
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Monthly Expenses',
+                line: {
+                    shape: 'spline',
+                    width: 3,
+                    color: '#0d6efd'
+                },
+                marker: {
+                    size: 8,
+                    symbol: [...historicalMarkers, ...forecastMarkers],
+                    color: Array(totalLen).fill('#0d6efd').map((c, i) => i >= historicalLen ? '#dc3545' : c)
+                }
+            };
+            
+            const forecastStart = data.historical[data.historical.length - 1].date;
+            
+            const layout = {
+                title: 'Monthly Expense Forecast',
+                xaxis: {
+                    title: 'Month',
+                    showgrid: true,
+                    zeroline: false
+                },
+                yaxis: {
+                    title: 'Total Expenses ($)',
+                    showgrid: true,
+                    zeroline: false
+                },
+                shapes: [{
+                    type: 'line',
+                    x0: forecastStart,
+                    y0: 0,
+                    x1: forecastStart,
+                    y1: 1,
+                    yref: 'paper',
+                    line: {
+                        color: 'gray',
+                        width: 2,
+                        dash: 'dash'
+                    }
+                }],
+                annotations: [{
+                    x: forecastStart,
+                    y: 1,
+                    yref: 'paper',
+                    text: 'Forecast Start',
+                    showarrow: true,
+                    arrowhead: 2,
+                    arrowsize: 1,
+                    arrowwidth: 2,
+                    ax: 40,
+                    ay: -30
+                }],
+                margin: {
+                    l: 50,
+                    r: 50,
+                    b: 50,
+                    t: 50,
+                    pad: 4
+                }
+            };
+            
+            const config = {
+                responsive: true
+            };
+            
+            Plotly.newPlot('forecastChart', [trace], layout, config);
+        }
+        
+        function updateForecastMessage(data) {
+            const messageContainer = document.getElementById('forecastMessage');
+            let message = '';
+            
+            // Average monthly change
+            const avgChange = data.avg_monthly_change;
+            if (avgChange > 0) {
+                message += `<div class="alert alert-warning">
+                    <i class="bi bi-graph-up-arrow me-2"></i>
+                    Your expenses are increasing by approximately <strong>${avgChange.toFixed(1)}%</strong> each month.
+                </div>`;
+            } else if (avgChange < 0) {
+                message += `<div class="alert alert-success">
+                    <i class="bi bi-graph-down-arrow me-2"></i>
+                    Your expenses are decreasing by approximately <strong>${Math.abs(avgChange).toFixed(1)}%</strong> each month.
+                </div>`;
+            } else {
+                message += `<div class="alert alert-info">
+                    <i class="bi bi-graph-up me-2"></i>
+                    Your monthly expenses are relatively stable.
+                </div>`;
+            }
+            
+            // Depletion warning if applicable
+            if (data.depletion) {
+                message += `<div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>Warning:</strong> If this spending trend continues, your savings could be depleted by <strong>${data.depletion.date}</strong> (in about ${data.depletion.months} months).
+                </div>`;
+            }
+            
+            messageContainer.innerHTML = message;
+        }
+        
+        function fetchLastMonthPredictions() {
+            // Get the loader and content areas
+            const loader = document.getElementById('lastMonthLoader');
+            const content = document.getElementById('lastMonthContent');
+            
+            // Show loader, hide content
+            loader.style.display = 'block';
+            content.style.display = 'none';
+            
+            fetch('/ai/last_month_predictions')
+            .then(response => response.json())
+            .then(data => {
+                // Hide loader
+                loader.style.display = 'none';
+                
+                if (data.success) {
+                    // Show content
+                    content.style.display = 'block';
+                    
+                    // Update UI with predictions
+                    renderLastMonthPredictions(data.data);
+                } else {
+                    // Show error message
+                    content.style.display = 'block';
+                    content.innerHTML = `
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            ${data.message || "Couldn't generate predictions. You may need more expense data."}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                // Hide loader, show error
+                loader.style.display = 'none';
+                content.style.display = 'block';
+                
+                console.error('Error fetching last month predictions:', error);
+                content.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Error loading predictions. Please try again later.
+                    </div>
+                `;
+            });
+        }
+        
+        function renderLastMonthPredictions(data) {
+            // Update month analyzed
+            document.getElementById('monthAnalyzed').textContent = data.month_analyzed;
+            
+            // Update total spent
+            document.getElementById('totalSpentLastMonth').textContent = 
+                `$${data.total_spent_last_month.toFixed(2)}`;
+            
+            // Update budget alert
+            const alertEl = document.getElementById('lastMonthAlert');
+            alertEl.classList.remove('alert-success', 'alert-warning', 'alert-danger');
+            
+            if (data.overall_budget_status === 'good') {
+                alertEl.classList.add('alert-success');
+                alertEl.innerHTML = `<i class="bi bi-check-circle me-2"></i> ${data.budget_message}`;
+            } else if (data.overall_budget_status === 'warning') {
+                alertEl.classList.add('alert-warning');
+                alertEl.innerHTML = `<i class="bi bi-exclamation-triangle me-2"></i> ${data.budget_message}`;
+            } else {
+                alertEl.classList.add('alert-danger');
+                alertEl.innerHTML = `<i class="bi bi-exclamation-circle me-2"></i> ${data.budget_message}`;
+            }
+            
+            // Render categories
+            const categoriesEl = document.getElementById('categoriesList');
+            categoriesEl.innerHTML = '';
+            
+            data.categories.forEach(category => {
+                const categoryCard = document.createElement('div');
+                categoryCard.className = 'card mb-2';
+                
+                // Add alert border if there's a budget alert
+                if (category.budget_alert) {
+                    categoryCard.classList.add(category.budget_alert.severity === 'high' ? 
+                        'border-danger' : 'border-warning');
+                }
+                
+                // Build category content
+                let budgetInfo = '';
+                if (category.budget_limit > 0) {
+                    const percentUsed = (category.last_month_total / category.budget_limit) * 100;
+                    budgetInfo = `
+                        <div class="mt-2">
+                            <small class="text-muted">Budget: $${category.budget_limit.toFixed(2)}</small>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar ${percentUsed > 90 ? 'bg-danger' : percentUsed > 75 ? 'bg-warning' : 'bg-success'}" 
+                                     role="progressbar" 
+                                     style="width: ${Math.min(100, percentUsed)}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Add alert message if needed
+                let alertMsg = '';
+                if (category.budget_alert) {
+                    alertMsg = `
+                        <div class="alert alert-${category.budget_alert.severity === 'high' ? 'danger' : 'warning'} mt-2 py-1 px-2 mb-0">
+                            <small><i class="bi bi-exclamation-triangle me-1"></i> ${category.budget_alert.message}</small>
+                        </div>
+                    `;
+                }
+                
+                categoryCard.innerHTML = `
+                    <div class="card-body py-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">${category.name}</h6>
+                            <span>$${category.last_month_total.toFixed(2)}</span>
+                        </div>
+                        <small class="text-muted">Projected: $${category.projected.toFixed(2)} this month</small>
+                        ${budgetInfo}
+                        ${alertMsg}
+                    </div>
+                `;
+                
+                categoriesEl.appendChild(categoryCard);
+            });
+            
+            // Render savings suggestions
+            const suggestionsEl = document.getElementById('savingsSuggestions');
+            suggestionsEl.innerHTML = '';
+            
+            if (data.savings_suggestions && data.savings_suggestions.length > 0) {
+                data.savings_suggestions.forEach(suggestion => {
+                    const suggestionEl = document.createElement('div');
+                    suggestionEl.className = 'alert alert-info py-2 mb-2';
+                    suggestionEl.innerHTML = `
+                        <small><i class="bi bi-lightbulb me-2"></i> ${suggestion.message}</small>
+                    `;
+                    suggestionsEl.appendChild(suggestionEl);
+                });
+            } else {
+                suggestionsEl.innerHTML = `
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-check2-circle fs-4"></i>
+                        <p class="mb-0 mt-2">No savings suggestions at this time.</p>
+                    </div>
+                `;
+            }
+        }
+    });
+</script>
+{% endblock %}
