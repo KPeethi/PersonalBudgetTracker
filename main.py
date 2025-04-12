@@ -2858,6 +2858,163 @@ def last_month_predictions():
         })
 
 
+@app.route('/ai/funny-chatbot')
+@login_required
+def funny_chatbot():
+    """Show the funny financial chatbot interface (FinWit)."""
+    # Check if Perplexity API is available
+    api_available = perplexity_service.check_api_availability()
+    
+    # Get top spending categories for the current user
+    categories_data = []
+    try:
+        # Get the current user's expenses (excluding Excel imports)
+        expenses = Expense.query.filter_by(user_id=current_user.id, excel_import_id=None).all()
+        
+        # Calculate category totals
+        category_totals = {}
+        for expense in expenses:
+            if expense.category in category_totals:
+                category_totals[expense.category] += expense.amount
+            else:
+                category_totals[expense.category] = expense.amount
+        
+        # Sort categories by total amount
+        sorted_categories = sorted(category_totals.items(), key=lambda x: x[1], reverse=True)
+        
+        # Get top 5 categories
+        top_categories = sorted_categories[:5]
+        
+        # Format for template
+        for category, amount in top_categories:
+            categories_data.append({
+                'name': category,
+                'amount': amount
+            })
+    except Exception as e:
+        logger.exception("Error fetching category data for funny chatbot")
+    
+    # Get a daily financial tip
+    daily_tip = perplexity_service.get_financial_tip() if api_available else "Tip of the day: Remember that the best investment you can make is in yourself. And maybe a good coffee machine."
+    
+    return render_template(
+        'ai/funny_chatbot.html',
+        title='FinWit - Your Witty Financial Assistant',
+        api_available=api_available,
+        categories_data=categories_data,
+        daily_tip=daily_tip
+    )
+
+
+@app.route('/ai/funny-chat', methods=['POST'])
+@login_required
+def funny_chat_process():
+    """Process a query to the funny financial chatbot (FinWit)."""
+    data = request.get_json()
+    
+    if not data or 'message' not in data:
+        return jsonify({
+            'success': False,
+            'error': 'Missing message',
+            'response': 'Please provide a message.'
+        })
+    
+    message = data.get('message', '')
+    humor_level = data.get('humor_level', 'medium')
+    
+    # Get recent expenses for context (limit to last 30 days)
+    thirty_days_ago = datetime.now() - timedelta(days=30)
+    recent_expenses = Expense.query.filter(
+        Expense.user_id == current_user.id,
+        Expense.date >= thirty_days_ago,
+        Expense.excel_import_id == None
+    ).order_by(Expense.date.desc()).all()
+    
+    # Format financial context
+    financial_context = None
+    if recent_expenses:
+        total_spent = sum(expense.amount for expense in recent_expenses)
+        avg_expense = total_spent / len(recent_expenses)
+        
+        # Group by category
+        categories = {}
+        for expense in recent_expenses:
+            if expense.category in categories:
+                categories[expense.category] += expense.amount
+            else:
+                categories[expense.category] = expense.amount
+        
+        # Sort categories by amount
+        sorted_categories = sorted(categories.items(), key=lambda x: x[1], reverse=True)
+        top_categories = sorted_categories[:3]
+        
+        # Create context
+        financial_context = f"""
+        User financial context (last 30 days):
+        - Total spent: ${total_spent:.2f}
+        - Number of expenses: {len(recent_expenses)}
+        - Average expense: ${avg_expense:.2f}
+        - Top spending categories: {', '.join([f'{cat} (${amt:.2f})' for cat, amt in top_categories])}
+        """
+    
+    # Special case for spending analysis request
+    if "my spending" in message.lower():
+        response = perplexity_service.analyze_spending_pattern(
+            [expense.__dict__ for expense in recent_expenses]
+        )
+        
+        # Add follow-up suggestions
+        suggestions = [
+            "How can I reduce my spending?",
+            "What's my biggest expense?",
+            "Give me a saving tip",
+            "Compare this month to last month"
+        ]
+        
+        return jsonify({
+            'success': True,
+            'response': response,
+            'suggestions': suggestions
+        })
+    
+    # Process regular query
+    result = perplexity_service.generate_response(
+        query=message,
+        financial_context=financial_context,
+        humor_level=humor_level
+    )
+    
+    # Add follow-up suggestions based on the query type
+    suggestions = []
+    if "budget" in message.lower():
+        suggestions = [
+            "How do I create a budget?",
+            "What's a good budget breakdown?",
+            "How to stick to a budget?",
+            "50/30/20 budget rule"
+        ]
+    elif "save" in message.lower() or "saving" in message.lower():
+        suggestions = [
+            "Saving money on groceries",
+            "Best savings accounts",
+            "How much should I save each month?",
+            "Emergency fund tips"
+        ]
+    elif "invest" in message.lower():
+        suggestions = [
+            "Investment basics",
+            "Low-risk investments",
+            "What is compound interest?",
+            "Retirement planning"
+        ]
+    
+    return jsonify({
+        'success': result.get('success', False),
+        'response': result.get('response', 'Sorry, I encountered an issue. Please try again later.'),
+        'suggestions': suggestions if result.get('success', False) else []
+    })
+
+
 # Routes for downloading sample templates
 @app.route('/downloads/excel_template.xlsx')
 def download_excel_template():
