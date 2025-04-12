@@ -37,7 +37,7 @@ def add_description_column():
             # Add the column
             logger.info("Adding description column to excel_imports table...")
             with engine.begin() as conn:
-                conn.execute(f'ALTER TABLE excel_imports ADD COLUMN description TEXT;')
+                conn.execute(f'ALTER TABLE excel_imports ADD COLUMN IF NOT EXISTS description TEXT')
             
             logger.info("Successfully added description column to excel_imports table.")
             return True
