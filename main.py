@@ -45,6 +45,10 @@ os.makedirs(EXCEL_UPLOAD_FOLDER, exist_ok=True)
 TEMPLATES_FOLDER = 'static/templates'
 os.makedirs(TEMPLATES_FOLDER, exist_ok=True)
 
+# Directory for chart images
+TEMP_CHARTS_FOLDER = 'temp_charts'
+os.makedirs(TEMP_CHARTS_FOLDER, exist_ok=True)
+
 # Maximum upload file size (5MB)
 MAX_CONTENT_LENGTH = 5 * 1024 * 1024
 
@@ -2965,11 +2969,11 @@ def excel_visualize():
                 # Prepare chart data for display
                 temp_dir = 'temp_charts'
                 chart_paths = [
-                    {'title': 'Expenses by Category', 'path': f'/{temp_dir}/category_pie.png'},
-                    {'title': 'Daily Expenses Over Time', 'path': f'/{temp_dir}/time_series.png'},
-                    {'title': 'Expenses by Payment Method', 'path': f'/{temp_dir}/payment_method.png'},
-                    {'title': 'Top Merchants by Expense', 'path': f'/{temp_dir}/merchant.png'},
-                    {'title': 'Category Expense Trends', 'path': f'/{temp_dir}/category_trend.png'}
+                    {'title': 'Expenses by Category', 'path': f'/temp_charts/category_pie.png'},
+                    {'title': 'Daily Expenses Over Time', 'path': f'/temp_charts/time_series.png'},
+                    {'title': 'Expenses by Payment Method', 'path': f'/temp_charts/payment_method.png'},
+                    {'title': 'Top Merchants by Expense', 'path': f'/temp_charts/merchant.png'},
+                    {'title': 'Category Expense Trends', 'path': f'/temp_charts/category_trend.png'}
                 ]
                 
                 # Filter out any charts that weren't generated
@@ -3095,6 +3099,12 @@ def download_visualization(filename):
         logger.exception("Error downloading visualization file")
         flash(f'Error downloading file: {str(e)}', 'danger')
         return redirect(url_for('excel_visualize'))
+
+
+@app.route('/temp_charts/<path:filename>')
+def serve_chart(filename):
+    """Serve chart images from the temp_charts directory."""
+    return send_from_directory(TEMP_CHARTS_FOLDER, filename)
 
 
 if __name__ == "__main__":
