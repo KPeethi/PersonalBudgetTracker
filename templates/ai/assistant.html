@@ -18,23 +18,18 @@
                     <p><strong>Expense Records:</strong> {{ expense_count }}</p>
                     <p><strong>Unique Categories:</strong> {{ category_count }}</p>
                     
-                    {% if top_categories %}
-                    <hr>
-                    <h6>Top Spending Categories:</h6>
-                    <ul class="list-group list-group-flush">
-                        {% for category in top_categories %}
-                        <li class="list-group-item px-0">
-                            <div class="d-flex justify-content-between">
-                                <span>{{ category.name }}</span>
-                                <span>${{ "%.2f"|format(category.amount) }}</span>
-                            </div>
-                            <div class="progress" role="progressbar" aria-label="{{ category.name }} spending">
-                                <div class="progress-bar" style="width: {{ category.percentage }}%"></div>
-                            </div>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                    {% endif %}
+                    <div class="mt-3">
+                        <h6 class="fw-bold">Top Categories</h6>
+                        {% if top_categories %}
+                            <ol class="ps-3">
+                                {% for category, amount in top_categories %}
+                                <li>{{ category }}: ${{ "%.2f"|format(amount) }}</li>
+                                {% endfor %}
+                            </ol>
+                        {% else %}
+                            <p class="text-muted">No category data available.</p>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
             
@@ -43,19 +38,19 @@
                     <h5 class="card-title mb-0">Analysis Options</h5>
                 </div>
                 <div class="card-body">
-                    <form action="{{ url_for('ai_analysis') }}" method="get" class="mb-3">
+                    <form action="{{ url_for('ai_analysis') }}" method="get">
                         <div class="mb-3">
-                            <label for="time_period" class="form-label">Time Period:</label>
-                            <select name="time_period" id="time_period" class="form-select">
+                            <label for="time_period" class="form-label">Time Period</label>
+                            <select class="form-select" id="time_period" name="time_period">
                                 <option value="all" {% if time_period == 'all' %}selected{% endif %}>All Time</option>
-                                <option value="year" {% if time_period == 'year' %}selected{% endif %}>This Year</option>
                                 <option value="month" {% if time_period == 'month' %}selected{% endif %}>This Month</option>
+                                <option value="year" {% if time_period == 'year' %}selected{% endif %}>This Year</option>
                             </select>
                         </div>
                         
                         <div class="mb-3">
-                            <label for="analysis_type" class="form-label">Analysis Type:</label>
-                            <select name="analysis_type" id="analysis_type" class="form-select">
+                            <label for="analysis_type" class="form-label">Analysis Type</label>
+                            <select class="form-select" id="analysis_type" name="analysis_type">
                                 {% for key, option in analysis_options.items() %}
                                 <option value="{{ key }}" {% if analysis_type == key %}selected{% endif %}>
                                     {{ option.title }}
@@ -64,610 +59,33 @@
                             </select>
                         </div>
                         
-                        <button type="submit" class="btn btn-primary w-100">Generate Analysis</button>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Generate Analysis</button>
+                        </div>
                     </form>
                 </div>
             </div>
         </div>
         
-        <!-- Right column with analysis results -->
+        <!-- Right column with AI analysis -->
         <div class="col-md-8">
+            <!-- AI Analysis Results -->
             <div class="card shadow-sm mb-4">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">{{ current_analysis.title }}</h5>
+                    <span class="badge bg-primary">{{ time_period|title }}</span>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted">{{ current_analysis.description }}</p>
-                    
-                    {% if not expenses %}
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        No expense data available. Please add some expenses to get AI-powered insights.
-                    </div>
-                    {% elif not analysis_results %}
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Unable to generate analysis. Please try again later or contact support.
-                    </div>
+                    {% if analysis_results %}
+                        <p class="card-text">{{ analysis_results|safe }}</p>
                     {% else %}
-                    <div class="analysis-results mt-3">
-                        {{ analysis_results|nl2br }}
-                    </div>
+                        <div class="text-center p-4">
+                            <i class="bi bi-robot fs-1 text-muted mb-3"></i>
+                            <p class="mb-0">Select analysis options and click "Generate Analysis" to get AI-powered insights about your expenses.</p>
+                        </div>
                     {% endif %}
                 </div>
             </div>
-            
-            <!-- Financial insights in a minimalist, magazine-style design -->
-            {% if analysis_results %}
-            <div class="card shadow-sm mb-4 border-0">
-                <div class="card-header bg-white border-0 pt-4 pb-0">
-                    <h5 class="display-6 mb-0" style="letter-spacing: -0.5px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500;">
-                        Financial Insights
-                    </h5>
-                    <p class="text-muted small fst-italic">Curated recommendations based on your {{ current_analysis.title.lower() }}</p>
-                </div>
-                
-                <div class="card-body pt-2">
-                    <hr class="mt-0 mb-4" style="width: 50px; border-width: 2px; opacity: 1;">
-                    
-                    <div class="row gy-4">
-                        {% if analysis_type == 'budget_analysis' %}
-                            <!-- Budget Analysis Insights -->
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0 me-3">
-                                        <span class="display-3 text-black-50" style="font-family: 'Playfair Display', Georgia, serif; font-weight: 300;">01</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="mb-2" style="letter-spacing: -0.5px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500;">Balanced Allocation</h4>
-                                        <p class="text-muted mb-1">The 50/30/20 rule offers a balanced approach to budgeting your monthly income.</p>
-                                        <p class="small">
-                                            Allocate 50% to essentials, 30% to discretionary spending, and 20% to savings and debt repayment.
-                                        </p>
-                                        <div class="mt-2">
-                                            <a href="#" class="text-decoration-none text-black small">
-                                                <span class="border-bottom border-1 pb-1">Learn about allocation methods</span>
-                                                <i class="bi bi-arrow-right ms-1"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0 me-3">
-                                        <span class="display-3 text-black-50" style="font-family: 'Playfair Display', Georgia, serif; font-weight: 300;">02</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="mb-2" style="letter-spacing: -0.5px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500; font-family: 'Playfair Display', Georgia, serif; font-weight: 500;">Budget Flexibility</h4>
-                                        <p class="text-muted mb-1">A good budget is a living document, not a restrictive cage for your finances.</p>
-                                        <p class="small">
-                                            Revisit and adjust allocations monthly as your expenses and priorities evolve.
-                                        </p>
-                                        <div class="mt-2">
-                                            <a href="#" class="text-decoration-none text-black small">
-                                                <span class="border-bottom border-1 pb-1">Create flexible budget</span>
-                                                <i class="bi bi-arrow-right ms-1"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0 me-3">
-                                        <span class="display-3 text-black-50" style="font-family: 'Playfair Display', Georgia, serif; font-weight: 300;">03</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="mb-2" style="letter-spacing: -0.5px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500; font-family: 'Playfair Display', Georgia, serif; font-weight: 500;">Income Alignment</h4>
-                                        <p class="text-muted mb-1">Align your expenses with your income to achieve sustainable financial health.</p>
-                                        <p class="small">
-                                            Consider seasonal income variations and adjust your budget accordingly.
-                                        </p>
-                                        <div class="mt-2">
-                                            <a href="#" class="text-decoration-none text-black small">
-                                                <span class="border-bottom border-1 pb-1">Income-based budgeting</span>
-                                                <i class="bi bi-arrow-right ms-1"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0 me-3">
-                                        <span class="display-3 text-black-50" style="font-family: 'Playfair Display', Georgia, serif; font-weight: 300;">04</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="mb-2" style="letter-spacing: -0.5px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500; font-family: 'Playfair Display', Georgia, serif; font-weight: 500;">Zero-Based Budgeting</h4>
-                                        <p class="text-muted mb-1">Give every dollar a purpose before it's spent.</p>
-                                        <p class="small">
-                                            Assign all income to specific categories, ensuring every dollar has a job and nothing is left unallocated.
-                                        </p>
-                                        <div class="mt-2">
-                                            <a href="#" class="text-decoration-none text-black small">
-                                                <span class="border-bottom border-1 pb-1">Explore zero-based approach</span>
-                                                <i class="bi bi-arrow-right ms-1"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <blockquote class="border-start ps-4 my-4" style="border-width: 3px !important; border-color: #f8f9fa !important;">
-                                <p class="mb-0 fst-italic" style="font-family: 'Playfair Display', Georgia, serif;">"A budget is telling your money where to go instead of wondering where it went."</p>
-                                <footer class="blockquote-footer mt-1">John C. Maxwell</footer>
-                            </blockquote>
-                        
-                        {% elif analysis_type == 'category_analysis' %}
-                            <!-- Category Analysis Insights -->
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0 me-3">
-                                        <span class="display-3 text-black-50" style="font-family: 'Playfair Display', Georgia, serif; font-weight: 300;">01</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="mb-2" style="letter-spacing: -0.5px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500; font-family: 'Playfair Display', Georgia, serif; font-weight: 500;">Category Patterns</h4>
-                                        <p class="text-muted mb-1">Your spending categories tell a story about your values and priorities.</p>
-                                        <p class="small">
-                                            Review your top three categories to identify whether they align with what matters most to you.
-                                        </p>
-                                        <div class="mt-2">
-                                            <a href="#" class="text-decoration-none text-black small">
-                                                <span class="border-bottom border-1 pb-1">Analyze your categories</span>
-                                                <i class="bi bi-arrow-right ms-1"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0 me-3">
-                                        <span class="display-3 text-black-50" style="font-family: 'Playfair Display', Georgia, serif; font-weight: 300;">02</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="mb-2" style="letter-spacing: -0.5px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500; font-family: 'Playfair Display', Georgia, serif; font-weight: 500;">Category Balance</h4>
-                                        <p class="text-muted mb-1">A healthy financial life maintains balance across essential categories.</p>
-                                        <p class="small">
-                                            Housing, food, transportation, healthcare, and savings should be proportionally balanced.
-                                        </p>
-                                        <div class="mt-2">
-                                            <a href="#" class="text-decoration-none text-black small">
-                                                <span class="border-bottom border-1 pb-1">Discover ideal category ratios</span>
-                                                <i class="bi bi-arrow-right ms-1"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0 me-3">
-                                        <span class="display-3 text-black-50" style="font-family: 'Playfair Display', Georgia, serif; font-weight: 300;">03</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="mb-2" style="letter-spacing: -0.5px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500; font-family: 'Playfair Display', Georgia, serif; font-weight: 500;">Category Creep</h4>
-                                        <p class="text-muted mb-1">Small, gradual increases in category spending often go unnoticed but add up.</p>
-                                        <p class="small">
-                                            Regularly audit categories that show gradual increases to identify potential lifestyle inflation.
-                                        </p>
-                                        <div class="mt-2">
-                                            <a href="#" class="text-decoration-none text-black small">
-                                                <span class="border-bottom border-1 pb-1">Audit your categories</span>
-                                                <i class="bi bi-arrow-right ms-1"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0 me-3">
-                                        <span class="display-3 text-black-50" style="font-family: 'Playfair Display', Georgia, serif; font-weight: 300;">04</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="mb-2" style="letter-spacing: -0.5px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500; font-family: 'Playfair Display', Georgia, serif; font-weight: 500;">Value-Based Categories</h4>
-                                        <p class="text-muted mb-1">Restructure your categories to reflect what you truly value.</p>
-                                        <p class="small">
-                                            Instead of generic categories, create ones that reflect your life priorities and values.
-                                        </p>
-                                        <div class="mt-2">
-                                            <a href="#" class="text-decoration-none text-black small">
-                                                <span class="border-bottom border-1 pb-1">Create meaningful categories</span>
-                                                <i class="bi bi-arrow-right ms-1"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <blockquote class="border-start ps-4 my-4" style="border-width: 3px !important; border-color: #f8f9fa !important;">
-                                <p class="mb-0 fst-italic" style="font-family: 'Playfair Display', Georgia, serif;">"Your categories reveal not just how you spend, but what you value. Make sure they tell the right story."</p>
-                                <footer class="blockquote-footer mt-1">Financial wisdom</footer>
-                            </blockquote>
-                        
-                        {% elif analysis_type == 'trend_analysis' %}
-                            <!-- Trend Analysis Insights -->
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0 me-3">
-                                        <span class="display-3 text-black-50" style="font-family: 'Playfair Display', Georgia, serif; font-weight: 300;">01</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="mb-2" style="letter-spacing: -0.5px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500; font-family: 'Playfair Display', Georgia, serif; font-weight: 500;">Pattern Recognition</h4>
-                                        <p class="text-muted mb-1">Spending patterns are the subtle rhythms that guide your financial life.</p>
-                                        <p class="small">
-                                            Look for weekly, monthly, and seasonal patterns to anticipate and better manage expenses.
-                                        </p>
-                                        <div class="mt-2">
-                                            <a href="#" class="text-decoration-none text-black small">
-                                                <span class="border-bottom border-1 pb-1">Identify your patterns</span>
-                                                <i class="bi bi-arrow-right ms-1"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0 me-3">
-                                        <span class="display-3 text-black-50" style="font-family: 'Playfair Display', Georgia, serif; font-weight: 300;">02</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="mb-2" style="letter-spacing: -0.5px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500; font-family: 'Playfair Display', Georgia, serif; font-weight: 500;">Trend Anticipation</h4>
-                                        <p class="text-muted mb-1">Anticipating trends gives you the power to shape your financial future.</p>
-                                        <p class="small">
-                                            Use past trends to predict future expenses and prepare accordingly.
-                                        </p>
-                                        <div class="mt-2">
-                                            <a href="#" class="text-decoration-none text-black small">
-                                                <span class="border-bottom border-1 pb-1">Forecast your spending</span>
-                                                <i class="bi bi-arrow-right ms-1"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0 me-3">
-                                        <span class="display-3 text-black-50" style="font-family: 'Playfair Display', Georgia, serif; font-weight: 300;">03</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="mb-2" style="letter-spacing: -0.5px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500; font-family: 'Playfair Display', Georgia, serif; font-weight: 500;">Trend Interruption</h4>
-                                        <p class="text-muted mb-1">Sometimes the most powerful financial move is breaking an unproductive trend.</p>
-                                        <p class="small">
-                                            Identify negative spending trends and create intentional interruptions to establish new patterns.
-                                        </p>
-                                        <div class="mt-2">
-                                            <a href="#" class="text-decoration-none text-black small">
-                                                <span class="border-bottom border-1 pb-1">Break negative patterns</span>
-                                                <i class="bi bi-arrow-right ms-1"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0 me-3">
-                                        <span class="display-3 text-black-50" style="font-family: 'Playfair Display', Georgia, serif; font-weight: 300;">04</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="mb-2" style="letter-spacing: -0.5px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500; font-family: 'Playfair Display', Georgia, serif; font-weight: 500;">Growth Trajectories</h4>
-                                        <p class="text-muted mb-1">Your financial growth trajectory is shaped by consistent trends over time.</p>
-                                        <p class="small">
-                                            Focus on establishing positive long-term trends rather than short-term fluctuations.
-                                        </p>
-                                        <div class="mt-2">
-                                            <a href="#" class="text-decoration-none text-black small">
-                                                <span class="border-bottom border-1 pb-1">Build positive momentum</span>
-                                                <i class="bi bi-arrow-right ms-1"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <blockquote class="border-start ps-4 my-4" style="border-width: 3px !important; border-color: #f8f9fa !important;">
-                                <p class="mb-0 fst-italic" style="font-family: 'Playfair Display', Georgia, serif;">"In matters of finance, what matters is not where you are today, but the direction you're consistently moving."</p>
-                                <footer class="blockquote-footer mt-1">Financial wisdom</footer>
-                            </blockquote>
-                        
-                        {% elif analysis_type == 'savings_opportunities' %}
-                            <!-- Savings Opportunities Insights -->
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0 me-3">
-                                        <span class="display-3 text-black-50" style="font-family: 'Playfair Display', Georgia, serif; font-weight: 300;">01</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="mb-2" style="letter-spacing: -0.5px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500; font-family: 'Playfair Display', Georgia, serif; font-weight: 500;">Expense Pruning</h4>
-                                        <p class="text-muted mb-1">Like gardening, financial health requires regular pruning of unnecessary expenses.</p>
-                                        <p class="small">
-                                            Review recurring subscriptions and services monthly to eliminate those providing minimal value.
-                                        </p>
-                                        <div class="mt-2">
-                                            <a href="#" class="text-decoration-none text-black small">
-                                                <span class="border-bottom border-1 pb-1">Subscription audit checklist</span>
-                                                <i class="bi bi-arrow-right ms-1"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0 me-3">
-                                        <span class="display-3 text-black-50" style="font-family: 'Playfair Display', Georgia, serif; font-weight: 300;">02</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="mb-2" style="letter-spacing: -0.5px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500; font-family: 'Playfair Display', Georgia, serif; font-weight: 500;">Value Optimization</h4>
-                                        <p class="text-muted mb-1">The goal isn't spending less, but extracting more value from each dollar spent.</p>
-                                        <p class="small">
-                                            Focus on quality over quantity and optimize for long-term value in major purchases.
-                                        </p>
-                                        <div class="mt-2">
-                                            <a href="#" class="text-decoration-none text-black small">
-                                                <span class="border-bottom border-1 pb-1">Value-based purchasing</span>
-                                                <i class="bi bi-arrow-right ms-1"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0 me-3">
-                                        <span class="display-3 text-black-50" style="font-family: 'Playfair Display', Georgia, serif; font-weight: 300;">03</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="mb-2" style="letter-spacing: -0.5px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500; font-family: 'Playfair Display', Georgia, serif; font-weight: 500;">Mindful Reduction</h4>
-                                        <p class="text-muted mb-1">The areas where you spend most often yield the greatest opportunities for savings.</p>
-                                        <p class="small">
-                                            Challenge yourself to a 10% reduction in your top spending category this month.
-                                        </p>
-                                        <div class="mt-2">
-                                            <a href="#" class="text-decoration-none text-black small">
-                                                <span class="border-bottom border-1 pb-1">Start a reduction challenge</span>
-                                                <i class="bi bi-arrow-right ms-1"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0 me-3">
-                                        <span class="display-3 text-black-50" style="font-family: 'Playfair Display', Georgia, serif; font-weight: 300;">04</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="mb-2" style="letter-spacing: -0.5px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500; font-family: 'Playfair Display', Georgia, serif; font-weight: 500;">Automated Saving</h4>
-                                        <p class="text-muted mb-1">The most effective savings strategy removes the need for repeated decisions.</p>
-                                        <p class="small">
-                                            Automate transfers to savings accounts on payday before expenses can claim your income.
-                                        </p>
-                                        <div class="mt-2">
-                                            <a href="#" class="text-decoration-none text-black small">
-                                                <span class="border-bottom border-1 pb-1">Set up automated savings</span>
-                                                <i class="bi bi-arrow-right ms-1"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <blockquote class="border-start ps-4 my-4" style="border-width: 3px !important; border-color: #f8f9fa !important;">
-                                <p class="mb-0 fst-italic" style="font-family: 'Playfair Display', Georgia, serif;">"Do not save what is left after spending, but spend what is left after saving."</p>
-                                <footer class="blockquote-footer mt-1">Warren Buffett</footer>
-                            </blockquote>
-                        
-                        {% elif analysis_type == 'financial_goals' %}
-                            <!-- Financial Goals Insights -->
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0 me-3">
-                                        <span class="display-3 text-black-50" style="font-family: 'Playfair Display', Georgia, serif; font-weight: 300;">01</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="mb-2" style="letter-spacing: -0.5px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500; font-family: 'Playfair Display', Georgia, serif; font-weight: 500;">Goal Clarity</h4>
-                                        <p class="text-muted mb-1">Vague financial hopes become achievable goals when given specificity and timelines.</p>
-                                        <p class="small">
-                                            Transform abstract goals into specific, measurable targets with clear deadlines.
-                                        </p>
-                                        <div class="mt-2">
-                                            <a href="#" class="text-decoration-none text-black small">
-                                                <span class="border-bottom border-1 pb-1">Define your SMART goals</span>
-                                                <i class="bi bi-arrow-right ms-1"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0 me-3">
-                                        <span class="display-3 text-black-50" style="font-family: 'Playfair Display', Georgia, serif; font-weight: 300;">02</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="mb-2" style="letter-spacing: -0.5px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500; font-family: 'Playfair Display', Georgia, serif; font-weight: 500;">Goal Hierarchy</h4>
-                                        <p class="text-muted mb-1">Not all financial goals deserve equal attention. Prioritization is essential.</p>
-                                        <p class="small">
-                                            Create a hierarchy of goals from foundational (emergency fund) to aspirational (major purchases).
-                                        </p>
-                                        <div class="mt-2">
-                                            <a href="#" class="text-decoration-none text-black small">
-                                                <span class="border-bottom border-1 pb-1">Create a goals hierarchy</span>
-                                                <i class="bi bi-arrow-right ms-1"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0 me-3">
-                                        <span class="display-3 text-black-50" style="font-family: 'Playfair Display', Georgia, serif; font-weight: 300;">03</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="mb-2" style="letter-spacing: -0.5px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500; font-family: 'Playfair Display', Georgia, serif; font-weight: 500;">Goal Alignment</h4>
-                                        <p class="text-muted mb-1">Financial goals should reflect your deepest values and life aspirations.</p>
-                                        <p class="small">
-                                            Ensure that each financial goal serves a meaningful life purpose, not just arbitrary targets.
-                                        </p>
-                                        <div class="mt-2">
-                                            <a href="#" class="text-decoration-none text-black small">
-                                                <span class="border-bottom border-1 pb-1">Align goals with values</span>
-                                                <i class="bi bi-arrow-right ms-1"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0 me-3">
-                                        <span class="display-3 text-black-50" style="font-family: 'Playfair Display', Georgia, serif; font-weight: 300;">04</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="mb-2" style="letter-spacing: -0.5px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500; font-family: 'Playfair Display', Georgia, serif; font-weight: 500;">Goal Systems</h4>
-                                        <p class="text-muted mb-1">Financial success comes from reliable systems, not willpower or motivation.</p>
-                                        <p class="small">
-                                            Build automated systems that move you toward your goals without requiring constant decision-making.
-                                        </p>
-                                        <div class="mt-2">
-                                            <a href="#" class="text-decoration-none text-black small">
-                                                <span class="border-bottom border-1 pb-1">Design goal systems</span>
-                                                <i class="bi bi-arrow-right ms-1"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <blockquote class="border-start ps-4 my-4" style="border-width: 3px !important; border-color: #f8f9fa !important;">
-                                <p class="mb-0 fst-italic" style="font-family: 'Playfair Display', Georgia, serif;">"Financial goals are the bridge between your present situation and your desired future."</p>
-                                <footer class="blockquote-footer mt-1">Financial wisdom</footer>
-                            </blockquote>
-                        
-                        {% else %}
-                            <!-- Default Insights -->
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0 me-3">
-                                        <span class="display-3 text-black-50" style="font-family: 'Playfair Display', Georgia, serif; font-weight: 300;">01</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="mb-2" style="letter-spacing: -0.5px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500; font-family: 'Playfair Display', Georgia, serif; font-weight: 500;">Financial Awareness</h4>
-                                        <p class="text-muted mb-1">The journey to financial freedom begins with awareness of where your money goes.</p>
-                                        <p class="small">
-                                            Maintain a consistent record of expenses to gain insights that can transform your relationship with money.
-                                        </p>
-                                        <div class="mt-2">
-                                            <a href="#" class="text-decoration-none text-black small">
-                                                <span class="border-bottom border-1 pb-1">Learn more about expense tracking</span>
-                                                <i class="bi bi-arrow-right ms-1"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0 me-3">
-                                        <span class="display-3 text-black-50" style="font-family: 'Playfair Display', Georgia, serif; font-weight: 300;">02</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="mb-2" style="letter-spacing: -0.5px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500; font-family: 'Playfair Display', Georgia, serif; font-weight: 500;">Intentional Budgeting</h4>
-                                        <p class="text-muted mb-1">A budget isn't a restriction; it's a plan for your money to work for your priorities.</p>
-                                        <p class="small">
-                                            Create thoughtful category limits that align with your values and long-term goals.
-                                        </p>
-                                        <div class="mt-2">
-                                            <a href="#" class="text-decoration-none text-black small">
-                                                <span class="border-bottom border-1 pb-1">Explore budgeting techniques</span>
-                                                <i class="bi bi-arrow-right ms-1"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0 me-3">
-                                        <span class="display-3 text-black-50" style="font-family: 'Playfair Display', Georgia, serif; font-weight: 300;">03</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="mb-2" style="letter-spacing: -0.5px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500; font-family: 'Playfair Display', Georgia, serif; font-weight: 500;">Mindful Consumption</h4>
-                                        <p class="text-muted mb-1">The areas where you spend most reveal your priorities. Are they aligned with your values?</p>
-                                        <p class="small">
-                                            Challenge yourself to reduce spending in top categories by evaluating each purchase's true value.
-                                        </p>
-                                        <div class="mt-2">
-                                            <a href="#" class="text-decoration-none text-black small">
-                                                <span class="border-bottom border-1 pb-1">Discover mindful spending practices</span>
-                                                <i class="bi bi-arrow-right ms-1"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-start">
-                                    <div class="flex-shrink-0 me-3">
-                                        <span class="display-3 text-black-50" style="font-family: 'Playfair Display', Georgia, serif; font-weight: 300;">04</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="mb-2" style="letter-spacing: -0.5px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500; font-family: 'Playfair Display', Georgia, serif; font-weight: 500;">Future Self Investment</h4>
-                                        <p class="text-muted mb-1">Your most important financial relationship is with your future self.</p>
-                                        <p class="small">
-                                            Consistently setting aside 10-15% of income creates freedom and opportunity for your future.
-                                        </p>
-                                        <div class="mt-2">
-                                            <a href="#" class="text-decoration-none text-black small">
-                                                <span class="border-bottom border-1 pb-1">Calculate your savings potential</span>
-                                                <i class="bi bi-arrow-right ms-1"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <blockquote class="border-start ps-4 my-4" style="border-width: 3px !important; border-color: #f8f9fa !important;">
-                                <p class="mb-0 fst-italic" style="font-family: 'Playfair Display', Georgia, serif;">"Financial freedom isn't about wealth accumulation; it's about having options and living intentionally."</p>
-                                <footer class="blockquote-footer mt-1">Financial wisdom</footer>
-                            </blockquote>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="text-end mt-4">
-                        <a href="#" class="btn btn-outline-dark rounded-0 px-4">
-                            <span>Personalized Action Plan</span>
-                            <i class="bi bi-arrow-right ms-2"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
         </div>
     </div>
 </div>
