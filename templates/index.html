@@ -522,6 +522,73 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Receipts Section -->
+        {% if receipts %}
+        <div class="col-12 mt-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-receipt me-2"></i>Recent Receipts
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                        {% for receipt in receipts %}
+                        <div class="col">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="card-title mb-0">
+                                            {% if receipt.expense %}
+                                            <a href="#" class="text-decoration-none">{{ receipt.expense.description }}</a>
+                                            {% else %}
+                                            <span class="text-muted">No linked expense</span>
+                                            {% endif %}
+                                        </h6>
+                                        <span class="badge bg-info">
+                                            {{ receipt.upload_date.strftime('%b %d, %Y') }}
+                                        </span>
+                                    </div>
+                                    <div class="text-center mb-3">
+                                        <a href="{{ url_for('view_receipt', receipt_id=receipt.id) }}" class="text-decoration-none">
+                                            <img src="{{ url_for('static', filename='uploads/receipts/' + receipt.file_path) }}" 
+                                                 alt="Receipt thumbnail" 
+                                                 class="img-thumbnail receipt-thumbnail" 
+                                                 style="max-height: 150px; max-width: 100%;">
+                                        </a>
+                                    </div>
+                                    {% if receipt.description %}
+                                    <p class="card-text small text-muted">{{ receipt.description }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        {% if receipt.expense %}
+                                        <span class="badge bg-success">${{ receipt.expense.amount|round(2) }}</span>
+                                        {% endif %}
+                                        <div>
+                                            <a href="{{ url_for('view_receipt', receipt_id=receipt.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <form method="POST" action="{{ url_for('delete_receipt', receipt_id=receipt.id) }}" 
+                                                  class="d-inline" onsubmit="return confirm('Are you sure you want to delete this receipt?');">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
         {% endif %}
     {% endif %}
 </div>
