@@ -437,6 +437,50 @@ document.addEventListener('DOMContentLoaded', function() {
         // Convert to lowercase for easier matching
         const lowerMessage = message.toLowerCase();
         
+        // Check for greetings and basic questions first
+        if (['hi', 'hello', 'hey', 'greetings', 'howdy', 'yo', 'hiya'].includes(lowerMessage)) {
+            return {
+                response: "Hello! I'm your Financial Assistant. How can I help you with your financial questions today?",
+                suggestions: ["Tell me about budgeting", "How can I save money?", "What are good financial habits?", "What's the 50/30/20 rule?"]
+            };
+        }
+        
+        if (lowerMessage.includes('your name') || lowerMessage.includes('who are you') || lowerMessage === 'name' || lowerMessage === 'what is your name') {
+            return {
+                response: "I'm your Financial Assistant, an AI designed to help you manage your finances and understand your spending patterns. I can provide personalized financial advice and answer questions about budgeting, saving, investing, and more.",
+                suggestions: ["What can you help me with?", "How do you analyze my expenses?", "Give me a savings tip", "What's the 50/30/20 rule?"]
+            };
+        }
+        
+        // Handle one-word queries
+        if (lowerMessage === 'help') {
+            return {
+                response: "I'm here to help with your financial questions! I can provide advice on budgeting, saving, investing, debt management, and more. What specific financial topic would you like help with today?",
+                suggestions: ["Budgeting help", "Saving strategies", "Investment advice", "Debt management"]
+            };
+        }
+        
+        if (lowerMessage === 'thanks' || lowerMessage === 'thank you' || lowerMessage === 'thx') {
+            return {
+                response: "You're welcome! I'm happy to help with your financial questions anytime. Is there anything else you'd like to know about managing your finances?",
+                suggestions: ["More savings tips", "Budget advice", "Investment basics", "No thanks, that's all"]
+            };
+        }
+        
+        if (lowerMessage.includes('how are you') || lowerMessage.includes('how do you feel')) {
+            return {
+                response: "I'm running smoothly and ready to help with your financial questions! Unlike humans, I don't have feelings, but I'm designed to provide you with helpful financial guidance. What would you like to know about today?",
+                suggestions: ["Tell me about budgeting", "How can I save money?", "What are good financial habits?", "What are your capabilities?"]
+            };
+        }
+        
+        if (lowerMessage.includes('what can you do') || lowerMessage.includes('help me with') || lowerMessage.includes('capabilities')) {
+            return {
+                response: "I can help you with various financial topics including: creating and managing budgets, developing saving strategies, understanding investment basics, managing debt, reducing expenses, setting financial goals, improving credit scores, and analyzing your spending patterns. What would you like to know about?",
+                suggestions: ["Create a budget", "Saving strategies", "Investment basics", "Debt management"]
+            };
+        }
+        
         // Define topics and keywords for matching
         const topics = {
             budget: ['budget', 'budgeting', 'allocate', 'allocating', '50/30/20', '50 30 20', 'spending plan'],
