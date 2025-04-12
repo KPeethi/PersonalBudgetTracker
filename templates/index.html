@@ -412,6 +412,117 @@
                 </div>
             </div>
         </div>
+        
+        {% if current_user.is_authenticated %}
+        <!-- Receipts Section -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0"><i class="bi bi-receipt me-2"></i>Your Receipts</h5>
+                        <a href="{{ url_for('receipts') }}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-upload me-1"></i> Upload New Receipt
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        {% if receipts %}
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>File</th>
+                                            <th>Date</th>
+                                            <th>Linked Expense</th>
+                                            <th>Description</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for receipt in receipts %}
+                                        <tr>
+                                            <td>
+                                                {% if receipt.file_type.startswith('image/') %}
+                                                    <i class="bi bi-file-image text-primary fs-4"></i>
+                                                {% elif receipt.file_type == 'application/pdf' %}
+                                                    <i class="bi bi-file-pdf text-danger fs-4"></i>
+                                                {% else %}
+                                                    <i class="bi bi-file-earmark text-secondary fs-4"></i>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ receipt.upload_date.strftime('%b %d, %Y') }}</td>
+                                            <td>
+                                                {% if receipt.expense %}
+                                                    <a href="#" data-bs-toggle="tooltip" title="{{ receipt.expense.description }}">
+                                                        ${{ receipt.expense.amount }}
+                                                    </a>
+                                                {% else %}
+                                                    <span class="text-muted">—</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if receipt.description %}
+                                                    {{ receipt.description }}
+                                                {% else %}
+                                                    <span class="text-muted">No description</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="btn-group">
+                                                    <a href="{{ url_for('view_receipt', receipt_id=receipt.id) }}" 
+                                                       class="btn btn-sm btn-outline-primary" target="_blank">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                            data-bs-toggle="modal" data-bs-target="#deleteReceiptModal{{ receipt.id }}">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                                
+                                                <!-- Delete Confirmation Modal -->
+                                                <div class="modal fade" id="deleteReceiptModal{{ receipt.id }}" tabindex="-1" aria-hidden="true">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title">Confirm Delete</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <p>Are you sure you want to delete this receipt? This action cannot be undone.</p>
+                                                                <div class="text-muted">
+                                                                    <small>File: {{ receipt.filename }}</small><br>
+                                                                    <small>Uploaded: {{ receipt.upload_date.strftime('%b %d, %Y %H:%M') }}</small>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                                <form action="{{ url_for('delete_receipt', receipt_id=receipt.id) }}" method="POST">
+                                                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-receipt bi-lg text-muted mb-3" style="font-size: 2.5rem;"></i>
+                                <h5>No Receipts Found</h5>
+                                <p class="text-muted mb-3">Upload your first receipt to keep track of your expenses.</p>
+                                <a href="{{ url_for('receipts') }}" class="btn btn-primary">
+                                    <i class="bi bi-upload me-1"></i> Upload Receipt
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     {% endif %}
 </div>
 {% endblock %}
