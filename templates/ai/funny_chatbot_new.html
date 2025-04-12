@@ -437,6 +437,71 @@ document.addEventListener('DOMContentLoaded', function() {
         // Convert to lowercase for easier matching
         const lowerMessage = message.toLowerCase();
         
+        // Handle one-word category queries - immediately provide data for these common categories
+        const oneWordCategories = {
+            "dining": {
+                amount: 138.50,
+                percentage: 5.1,
+                monthly: 138.50,
+                average: 162.75,
+                trend: "lower",
+                breakdown: "• Restaurants: $138.50 (100%)"
+            },
+            "groceries": {
+                amount: 285.25,
+                percentage: 10.5,
+                monthly: 285.25,
+                average: 310.45,
+                trend: "slightly lower",
+                breakdown: "• Supermarkets: $215.75 (76%)\n  - Specialty stores: $69.50 (24%)"
+            },
+            "rent": {
+                amount: 950.00,
+                percentage: 35.0,
+                monthly: 950.00,
+                average: 950.00,
+                trend: "stable",
+                breakdown: "• Monthly rent: $950.00 (100%)"
+            },
+            "utilities": {
+                amount: 210.40,
+                percentage: 7.7,
+                monthly: 210.40,
+                average: 195.30,
+                trend: "slightly higher",
+                breakdown: "• Electricity: $85.75 (41%)\n  - Water: $45.20 (21%)\n  - Internet: $79.45 (38%)"
+            },
+            "transportation": {
+                amount: 325.80,
+                percentage: 12.0,
+                monthly: 325.80,
+                average: 280.60,
+                trend: "higher",
+                breakdown: "• Gas: $180.45 (55%)\n  - Maintenance: $85.35 (26%)\n  - Parking: $60.00 (19%)"
+            },
+            "entertainment": {
+                amount: 185.30,
+                percentage: 6.8,
+                monthly: 185.30,
+                average: 220.75,
+                trend: "lower",
+                breakdown: "• Streaming services: $45.80 (25%)\n  - Movies/events: $85.50 (46%)\n  - Hobbies: $54.00 (29%)"
+            }
+        };
+
+        // Check if the message is just a single category word
+        if (oneWordCategories[lowerMessage]) {
+            const category = oneWordCategories[lowerMessage];
+            return {
+                response: `Here are your ${lowerMessage} expense numbers for the past month:\n\n` +
+                         `• Total ${lowerMessage} expenses: $${category.amount.toFixed(2)}\n` +
+                         `• Breakdown:\n  ${category.breakdown}\n\n` +
+                         `This represents ${category.percentage}% of your total monthly spending ($2,724.00).\n` +
+                         `Compared to your 3-month average of $${category.average.toFixed(2)}, your ${lowerMessage} spending is ${category.trend} this month.`,
+                suggestions: [`Compare ${lowerMessage} to budget`, `${lowerMessage} saving tips`, "See spending trend", "Other expense categories"]
+            };
+        }
+        
         // Pre-process special queries that mix multiple intents
         if (lowerMessage === "food expenses or try 'give me in numbers'") {
             return {
