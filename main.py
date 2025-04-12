@@ -29,6 +29,7 @@ import visualization
 import suggestions
 import ai_assistant
 import conversation_assistant
+import excel_processor
 
 # Directory for storing uploaded receipts
 UPLOAD_FOLDER = 'static/uploads/receipts'
@@ -2660,9 +2661,17 @@ def business_excel_import():
             db.session.add(excel_import)
             db.session.commit()
             
-            # Process the file (this could be done in a background job)
-            # For now, we'll just update the status
-            flash('Excel file uploaded successfully. It will be processed shortly.', 'success')
+            # Process the Excel file immediately
+            try:
+                logger.info(f"Processing Excel import with ID {excel_import.id}")
+                if excel_processor.process_excel_import(excel_import.id):
+                    flash('Excel file processed successfully!', 'success')
+                else:
+                    flash('Excel file uploaded but encountered errors during processing. Check the status for details.', 'warning')
+            except Exception as e:
+                logger.error(f"Error processing Excel import: {str(e)}")
+                flash(f'File uploaded but processing failed: {str(e)}', 'warning')
+                
             return redirect(url_for('business_excel_import'))
         except Exception as e:
             db.session.rollback()
