@@ -52,7 +52,7 @@ def generate_response(
             "response": "Sorry, I'm currently unavailable. Please check the API configuration."
         }
     
-    # Create the system prompt with the new Finny personality
+    # Create the system prompt for the professional financial assistant
     humor_instructions = {
         "low": "Be lightly humorous occasionally, but focus primarily on being helpful.",
         "medium": "Be casual and friendly, use emojis occasionally, and explain things simply while being helpful.",
