@@ -88,6 +88,9 @@ When giving financial advice, be responsible and avoid overly specific investmen
             "frequency_penalty": 0.5
         }
         
+        # Log the request for debugging purposes
+        logger.debug(f"Perplexity API request: {payload}")
+        
         # Make the API request
         response = requests.post(
             PERPLEXITY_API_URL,
@@ -95,9 +98,13 @@ When giving financial advice, be responsible and avoid overly specific investmen
             json=payload
         )
         
+        # Log the response for debugging
+        logger.debug(f"Perplexity API response code: {response.status_code}")
+        
         # Parse and return the response
         if response.status_code == 200:
             result = response.json()
+            logger.debug(f"Successful response received: {result}")
             return {
                 "success": True,
                 "response": result["choices"][0]["message"]["content"],

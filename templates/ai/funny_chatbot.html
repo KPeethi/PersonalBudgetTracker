@@ -312,6 +312,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 removeLoading();
                 
                 if (data.success) {
+                    // Check if this is a fallback response
+                    if (data.fallback) {
+                        // Add a note that we're using a fallback
+                        addSystemMessage("Using offline response mode");
+                    }
+                    
                     addAssistantMessage(data.response);
                     
                     // If there are follow-up suggestions

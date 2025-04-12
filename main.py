@@ -3007,6 +3007,39 @@ def funny_chat_process():
             "What is compound interest?",
             "Retirement planning"
         ]
+    elif "food" in message.lower() or "groceries" in message.lower() or "restaurant" in message.lower():
+        suggestions = [
+            "How to meal plan on a budget?",
+            "Best days for grocery shopping",
+            "Restaurant hacks to save money",
+            "Apps that offer food discounts"
+        ]
+    
+    # If API call failed, use our fallback responses based on query topic
+    if not result.get('success', False):
+        logger.warning(f"Perplexity API call failed, using fallback response for: {message}")
+        
+        # Fallback responses based on query topic
+        if "food" in message.lower() or "groceries" in message.lower():
+            response = "To reduce food expenses, try meal planning, buying in bulk, using grocery store loyalty programs, and cooking at home more often. And remember, the freezer is your friend - unlike those 'friends' who always suggest expensive restaurants!"
+        elif "budget" in message.lower():
+            response = "Creating a budget is like making a sandwich - you need the right ingredients! Start with your income (the bread), subtract fixed expenses (the filling), and what's left is your discretionary spending (the condiments). The 50/30/20 rule is popular: 50% for needs, 30% for wants, 20% for savings."
+        elif "save" in message.lower() or "saving" in message.lower():
+            response = "Want to save more money? Try the 24-hour rule for purchases, automate your savings, cut subscriptions you barely use, and remember: your coffee habit costs more than you think. That $5 daily latte is around $1,825 annually - enough for a vacation or a small emergency fund!"
+        elif "invest" in message.lower():
+            response = "Investing is like planting a money tree, but with less dirt under your fingernails. Start with low-cost index funds, max out tax-advantaged accounts like 401(k)s, and remember - time in the market beats timing the market. Your future self will thank you!"
+        elif "expensive" in message.lower() or "spending" in message.lower():
+            response = "To curb expensive spending habits, try using cash instead of cards, implement a 'cooling off' period before big purchases, and track every expense for a month - you'll be shocked where your money goes! As they say, a dollar saved is a dollar that won't mysteriously disappear at Target."
+        else:
+            response = "I'm having a bit of trouble with my financial calculator right now. While my AI brain reboots, here's a classic tip: pay yourself first! Set up automatic transfers to savings on payday before you have a chance to spend it. Your future self will be so grateful they might even forgive your current self's questionable fashion choices."
+        
+        # Always return true success for fallback responses
+        return jsonify({
+            'success': True,
+            'response': response,
+            'suggestions': suggestions,
+            'fallback': True  # Flag to indicate this was a fallback response
+        })
     
     return jsonify({
         'success': result.get('success', False),
