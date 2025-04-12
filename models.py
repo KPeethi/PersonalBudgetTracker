@@ -56,6 +56,9 @@ class Expense(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     excel_import_id = db.Column(db.Integer, db.ForeignKey('excel_imports.id'), nullable=True)
+    # Optional fields for additional expense details
+    payment_method = db.Column(db.String(50), nullable=True)
+    merchant = db.Column(db.String(100), nullable=True)
     
     def __repr__(self):
         """String representation of an expense."""

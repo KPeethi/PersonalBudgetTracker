@@ -103,7 +103,7 @@ def process_excel_import(import_id):
                         payment_method=payment_method,
                         merchant=merchant,
                         created_at=datetime.utcnow(),
-                        import_id=excel_import.id
+                        excel_import_id=excel_import.id
                     )
                     db.session.add(expense)
                     num_rows += 1
