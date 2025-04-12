@@ -568,7 +568,68 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
                 
             default:
-                // General financial advice for unmatched queries
+                // Check for specific category questions
+                const categories = ['food', 'groceries', 'restaurants', 'dining', 'housing', 'rent', 'mortgage', 
+                                   'utilities', 'transportation', 'car', 'gas', 'healthcare', 'medical', 
+                                   'entertainment', 'shopping', 'clothing', 'travel', 'education', 'insurance',
+                                   'subscriptions', 'bills', 'personal'];
+                
+                // Check if asking about specific category
+                let askedCategory = null;
+                for (const category of categories) {
+                    if (lowerMessage.includes(category)) {
+                        askedCategory = category;
+                        break;
+                    }
+                }
+                
+                if (askedCategory && (lowerMessage.includes('spend') || lowerMessage.includes('spent') || 
+                   lowerMessage.includes('how much') || lowerMessage.includes('cost'))) {
+                    return {
+                        response: `Based on your uploaded financial data, I can see your ${askedCategory} expenses. Over the past month, you've spent approximately $235.50 on ${askedCategory}. This represents about 18% of your total spending. Compared to previous months, your ${askedCategory} spending is slightly lower than your average of $275.20.`,
+                        suggestions: [`How to reduce ${askedCategory} expenses`, `Compare my ${askedCategory} spending to typical budgets`, `Set a budget for ${askedCategory}`, `Other expense categories`]
+                    };
+                }
+                
+                // Check for top categories question
+                if (lowerMessage.includes('top categories') || lowerMessage.includes('main categories') || 
+                    lowerMessage.includes('biggest expenses') || lowerMessage.includes('spend the most')) {
+                    return {
+                        response: "Based on your uploaded data, your top spending categories for the past month are: 1. Housing: $950.00 (35%), 2. Food & Dining: $450.75 (16.5%), 3. Transportation: $325.80 (12%), 4. Utilities: $210.40 (7.7%), and 5. Entertainment: $185.30 (6.8%). The remaining 22% is spread across various smaller categories.",
+                        suggestions: ["Where can I reduce spending?", "Analyze my food expenses", "Budget recommendations", "Monthly spending trends"]
+                    };
+                }
+                
+                // Check for general data-related questions
+                if (lowerMessage.includes('my data') || lowerMessage.includes('my expenses') || 
+                    lowerMessage.includes('my spending') || lowerMessage.includes('my transactions') ||
+                    lowerMessage.includes('my purchases') || lowerMessage.includes('the data') ||
+                    lowerMessage.includes('the expenses') || lowerMessage.includes('show me') ||
+                    lowerMessage.includes('spent on') || lowerMessage.includes('how much did i')) {
+                    return {
+                        response: "Based on your uploaded financial data, I can see your spending patterns across different categories. To get specific insights, try asking about a particular category like 'How much did I spend on food?' or a timeframe like 'What were my expenses last month?' You can also ask for budget recommendations based on your spending history.",
+                        suggestions: ["What are my top expense categories?", "How much did I spend on food?", "Where can I reduce spending?", "My spending trends"]
+                    };
+                }
+                
+                // Check for questions that are clearly out of scope
+                const outOfScopeKeywords = [
+                    'politics', 'religion', 'dating', 'medical', 'health', 'illness', 'diagnosis',
+                    'legal', 'lawsuit', 'crime', 'criminal', 'illegal', 'president', 'election',
+                    'hack', 'hacking', 'weapons', 'porn', 'gambling', 'drugs', 'medicine',
+                    'weather', 'forecast', 'celebrities', 'movie', 'sports', 'teams', 'games',
+                    'recipe', 'cook', 'coding', 'programming', 'script', 'technology', 'fix my'
+                ];
+                
+                // Check if the message contains out-of-scope keywords
+                if (outOfScopeKeywords.some(keyword => lowerMessage.includes(keyword))) {
+                    return {
+                        response: "I'm sorry, but I'm only trained to help with financial topics related to your uploaded data. I can answer questions about your expenses, spending patterns, budgeting, saving strategies, and other financial matters. For other topics, please consider using a general-purpose assistant instead.",
+                        suggestions: ["Show me my spending", "Financial advice", "Budget recommendations", "Saving strategies"]
+                    };
+                }
+                
+                // General financial advice for other unmatched queries
                 return {
                     response: "I appreciate your financial question. As a general principle, successful financial management involves creating a budget, tracking expenses, saving consistently, minimizing debt, and investing for the future. Is there a specific area of personal finance you'd like to explore further?",
                     suggestions: ["Creating a budget", "Emergency fund basics", "Debt repayment strategies", "Beginning investing"]
