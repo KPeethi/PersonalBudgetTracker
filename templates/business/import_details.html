@@ -52,7 +52,7 @@
                         
                         <dt class="col-sm-4">Completion Time</dt>
                         <dd class="col-sm-8">
-                            {{ excel_import.completed_date.strftime('%Y-%m-%d %H:%M') if excel_import.completed_date else 'Not completed' }}
+                            {{ excel_import.processed_date.strftime('%Y-%m-%d %H:%M') if excel_import.processed_date else 'Not completed' }}
                         </dd>
                     </dl>
                 </div>
@@ -64,9 +64,9 @@
             </div>
             {% endif %}
             
-            {% if excel_import.notes %}
+            {% if excel_import.description %}
             <div class="alert alert-info mt-3">
-                <strong>Notes:</strong> {{ excel_import.notes }}
+                <strong>Description:</strong> {{ excel_import.description }}
             </div>
             {% endif %}
         </div>
