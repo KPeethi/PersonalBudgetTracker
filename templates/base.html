@@ -133,12 +133,20 @@
             text-transform: uppercase;
             letter-spacing: 1px;
             color: #8e959e;
-            padding: 0 20px;
-            margin: 20px 0 8px 0;
+            padding: 8px 20px;
+            margin: 20px 0 0 0;
             font-weight: 400;
             display: flex;
             align-items: center;
             opacity: 0.8;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        
+        .sidebar-category:hover {
+            background-color: rgba(13, 110, 253, 0.03);
+            color: #6c757d;
         }
         
         .sidebar-category::before {
@@ -148,6 +156,26 @@
             background-color: #8e959e;
             opacity: 0.5;
             margin-right: 8px;
+        }
+        
+        .sidebar-category .category-icon {
+            margin-left: auto;
+            font-size: 0.7rem;
+            transition: transform 0.2s ease;
+        }
+        
+        .sidebar-category.collapsed .category-icon {
+            transform: rotate(-90deg);
+        }
+        
+        .sidebar-submenu {
+            overflow: hidden;
+            max-height: 500px;
+            transition: max-height 0.3s ease;
+        }
+        
+        .sidebar-submenu.collapsed {
+            max-height: 0;
         }
         
         /* Mobile responsive */
@@ -354,86 +382,107 @@
     {% if current_user.is_authenticated %}
     <div class="sidebar">
         <!-- Main Navigation -->
-        <div class="sidebar-category">Main</div>
-        
-        <a href="{{ url_for('index') }}" class="sidebar-link {% if request.path == url_for('index') %}active{% endif %}">
-            <i class="bi bi-house-door"></i>
-            <span>Home</span>
-        </a>
-        
-        <a href="{{ url_for('dashboard') }}" class="sidebar-link {% if request.path == url_for('dashboard') %}active{% endif %}">
-            <i class="bi bi-speedometer2"></i>
-            <span>Dashboard</span>
-        </a>
+        <div class="sidebar-category" data-category="main">
+            Main <i class="bi bi-chevron-down category-icon"></i>
+        </div>
+        <div class="sidebar-submenu" id="sidebar-main">
+            <a href="{{ url_for('index') }}" class="sidebar-link {% if request.path == url_for('index') %}active{% endif %}">
+                <i class="bi bi-house-door"></i>
+                <span>Home</span>
+            </a>
+            
+            <a href="{{ url_for('dashboard') }}" class="sidebar-link {% if request.path == url_for('dashboard') %}active{% endif %}">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+            </a>
+        </div>
 
         <!-- Financial Management -->
-        <div class="sidebar-category">Financial</div>
-        
-        <a href="{{ url_for('monthly_summary') }}" class="sidebar-link {% if request.path == url_for('monthly_summary') %}active{% endif %}">
-            <i class="bi bi-calendar-month"></i>
-            <span>Monthly Summary</span>
-        </a>
-        
-        <a href="{{ url_for('import_plaid_data') }}" class="sidebar-link {% if request.path == url_for('import_plaid_data') %}active{% endif %}">
-            <i class="bi bi-bank"></i>
-            <span>Connect Bank</span>
-        </a>
+        <div class="sidebar-category" data-category="financial">
+            Financial <i class="bi bi-chevron-down category-icon"></i>
+        </div>
+        <div class="sidebar-submenu" id="sidebar-financial">
+            <a href="{{ url_for('monthly_summary') }}" class="sidebar-link {% if request.path == url_for('monthly_summary') %}active{% endif %}">
+                <i class="bi bi-calendar-month"></i>
+                <span>Monthly Summary</span>
+            </a>
+            
+            <a href="{{ url_for('import_plaid_data') }}" class="sidebar-link {% if request.path == url_for('import_plaid_data') %}active{% endif %}">
+                <i class="bi bi-bank"></i>
+                <span>Connect Bank</span>
+            </a>
+        </div>
         
         <!-- Assistance & Settings -->
-        <div class="sidebar-category">Tools</div>
+        <div class="sidebar-category" data-category="tools">
+            Tools <i class="bi bi-chevron-down category-icon"></i>
+        </div>
+        <div class="sidebar-submenu" id="sidebar-tools">
+            <a href="{{ url_for('ai_assistant_home') }}" class="sidebar-link {% if request.path == url_for('ai_assistant_home') %}active{% endif %}">
+                <i class="bi bi-robot"></i>
+                <span>AI Assistant</span>
+            </a>
+            
+            <a href="{{ url_for('chat_assistant') }}" class="sidebar-link {% if request.path == url_for('chat_assistant') %}active{% endif %}">
+                <i class="bi bi-chat-dots"></i>
+                <span>Chat Assistant</span>
+            </a>
+        </div>
         
-        <a href="{{ url_for('ai_assistant_home') }}" class="sidebar-link {% if request.path == url_for('ai_assistant_home') %}active{% endif %}">
-            <i class="bi bi-robot"></i>
-            <span>AI Assistant</span>
-        </a>
-        
-        <a href="{{ url_for('chat_assistant') }}" class="sidebar-link {% if request.path == url_for('chat_assistant') %}active{% endif %}">
-            <i class="bi bi-chat-dots"></i>
-            <span>Chat Assistant</span>
-        </a>
-        
-
         {% if current_user.is_business_user or current_user.is_admin %}
-        <div class="sidebar-category">Business Features</div>
-        
-        <a href="{{ url_for('business_excel_import') }}" class="sidebar-link {% if request.path == url_for('business_excel_import') %}active{% endif %}">
-            <i class="bi bi-file-earmark-spreadsheet"></i>
-            <span>Excel Import</span>
-        </a>
+        <div class="sidebar-category" data-category="business">
+            Business Features <i class="bi bi-chevron-down category-icon"></i>
+        </div>
+        <div class="sidebar-submenu" id="sidebar-business">
+            <a href="{{ url_for('business_excel_import') }}" class="sidebar-link {% if request.path == url_for('business_excel_import') %}active{% endif %}">
+                <i class="bi bi-file-earmark-spreadsheet"></i>
+                <span>Excel Import</span>
+            </a>
+        </div>
         {% elif not current_user.is_business_user %}
-        <div class="sidebar-category">Business Features</div>
-        
-        <a href="{{ url_for('request_business_upgrade') }}" class="sidebar-link {% if request.path == url_for('request_business_upgrade') %}active{% endif %}">
-            <i class="bi bi-arrow-up-circle"></i>
-            <span>Request Upgrade</span>
-            <span class="badge bg-primary rounded-pill ms-2">PRO</span>
-        </a>
+        <div class="sidebar-category" data-category="business">
+            Business Features <i class="bi bi-chevron-down category-icon"></i>
+        </div>
+        <div class="sidebar-submenu" id="sidebar-business">
+            <a href="{{ url_for('request_business_upgrade') }}" class="sidebar-link {% if request.path == url_for('request_business_upgrade') %}active{% endif %}">
+                <i class="bi bi-arrow-up-circle"></i>
+                <span>Request Upgrade</span>
+                <span class="badge bg-primary rounded-pill ms-2">PRO</span>
+            </a>
+        </div>
         {% endif %}
         
         {% if current_user.is_admin %}
-        <div class="sidebar-category">Administration</div>
-        
-        <a href="{{ url_for('admin_panel') }}" class="sidebar-link {% if request.path == url_for('admin_panel') %}active{% endif %}">
-            <i class="bi bi-shield-lock"></i>
-            <span>Admin Panel</span>
-        </a>
-        
-        <a href="{{ url_for('admin_business_requests') }}" class="sidebar-link {% if request.path == url_for('admin_business_requests') %}active{% endif %}">
-            <i class="bi bi-briefcase"></i>
-            <span>Business Requests</span>
-        </a>
+        <div class="sidebar-category" data-category="admin">
+            Administration <i class="bi bi-chevron-down category-icon"></i>
+        </div>
+        <div class="sidebar-submenu" id="sidebar-admin">
+            <a href="{{ url_for('admin_panel') }}" class="sidebar-link {% if request.path == url_for('admin_panel') %}active{% endif %}">
+                <i class="bi bi-shield-lock"></i>
+                <span>Admin Panel</span>
+            </a>
+            
+            <a href="{{ url_for('admin_business_requests') }}" class="sidebar-link {% if request.path == url_for('admin_business_requests') %}active{% endif %}">
+                <i class="bi bi-briefcase"></i>
+                <span>Business Requests</span>
+            </a>
+        </div>
         {% endif %}
         
-        <div class="sidebar-category">User</div>
-        <a href="{{ url_for('profile') }}" class="sidebar-link {% if request.path == url_for('profile') %}active{% endif %}">
-            <i class="bi bi-person"></i>
-            <span>Profile</span>
-        </a>
-        
-        <a href="{{ url_for('logout') }}" class="sidebar-link">
-            <i class="bi bi-box-arrow-right"></i>
-            <span>Sign Out</span>
-        </a>
+        <div class="sidebar-category" data-category="user">
+            User <i class="bi bi-chevron-down category-icon"></i>
+        </div>
+        <div class="sidebar-submenu" id="sidebar-user">
+            <a href="{{ url_for('profile') }}" class="sidebar-link {% if request.path == url_for('profile') %}active{% endif %}">
+                <i class="bi bi-person"></i>
+                <span>Profile</span>
+            </a>
+            
+            <a href="{{ url_for('logout') }}" class="sidebar-link">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Sign Out</span>
+            </a>
+        </div>
     </div>
     
     <!-- Main content with margin for sidebar -->
@@ -625,6 +674,50 @@
                     contentWrapper.classList.remove('sidebar-open');
                 }
             });
+            
+            // Initialize sidebar accordion functionality
+            const categoryHeaders = document.querySelectorAll('.sidebar-category');
+            const sidebarState = JSON.parse(localStorage.getItem('sidebarState')) || {};
+            
+            // Setup each category header with click handler
+            categoryHeaders.forEach(header => {
+                const category = header.getAttribute('data-category');
+                const submenu = document.getElementById(`sidebar-${category}`);
+                
+                // Apply saved state or default to expanded
+                if (sidebarState[category] === 'collapsed') {
+                    header.classList.add('collapsed');
+                    submenu.classList.add('collapsed');
+                }
+                
+                // Add click handler for toggling
+                header.addEventListener('click', function() {
+                    header.classList.toggle('collapsed');
+                    submenu.classList.toggle('collapsed');
+                    
+                    // Save state to localStorage
+                    sidebarState[category] = submenu.classList.contains('collapsed') ? 'collapsed' : 'expanded';
+                    localStorage.setItem('sidebarState', JSON.stringify(sidebarState));
+                });
+            });
+            
+            // Auto-expand section with active link
+            const activeLink = document.querySelector('.sidebar-link.active');
+            if (activeLink) {
+                const parentSubmenu = activeLink.closest('.sidebar-submenu');
+                if (parentSubmenu && parentSubmenu.classList.contains('collapsed')) {
+                    const category = parentSubmenu.id.replace('sidebar-', '');
+                    const header = document.querySelector(`.sidebar-category[data-category="${category}"]`);
+                    
+                    // Expand the section
+                    header.classList.remove('collapsed');
+                    parentSubmenu.classList.remove('collapsed');
+                    
+                    // Update saved state
+                    sidebarState[category] = 'expanded';
+                    localStorage.setItem('sidebarState', JSON.stringify(sidebarState));
+                }
+            }
         });
         
         // Notification system
