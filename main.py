@@ -2917,23 +2917,40 @@ def funny_chat_process():
     print(f"Current user: {current_user.username}")
     print(f"Request method: {request.method}")
     print(f"Request content type: {request.content_type}")
-    print(f"Request headers: {dict(request.headers)}")
+    print(f"Request headers (minus sensitive values): {', '.join(request.headers.keys())}")
     
-    # Print the raw request data for debugging
+    # Extract the relevant data from the request immediately to help debugging
+    request_data = None
     try:
-        print(f"Raw request data: {request.get_data(as_text=True)}")
+        raw_data = request.get_data(as_text=True)
+        print(f"Raw request data length: {len(raw_data)}")
+        if raw_data:
+            print(f"Raw data preview: {raw_data[:100]}...")
+        request_data = request.get_json(silent=True)
+        print(f"Parsed request data: {request_data}")
     except Exception as e:
-        print(f"Error getting raw data: {str(e)}")
+        print(f"Error processing request data: {str(e)}")
+    
+    # Always check for empty or None data before doing anything else
+    if not request_data or not isinstance(request_data, dict):
+        print("ERROR: Invalid or missing request data")
+        return jsonify({
+            'success': True,  # Set to True to use fallback
+            'fallback': True,
+            'error': 'Invalid request format',
+            'response': 'I encountered a problem processing your request. Please refresh the page and try again.',
+            'suggestions': ['How can I create a budget?', 'Tips for saving money', 'What is the 50/30/20 rule?']
+        })
     
     # Verify if Perplexity API is available before proceeding
     api_available = perplexity_service.check_api_availability()
     if not api_available:
-        print("ERROR: Perplexity API not available - key missing")
+        print("ERROR: Perplexity API not available - test call failed")
         return jsonify({
             'success': True,  # Set to True to use fallback
             'fallback': True,
-            'error': 'API not configured',
-            'response': 'The financial assistant is currently operating in offline mode. For personalized advice, please ensure the Perplexity API is properly configured.',
+            'error': 'API connectivity issue',
+            'response': 'The financial assistant is currently operating in offline mode due to API connectivity issues. Here is a helpful tip: The 50/30/20 budget rule suggests allocating 50% of your income to necessities, 30% to wants, and 20% to savings and debt repayment.',
             'suggestions': ['Tell me about budgeting', 'How can I save money?', 'What are good financial habits?']
         })
     

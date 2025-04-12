@@ -142,21 +142,21 @@ When giving financial advice, be responsible and avoid overly specific investmen
         
         print(f"DEBUG - Headers prepared (without showing actual key)")
         
+        # Simplified payload matching Perplexity documentation exactly
         payload = {
             "model": "llama-3.1-sonar-small-128k-online",
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": query}
             ],
-            "temperature": 0.7,
-            # Use max_tokens as a number, not a string
-            "max_tokens": 300,
+            "temperature": 0.2,  # Use the exact value from documentation
+            "max_tokens": 150,   # Reduced to ensure we're within limits
             "top_p": 0.9,
-            # Using standard parameters supported by Perplexity API
-            "presence_penalty": 0.0,  # Instead of frequency_penalty
-            "frequency_penalty": 0.0,
-            "stream": False  # Ensure we're not trying to stream
+            "stream": False      # We don't want to stream
         }
+        
+        # Print the exact payload we're sending for debugging
+        print(f"DEBUG - Exact payload being sent: {json.dumps(payload)}")
         
         print(f"DEBUG - Payload prepared, system prompt length: {len(system_prompt)}, query length: {len(query)}")
         
