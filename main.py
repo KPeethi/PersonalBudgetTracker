@@ -48,6 +48,9 @@ def nl2br_filter(text):
     """Convert newlines to <br> tags"""
     if not text:
         return ""
+    # First replace any existing <br> tags with newlines to avoid duplicates
+    text = text.replace('<br>', '\n')
+    # Then replace all newlines with <br> tags
     return Markup(text.replace('\n', '<br>'))
 
 @app.template_filter('month_name')

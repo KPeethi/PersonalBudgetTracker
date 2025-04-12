@@ -59,7 +59,8 @@
                 <div class="card-body">
                     {% if analysis_results %}
                         <div class="analysis-content">
-                            {{ analysis_results|safe|nl2br }}
+                            {% set formatted_text = analysis_results|replace('<br>', '<br>')|replace('\n', '<br>') %}
+                            {{ formatted_text|safe }}
                         </div>
                     {% else %}
                         <div class="text-center p-5">
@@ -137,10 +138,45 @@
 }
 .analysis-content {
     font-size: 1.05rem;
-    line-height: 1.6;
+    line-height: 1.7;
+    color: #2b2b2b;
 }
 .analysis-content p {
-    margin-bottom: 1rem;
+    margin-bottom: 1.2rem;
+}
+/* Fix for <br> rendering */
+.analysis-content {
+    white-space: pre-line;
+}
+/* Recommendations styling */
+.analysis-content ul, 
+.analysis-content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 1.2rem;
+}
+.analysis-content li {
+    margin-bottom: 0.5rem;
+}
+/* Section headers in analysis */
+.analysis-content strong,
+.analysis-content b {
+    color: #1a73e8;
+}
+/* Category names in analysis */
+.analysis-content em,
+.analysis-content i {
+    font-style: normal;
+    color: #444;
+    font-weight: 600;
+}
+/* Amount figures */
+.analysis-content span.amount {
+    font-weight: 600;
+    color: #1e824c;
+}
+/* Progress bars for categories */
+.progress-bar {
+    background-color: #1a73e8;
 }
 </style>
 {% endblock %}
