@@ -2764,14 +2764,6 @@ def last_month_predictions():
             'message': f"Error generating predictions: {str(e)}",
             'data': None
         })
-
-
-
-
-
-
-    """Process a query to the professional financial assistant."""
-    # Add console output for debugging
     print("===== FUNNY CHAT PROCESS =====")
     print("Received request!")
     print(f"PERPLEXITY_API_KEY configured: {bool(os.environ.get('PERPLEXITY_API_KEY'))}")
