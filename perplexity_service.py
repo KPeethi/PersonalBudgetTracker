@@ -81,14 +81,6 @@ When giving financial advice, be responsible and avoid overly specific investmen
         system_prompt += f"\nHere is some context about the user's finances: {financial_context}"
 
     try:
-        # Simulate API error for testing the fallback mechanism
-        # We'll uncomment the real code after testing
-        return {
-            "success": False,
-            "error": "Simulated API error for testing fallback mechanism",
-            "response": "Sorry, I encountered an issue. Please try again later."
-        }
-        
         # Prepare the request headers and payload
         headers = {
             "Authorization": f"Bearer {PERPLEXITY_API_KEY}",
@@ -164,7 +156,7 @@ def get_financial_tip(category: Optional[str] = None) -> str:
         # Category-specific tip
         query = f"Give a short, professional, and helpful financial tip about {category} spending in 1-2 sentences. Focus on practical advice without humor."
     
-    result = generate_response(query, humor_level="high")
+    result = generate_response(query, humor_level="low")
     if result["success"]:
         return result["response"]
     else:
@@ -217,7 +209,7 @@ def analyze_spending_pattern(expenses: List[Dict[str, Any]]) -> str:
     
     query = "Based on this spending data, provide a professional and insightful analysis. Include one practical tip. Use a friendly but professional tone without humor."
     
-    result = generate_response(query, financial_context=expense_context, humor_level="medium")
+    result = generate_response(query, financial_context=expense_context, humor_level="low")
     if result["success"]:
         return result["response"]
     else:
