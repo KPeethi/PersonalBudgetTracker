@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Excel Visualization - Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>
+            <i class="bi bi-bar-chart-fill me-2"></i>
+            Excel Visualization
+        </h1>
+        <a href="{{ url_for('business_excel_import') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Excel Import
+        </a>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Upload Excel File for Visualization</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Upload an Excel file with expense data to generate visualizations. The file should contain at least these columns:
+                    </p>
+                    <ul class="mb-4">
+                        <li><strong>date</strong> - Date of the expense</li>
+                        <li><strong>amount</strong> - Amount of the expense</li>
+                        <li><strong>category</strong> - Category of the expense</li>
+                        <li><strong>description</strong> - Description of the expense</li>
+                    </ul>
+                    <p class="text-muted">Additional columns like <code>payment_method</code> and <code>merchant</code> will enable more visualizations.</p>
+                    
+                    <form action="{{ url_for('excel_visualize') }}" method="post" enctype="multipart/form-data" class="mt-4">
+                        {{ form.hidden_tag() }}
+                        <div class="mb-3">
+                            <label for="excel_file" class="form-label">Excel File</label>
+                            <input type="file" class="form-control" id="excel_file" name="excel_file" accept=".xlsx,.xls" required>
+                            <div class="form-text">Max file size: 5MB</div>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-graph-up me-2"></i> Generate Visualizations
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Use Existing Import</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Generate visualizations from one of your existing Excel imports.
+                    </p>
+                    
+                    {% if imports %}
+                        <div class="table-responsive mt-3">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Filename</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for import in imports %}
+                                    <tr>
+                                        <td>{{ import.filename }}</td>
+                                        <td>{{ import.upload_date.strftime('%Y-%m-%d') }}</td>
+                                        <td>
+                                            {% if import.status == 'completed' %}
+                                                <span class="badge bg-success">Completed</span>
+                                            {% elif import.status == 'failed' %}
+                                                <span class="badge bg-danger">Failed</span>
+                                            {% else %}
+                                                <span class="badge bg-warning text-dark">{{ import.status|title }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('excel_visualize_from_import', import_id=import.id) }}" 
+                                                class="btn btn-sm btn-outline-primary"
+                                                {% if import.status != 'completed' %}disabled{% endif %}>
+                                                <i class="bi bi-graph-up"></i> Visualize
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            You don't have any completed Excel imports. Complete an import first or upload a file directly.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if result %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Visualization Results</h5>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-success">
+                <i class="bi bi-check-circle me-2"></i>
+                Visualizations successfully generated!
+            </div>
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <p class="mb-0">
+                    <strong>Output file:</strong> {{ result.filename }}
+                </p>
+                <a href="{{ url_for('download_visualization', filename=result.filename) }}" class="btn btn-success">
+                    <i class="bi bi-download me-2"></i> Download Excel with Visualizations
+                </a>
+            </div>
+            
+            <div class="row">
+                {% for chart in result.charts %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            {{ chart.title }}
+                        </div>
+                        <div class="card-body text-center">
+                            <img src="{{ chart.path }}" alt="{{ chart.title }}" class="img-fluid">
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

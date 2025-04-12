@@ -30,6 +30,7 @@ import suggestions
 import ai_assistant
 import conversation_assistant
 import excel_processor
+import excel_visualizer
 
 # Directory for storing uploaded receipts
 UPLOAD_FOLDER = 'static/uploads/receipts'
