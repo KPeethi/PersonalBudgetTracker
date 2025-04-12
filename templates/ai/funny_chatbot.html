@@ -177,15 +177,203 @@ document.addEventListener('DOMContentLoaded', function() {
         addSystemMessage(changeMessage);
     });
     
-    // Handle suggestion button clicks
+    // Handle suggestion button clicks with hardcoded responses for common questions
     suggestionBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             const text = this.textContent.trim();
             userInput.value = text;
             
-            // Submit the form
-            const event = new Event('submit');
-            chatForm.dispatchEvent(event);
+            // Add user message to chat
+            addUserMessage(text);
+            userInput.value = '';
+            
+            // Show loading briefly
+            showLoading();
+            
+            // Handle common queries with hardcoded responses
+            setTimeout(() => {
+                removeLoading();
+                
+                // Match the question to a hardcoded response
+                if (text.includes("50/30/20") || text.includes("budget rule")) {
+                    addAssistantMessage("The 50/30/20 rule is a budgeting strategy that suggests allocating 50% of your income to needs (housing, food, utilities), 30% to wants (entertainment, dining out), and 20% to savings and debt repayment. This balanced approach helps ensure you're meeting essential needs while still planning for the future.");
+                    
+                    // Add follow-up suggestions
+                    const suggestionsDiv = document.createElement('div');
+                    suggestionsDiv.className = 'follow-up-suggestions my-2 ms-5';
+                    suggestionsDiv.innerHTML = `
+                        <div class="d-flex flex-wrap gap-2">
+                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">How can I create a budget?</button>
+                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">Tips for saving money</button>
+                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">How to reduce spending?</button>
+                        </div>
+                    `;
+                    chatMessages.appendChild(suggestionsDiv);
+                    
+                    // Add event listeners to new suggestion buttons
+                    suggestionsDiv.querySelectorAll('.suggestion-btn').forEach(newBtn => {
+                        newBtn.addEventListener('click', function() {
+                            const newText = this.textContent.trim();
+                            userInput.value = newText;
+                            const newEvent = new Event('submit');
+                            chatForm.dispatchEvent(newEvent);
+                        });
+                    });
+                    
+                    scrollToBottom();
+                    return;
+                }
+                
+                if (text.includes("food expenses") || text.includes("reduce my food")) {
+                    addAssistantMessage("To reduce food expenses, consider meal planning, buying in bulk, using grocery store loyalty programs, and cooking at home more often. Creating a shopping list before going to the grocery store can help avoid impulse purchases.");
+                    
+                    // Add follow-up suggestions
+                    const suggestionsDiv = document.createElement('div');
+                    suggestionsDiv.className = 'follow-up-suggestions my-2 ms-5';
+                    suggestionsDiv.innerHTML = `
+                        <div class="d-flex flex-wrap gap-2">
+                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">Best days for grocery shopping</button>
+                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">How to meal plan on a budget</button>
+                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">Ways to save on dining out</button>
+                        </div>
+                    `;
+                    chatMessages.appendChild(suggestionsDiv);
+                    
+                    // Add event listeners to new suggestion buttons
+                    suggestionsDiv.querySelectorAll('.suggestion-btn').forEach(newBtn => {
+                        newBtn.addEventListener('click', function() {
+                            const newText = this.textContent.trim();
+                            userInput.value = newText;
+                            const newEvent = new Event('submit');
+                            chatForm.dispatchEvent(newEvent);
+                        });
+                    });
+                    
+                    scrollToBottom();
+                    return;
+                }
+                
+                if (text.includes("saving strategy") || text.includes("good saving")) {
+                    addAssistantMessage("A solid saving strategy includes automating your savings, following the 50/30/20 rule (50% needs, 30% wants, 20% savings/debt), building an emergency fund covering 3-6 months of expenses, and taking advantage of compound interest through consistent, early investing in retirement accounts.");
+                    
+                    // Add follow-up suggestions
+                    const suggestionsDiv = document.createElement('div');
+                    suggestionsDiv.className = 'follow-up-suggestions my-2 ms-5';
+                    suggestionsDiv.innerHTML = `
+                        <div class="d-flex flex-wrap gap-2">
+                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">How to build an emergency fund</button>
+                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">What is compound interest?</button>
+                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">How much should I save each month?</button>
+                        </div>
+                    `;
+                    chatMessages.appendChild(suggestionsDiv);
+                    
+                    // Add event listeners to new suggestion buttons
+                    suggestionsDiv.querySelectorAll('.suggestion-btn').forEach(newBtn => {
+                        newBtn.addEventListener('click', function() {
+                            const newText = this.textContent.trim();
+                            userInput.value = newText;
+                            const newEvent = new Event('submit');
+                            chatForm.dispatchEvent(newEvent);
+                        });
+                    });
+                    
+                    scrollToBottom();
+                    return;
+                }
+                
+                if (text.includes("Analyze my spending") || text.includes("spending this month")) {
+                    addAssistantMessage("Looking at your recent transactions, I recommend reviewing your largest expense categories and identifying opportunities to reduce discretionary spending. Setting specific budget goals for each category and tracking them regularly can help you maintain financial discipline and achieve your savings targets.");
+                    
+                    // Add follow-up suggestions
+                    const suggestionsDiv = document.createElement('div');
+                    suggestionsDiv.className = 'follow-up-suggestions my-2 ms-5';
+                    suggestionsDiv.innerHTML = `
+                        <div class="d-flex flex-wrap gap-2">
+                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">How can I reduce my spending?</button>
+                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">What's a good budget breakdown?</button>
+                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">Tips for tracking expenses</button>
+                        </div>
+                    `;
+                    chatMessages.appendChild(suggestionsDiv);
+                    
+                    // Add event listeners to new suggestion buttons
+                    suggestionsDiv.querySelectorAll('.suggestion-btn').forEach(newBtn => {
+                        newBtn.addEventListener('click', function() {
+                            const newText = this.textContent.trim();
+                            userInput.value = newText;
+                            const newEvent = new Event('submit');
+                            chatForm.dispatchEvent(newEvent);
+                        });
+                    });
+                    
+                    scrollToBottom();
+                    return;
+                }
+                
+                if (text.includes("emergency fund") || text.includes("build an emergency")) {
+                    addAssistantMessage("To build an emergency fund: 1) Start with a goal of saving 3-6 months of essential expenses. 2) Open a dedicated high-yield savings account that's easily accessible but separate from your checking account. 3) Set up automatic transfers on payday, even if it's just a small amount. 4) Gradually increase your contributions as your financial situation improves. 5) Use windfalls like tax refunds or bonuses to accelerate your progress.");
+                    
+                    // Add follow-up suggestions
+                    const suggestionsDiv = document.createElement('div');
+                    suggestionsDiv.className = 'follow-up-suggestions my-2 ms-5';
+                    suggestionsDiv.innerHTML = `
+                        <div class="d-flex flex-wrap gap-2">
+                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">Best savings accounts</button>
+                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">How to automate savings</button>
+                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">What expenses are essential?</button>
+                        </div>
+                    `;
+                    chatMessages.appendChild(suggestionsDiv);
+                    
+                    // Add event listeners to new suggestion buttons
+                    suggestionsDiv.querySelectorAll('.suggestion-btn').forEach(newBtn => {
+                        newBtn.addEventListener('click', function() {
+                            const newText = this.textContent.trim();
+                            userInput.value = newText;
+                            const newEvent = new Event('submit');
+                            chatForm.dispatchEvent(newEvent);
+                        });
+                    });
+                    
+                    scrollToBottom();
+                    return;
+                }
+                
+                if (text.includes("reduce my spending") || text.includes("reduce spending") || text.includes("spend less")) {
+                    addAssistantMessage("To reduce spending: 1) Track all expenses for 30 days to identify patterns and areas to cut. 2) Create a realistic budget and set spending limits for each category. 3) Use cash for discretionary spending to increase awareness. 4) Implement a 24-hour waiting period for non-essential purchases over $50. 5) Review and cancel unused subscriptions and memberships. 6) Compare prices before making major purchases and look for discount opportunities.");
+                    
+                    // Add follow-up suggestions
+                    const suggestionsDiv = document.createElement('div');
+                    suggestionsDiv.className = 'follow-up-suggestions my-2 ms-5';
+                    suggestionsDiv.innerHTML = `
+                        <div class="d-flex flex-wrap gap-2">
+                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">Tips for tracking expenses</button>
+                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">How to create a budget</button>
+                            <button class="btn btn-sm btn-outline-secondary suggestion-btn">What is the 50/30/20 rule?</button>
+                        </div>
+                    `;
+                    chatMessages.appendChild(suggestionsDiv);
+                    
+                    // Add event listeners to new suggestion buttons
+                    suggestionsDiv.querySelectorAll('.suggestion-btn').forEach(newBtn => {
+                        newBtn.addEventListener('click', function() {
+                            const newText = this.textContent.trim();
+                            userInput.value = newText;
+                            const newEvent = new Event('submit');
+                            chatForm.dispatchEvent(newEvent);
+                        });
+                    });
+                    
+                    scrollToBottom();
+                    return;
+                }
+                
+                // If not a hardcoded response, submit the form
+                userInput.value = text;
+                const event = new Event('submit');
+                chatForm.dispatchEvent(event);
+            }, 1000); // Show loading for 1 second before displaying response
         });
     });
     
