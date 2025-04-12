@@ -2977,7 +2977,7 @@ def excel_visualize():
                 ]
                 
                 # Filter out any charts that weren't generated
-                chart_paths = [chart for chart in chart_paths if os.path.exists(chart['path'][1:])]
+                chart_paths = [chart for chart in chart_paths if os.path.exists(os.path.join(TEMP_CHARTS_FOLDER, os.path.basename(chart['path'])))]
                 
                 result = {
                     'filename': os.path.basename(output_file),
@@ -3039,15 +3039,15 @@ def excel_visualize_from_import(import_id):
             # Prepare chart data for display
             temp_dir = 'temp_charts'
             chart_paths = [
-                {'title': 'Expenses by Category', 'path': f'/{temp_dir}/category_pie.png'},
-                {'title': 'Daily Expenses Over Time', 'path': f'/{temp_dir}/time_series.png'},
-                {'title': 'Expenses by Payment Method', 'path': f'/{temp_dir}/payment_method.png'},
-                {'title': 'Top Merchants by Expense', 'path': f'/{temp_dir}/merchant.png'},
-                {'title': 'Category Expense Trends', 'path': f'/{temp_dir}/category_trend.png'}
+                {'title': 'Expenses by Category', 'path': f'/temp_charts/category_pie.png'},
+                {'title': 'Daily Expenses Over Time', 'path': f'/temp_charts/time_series.png'},
+                {'title': 'Expenses by Payment Method', 'path': f'/temp_charts/payment_method.png'},
+                {'title': 'Top Merchants by Expense', 'path': f'/temp_charts/merchant.png'},
+                {'title': 'Category Expense Trends', 'path': f'/temp_charts/category_trend.png'}
             ]
             
             # Filter out any charts that weren't generated
-            chart_paths = [chart for chart in chart_paths if os.path.exists(chart['path'][1:])]
+            chart_paths = [chart for chart in chart_paths if os.path.exists(os.path.join(TEMP_CHARTS_FOLDER, os.path.basename(chart['path'])))]
             
             result = {
                 'filename': os.path.basename(output_file),
