@@ -260,6 +260,7 @@ class ExcelImport(db.Model):
     file_path = db.Column(db.String(512), nullable=False)
     file_size = db.Column(db.Integer, nullable=False)  # Size in bytes
     num_rows = db.Column(db.Integer, nullable=True)  # Number of rows imported
+    description = db.Column(db.Text, nullable=True)  # Description of the import
     
     # Import status
     status = db.Column(db.String(20), default='pending')  # pending, processing, completed, failed

@@ -1,0 +1,36 @@
+Date,Description,Category,Amount,User
+2025-04-06,Phone,Utilities,$192.84,testuser
+2025-04-04,Car Rental,Travel,$29.54,testuser
+2025-04-02,Internet bill,Utilities,$70.00,testuser
+2025-04-02,Concert,Entertainment,$148.00,testuser
+2025-03-31,Dinner out,Food,$65.75,testuser
+2025-03-29,Movie tickets,Entertainment,$30.00,testuser
+2025-03-28,Hotel,Travel,$196.56,testuser
+2025-03-27,Gas,Transportation,$45.01,testuser
+2025-03-27,Mortgage,Housing,$116.97,testuser
+2025-03-26,Gas,Transportation,$45.00,testuser
+2025-03-24,Groceries,Food,$85.50,testuser
+2025-03-19,Charity,Gifts,$158.82,testuser
+2025-03-16,Ride Share,Transportation,$16.78,testuser
+2025-03-15,Convenience Store,Groceries,$178.02,testuser
+2025-03-14,Donation,Gifts,$45.18,testuser
+2025-03-14,Pharmacy,Healthcare,$131.78,testuser
+2025-03-11,Car Rental,Travel,$110.14,testuser
+2025-03-11,Games,Entertainment,$30.62,testuser
+2025-02-22,Concert,Entertainment,$102.95,testuser
+2025-02-21,Repairs,Housing,$117.87,testuser
+2025-02-18,Restaurant,Dining,$90.65,testuser
+2025-02-16,Vacation Activities,Travel,$174.21,testuser
+2025-02-12,School Supplies,Education,$87.85,testuser
+2025-02-06,Magazine,Subscriptions,$34.32,testuser
+2025-02-04,Clothing,Shopping,$106.72,testuser
+2025-02-01,Doctor Visit,Healthcare,$60.07,testuser
+2025-01-27,Repairs,Housing,$56.34,testuser
+2025-01-24,Fast Food,Dining,$182.34,testuser
+2025-01-14,Home Goods,Shopping,$81.51,testuser
+2025-01-14,Restaurant,Dining,$123.61,testuser
+2025-01-13,Fitness,Healthcare,$18.46,testuser
+2025-01-12,Concert,Entertainment,$35.26,testuser
+2025-01-10,Supermarket,Groceries,$52.01,testuser
+2025-01-07,Doctor Visit,Healthcare,$107.87,testuser
+2025-01-06,School Supplies,Education,$100.13,testuser
