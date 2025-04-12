@@ -589,6 +589,27 @@ document.addEventListener('DOMContentLoaded', function() {
             };
         }
         
+        // Check if user is asking to see all available expense categories
+        if (lowerMessage.includes('show all categories') || 
+            lowerMessage.includes('list categories') || 
+            lowerMessage.includes('what categories') ||
+            lowerMessage.includes('available categories')) {
+            return {
+                response: "Here are all the expense categories I can provide data for:\n\n" +
+                         "• Food (includes groceries, restaurants, dining)\n" +
+                         "• Housing (includes rent, mortgage)\n" +
+                         "• Transportation (includes car expenses, gas, public transit)\n" +
+                         "• Utilities (includes electricity, water, internet, phone)\n" +
+                         "• Healthcare (includes medical expenses, insurance, prescriptions)\n" +
+                         "• Entertainment (includes streaming services, events, hobbies)\n" +
+                         "• Shopping (includes clothing, electronics, household items)\n" +
+                         "• Travel (includes flights, accommodations, local transport)\n" +
+                         "• Subscriptions (includes digital services, memberships)\n\n" +
+                         "You can ask about any of these categories such as 'How much did I spend on dining?' or 'Show me my travel expenses'.",
+                suggestions: ["Food expenses", "Housing expenses", "Transportation expenses", "Entertainment expenses"]
+            };
+        }
+        
         // Check for greetings and basic questions first
         if (['hi', 'hello', 'hey', 'greetings', 'howdy', 'yo', 'hiya'].includes(lowerMessage)) {
             return {
@@ -692,8 +713,27 @@ document.addEventListener('DOMContentLoaded', function() {
             'subscription': 'subscriptions'
         };
         
-        // If we found a category in the query, map it to our standard categories
-        if (extractedCategory && categoryMapping[extractedCategory]) {
+        // Check for category-related patterns in the query
+        if (extractedCategory) {
+            // If we found a category but it's not in our mapping, handle as unknown category
+            if (!categoryMapping[extractedCategory]) {
+                const similarCategories = Object.keys(categoryMapping).filter(cat => 
+                    // Find categories that share at least 3 characters with the extracted category
+                    extractedCategory.length > 2 && cat.includes(extractedCategory.substring(0, 3)) || 
+                    cat.length > 2 && extractedCategory.includes(cat.substring(0, 3))
+                );
+                
+                let suggestedCategories = similarCategories.length > 0 
+                    ? `Did you mean: ${similarCategories.slice(0, 3).join(', ')}?` 
+                    : "Try asking about categories like food, dining, utilities, rent, transportation, etc.";
+                
+                return {
+                    response: `I don't have data for the category "${extractedCategory}". ${suggestedCategories}`,
+                    suggestions: ["Show all categories", "Food expenses", "Dining expenses", "Housing expenses"]
+                };
+            }
+            
+            // If category is in our mapping, process it
             const standardCategory = categoryMapping[extractedCategory];
             
             // Check if we have data for this category
