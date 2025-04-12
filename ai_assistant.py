@@ -460,8 +460,18 @@ def generate_expense_insights_fallback(expenses: List[Dict[str, Any]], period_de
             categories[category] = 0
         categories[category] += expense.get('amount', 0)
     
-    # Get top categories
-    top_categories = sorted(categories.items(), key=lambda x: x[1], reverse=True)[:3]
+    # Get top categories as tuples for the insights
+    top_category_tuples = sorted(categories.items(), key=lambda x: x[1], reverse=True)[:3]
+    
+    # Convert categories to the format expected by the template
+    top_categories = []
+    for category, amount in top_category_tuples:
+        percentage = (amount / total_amount) * 100 if total_amount > 0 else 0
+        top_categories.append({
+            'name': category,
+            'amount': amount,
+            'percentage': percentage
+        })
     
     # Calculate average per expense
     avg_amount = total_amount / len(expenses) if expenses else 0
@@ -472,16 +482,16 @@ def generate_expense_insights_fallback(expenses: List[Dict[str, Any]], period_de
         f"Your average expense is ${avg_amount:.2f}."
     ]
     
-    # Top categories insights
-    if top_categories:
+    # Top categories insights - use the tuples for insights, don't modify top_categories
+    if top_category_tuples:
         insights.append("\nYour top spending categories are:")
-        for i, (category, amount) in enumerate(top_categories, 1):
+        for i, (category, amount) in enumerate(top_category_tuples, 1):
             percentage = (amount / total_amount) * 100 if total_amount > 0 else 0
             insights.append(f"{i}. {category}: ${amount:.2f} ({percentage:.1f}% of total)")
     
     # General recommendation based on top category
-    if top_categories:
-        top_category, top_amount = top_categories[0]
+    if top_category_tuples:
+        top_category, top_amount = top_category_tuples[0]
         percentage = (top_amount / total_amount) * 100 if total_amount > 0 else 0
         
         if percentage > 50:
@@ -494,6 +504,7 @@ def generate_expense_insights_fallback(expenses: List[Dict[str, Any]], period_de
     # General suggestion
     insights.append("\nSuggestion: Track your expenses consistently to identify patterns and opportunities for saving. Consider setting category-specific budgets for better financial control.")
     
+    # Return the insights text
     return "\n".join(insights)
 
 def get_expense_insights(expenses: List[Dict[str, Any]], 
@@ -507,6 +518,10 @@ def get_expense_insights(expenses: List[Dict[str, Any]],
         
     Returns:
         String containing general expense insights
+        
+    Note: In main.py, we expect this to return a formatted string. The top_categories
+          are prepared in the AI assistant template separately from this function, so
+          we're not changing the return type here.
     """
     if not expenses:
         return "No expense data available for analysis."
