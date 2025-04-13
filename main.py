@@ -2234,8 +2234,14 @@ def upload_receipt():
                     if auto_extracted_amount:
                         logger.info(f"Successfully extracted amount: ${auto_extracted_amount:.2f}")
                         form.expense_amount.data = auto_extracted_amount
+                        # Add a flash message to inform the user the amount was auto-extracted
+                        flash(f'Amount ${auto_extracted_amount:.2f} was automatically extracted from your receipt!', 'success')
+                    else:
+                        logger.warning("Failed to auto-extract amount from receipt")
+                        flash('Could not automatically extract amount from receipt. Please enter it manually.', 'warning')
                 except Exception as ex:
                     logger.exception(f"Error auto-extracting amount: {str(ex)}")
+                    flash('An error occurred while trying to extract the amount from your receipt. Please enter it manually.', 'warning')
             
             # Determine if we're creating a new expense or using an existing one
             expense_id = None
