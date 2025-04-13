@@ -218,6 +218,19 @@
                                                     </form>
                                                 </li>
                                                 {% endif %}
+                                                <li>
+                                                    <form action="{{ url_for('toggle_business_status', user_id=user.id) }}" method="post">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                        <button type="submit" class="dropdown-item">
+                                                            <i class="bi bi-briefcase me-2"></i> 
+                                                            {% if user.is_business_user %}
+                                                            Remove Business Access
+                                                            {% else %}
+                                                            Grant Business Access
+                                                            {% endif %}
+                                                        </button>
+                                                    </form>
+                                                </li>
                                                 {% if user.is_suspended or not user.is_active %}
                                                 <li>
                                                     <form action="{{ url_for('activate_user', user_id=user.id) }}" method="post">
