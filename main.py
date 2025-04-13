@@ -1505,9 +1505,10 @@ def get_suggestions():
 @app.route('/ai/assistant')
 @login_required
 def ai_assistant_home():
-    """Show AI assistant homepage with analysis options"""
-    logger.debug(
-        f"Accessing AI assistant homepage, user: {current_user.username}")
+    """Redirect from AI assistant homepage"""
+    logger.debug(f"Redirecting from AI assistant homepage, user: {current_user.username}")
+    flash('This feature has been deprecated and is no longer available.', 'info')
+    return redirect(url_for('dashboard'))
 
     # Get analysis options from AI module
     analysis_options = ai_assistant.get_analysis_options()
@@ -1596,8 +1597,10 @@ def ai_assistant_home():
 @app.route('/ai/analysis')
 @login_required
 def ai_analysis():
-    """Generate AI analysis based on selected option"""
-    logger.debug(f"Accessing AI analysis, user: {current_user.username}")
+    """Redirect from AI analysis endpoint"""
+    logger.debug(f"Redirecting from AI analysis endpoint, user: {current_user.username}")
+    flash('This feature has been deprecated and is no longer available.', 'info')
+    return redirect(url_for('dashboard'))
 
     # Get analysis type from query parameters
     analysis_type = request.args.get('analysis_type', 'expense_trends')
@@ -2349,91 +2352,24 @@ def chat_assistant():
 @app.route('/ai/process_query', methods=['POST'])
 @login_required
 def process_ai_query():
-    """Process a natural language query and return response"""
-    logger.debug(f"Processing AI query, user: {current_user.username}")
-    
-    # Get query from request
-    data = request.json
-    query = data.get('query', '')
-    
-    if not query:
-        return jsonify({
-            'success': False,
-            'response': 'Empty query provided'
-        })
-    
-    try:
-        # Process the query - now returns a dictionary with response and metadata
-        result = conversation_assistant.process_query(query)
-        
-        # Simply return the result dictionary as JSON
-        # It already contains 'success' and 'response' keys
-        return jsonify(result)
-    except Exception as e:
-        logger.error(f"Error processing query: {str(e)}")
-        return jsonify({
-            'success': False,
-            'response': 'Sorry, there was an error processing your query. Please try again.'
-        })
+    """Redirect from AI query endpoint"""
+    logger.debug(f"Redirecting from AI query endpoint, user: {current_user.username}")
+    return jsonify({
+        'success': False,
+        'error': 'Feature unavailable',
+        'response': 'This feature has been deprecated and is no longer available.'
+    })
 
 @app.route('/ai/process_audio', methods=['POST'])
 @login_required
 def process_audio():
-    """Process audio recording and convert to text"""
-    logger.debug(f"Processing audio recording, user: {current_user.username}")
-    
-    if 'audio' not in request.files:
-        return jsonify({
-            'success': False,
-            'error': 'No audio file provided'
-        })
-    
-    audio_file = request.files['audio']
-    
-    if not audio_file:
-        return jsonify({
-            'success': False,
-            'error': 'Empty audio file'
-        })
-    
-    # Define temp_filename outside try block so it's accessible in except block
-    temp_filename = os.path.join(UPLOAD_FOLDER, f"temp_audio_{current_user.id}.wav")
-    
-    try:
-        # Save the audio file temporarily
-        audio_file.save(temp_filename)
-        
-        # Use OpenAI Whisper API to transcribe the audio
-        if not conversation_assistant.openai_client:
-            return jsonify({
-                'success': False,
-                'error': 'OpenAI API not configured'
-            })
-        
-        with open(temp_filename, "rb") as audio_file:
-            transcript = conversation_assistant.openai_client.audio.transcriptions.create(
-                model="whisper-1", 
-                file=audio_file
-            )
-            
-        # Clean up the temporary file
-        if os.path.exists(temp_filename):
-            os.remove(temp_filename)
-        
-        return jsonify({
-            'success': True,
-            'text': transcript.text
-        })
-    except Exception as e:
-        logger.error(f"Error processing audio: {str(e)}")
-        # Clean up the temporary file if it exists
-        if os.path.exists(temp_filename):
-            os.remove(temp_filename)
-            
-        return jsonify({
-            'success': False,
-            'error': f"Error processing audio: {str(e)}"
-        })
+    """Redirect from audio processing endpoint"""
+    logger.debug(f"Redirecting from audio processing endpoint, user: {current_user.username}")
+    return jsonify({
+        'success': False,
+        'error': 'Feature unavailable',
+        'response': 'This feature has been deprecated and is no longer available.'
+    })
 
 # Old expense forecast route moved to business features section below
 
