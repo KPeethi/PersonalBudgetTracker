@@ -94,13 +94,25 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    console.log("Mark all as read succeeded, moving notifications");
+                    console.log("Before - Unread: ", notifications.unread.length, "Read: ", notifications.read.length);
+                    
+                    // Create a shallow copy of the unread notifications
+                    const unreadCopy = [...notifications.unread];
+                    
                     // Move all unread notifications to read array
-                    const movedNotifications = [...notifications.unread];
-                    notifications.read = [...movedNotifications, ...notifications.read];
-                    notifications.unread = [];
+                    if (unreadCopy.length > 0) {
+                        notifications.read = [...unreadCopy, ...notifications.read];
+                        notifications.unread = [];
+                    }
+                    
+                    console.log("After - Unread: ", notifications.unread.length, "Read: ", notifications.read.length);
                     
                     // Re-render the notifications with updated data
                     renderNotifications();
+                } else {
+                    console.error("Failed to mark all as read:", data);
+                    alert("Failed to mark all notifications as read. Please try again.");
                 }
                 // Reset button
                 markAllReadBtn.disabled = false;
