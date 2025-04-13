@@ -383,10 +383,6 @@
                     <span>Connect Bank</span>
                 </a>
                 
-                <a href="{{ url_for('chat_assistant') }}" class="sidebar-link {% if request.path == url_for('chat_assistant') %}active{% endif %}">
-                    <span>Chat Assistant</span>
-                </a>
-                
                 {% if current_user.is_business_user or current_user.is_admin %}
                 <a href="{{ url_for('funny_chatbot') }}" class="sidebar-link {% if request.path == url_for('funny_chatbot') %}active{% endif %}">
                     <span>Chat with AI</span>
