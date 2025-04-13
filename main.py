@@ -3439,6 +3439,52 @@ def process_pending_imports():
     return redirect(url_for('business_excel_import'))
 
 
+@app.route('/business/delete_import/<int:import_id>', methods=['POST'])
+@login_required
+def delete_import(import_id):
+    """Delete an Excel import and its associated expenses."""
+    if not current_user.is_business_user and not current_user.is_admin:
+        flash('You need business user access to delete imports.', 'warning')
+        return redirect(url_for('request_business_upgrade'))
+    
+    # Get the import record
+    excel_import = ExcelImport.query.get_or_404(import_id)
+    
+    # Check if the import belongs to the current user or if the user is an admin
+    if excel_import.user_id != current_user.id and not current_user.is_admin:
+        flash('You do not have permission to delete this import.', 'danger')
+        return redirect(url_for('business_excel_import'))
+    
+    try:
+        # Delete associated expenses first
+        associated_expenses = Expense.query.filter_by(excel_import_id=import_id).all()
+        
+        # If the import has associated expenses, delete them
+        if associated_expenses:
+            for expense in associated_expenses:
+                db.session.delete(expense)
+        
+        # Delete the import file if it exists
+        if excel_import.file_path and os.path.exists(excel_import.file_path):
+            try:
+                os.remove(excel_import.file_path)
+                logger.info(f"Deleted import file: {excel_import.file_path}")
+            except Exception as e:
+                logger.warning(f"Could not delete file {excel_import.file_path}: {str(e)}")
+        
+        # Delete the import record
+        db.session.delete(excel_import)
+        db.session.commit()
+        
+        flash('Import and associated expenses successfully deleted.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error deleting import: {str(e)}")
+        flash(f'Error deleting import: {str(e)}', 'danger')
+    
+    return redirect(url_for('business_excel_import'))
+
+
 @app.route('/business/import_details/<int:import_id>')
 @login_required
 def import_details(import_id):

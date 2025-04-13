@@ -160,6 +160,42 @@
                                                     <i class="bi bi-bar-chart"></i>
                                                 </a>
                                                 {% endif %}
+                                                <button type="button"
+                                                class="btn btn-sm btn-outline-danger"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#deleteImportModal{{ import.id }}"
+                                                data-bs-toggle="tooltip"
+                                                title="Delete Import">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                            
+                                            <!-- Delete Import Modal -->
+                                            <div class="modal fade" id="deleteImportModal{{ import.id }}" tabindex="-1" aria-labelledby="deleteImportModalLabel{{ import.id }}" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <form action="{{ url_for('delete_import', import_id=import.id) }}" method="post">
+                                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title" id="deleteImportModalLabel{{ import.id }}">Confirm Delete</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <p>Are you sure you want to delete this import <strong>({{ import.filename }})</strong>?</p>
+                                                                {% if import.status == 'completed' %}
+                                                                <div class="alert alert-warning">
+                                                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                                                    This will also remove all expenses associated with this import.
+                                                                </div>
+                                                                {% endif %}
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                                <button type="submit" class="btn btn-danger">Delete Import</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </td>
                                     </tr>
