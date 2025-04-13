@@ -256,13 +256,7 @@
                                 </a>
                             </li>
 
-                            {% if current_user.is_business_user or current_user.is_admin %}
-                            <li class="nav-item">
-                                <a class="nav-link {% if request.path == url_for('funny_chatbot') %}active-nav-item{% endif %}" href="{{ url_for('funny_chatbot') }}">
-                                    <i class="bi bi-chat-dots-fill me-1"></i> Chat with AI
-                                </a>
-                            </li>
-                            {% endif %}
+
 
                             {% if current_user.is_admin %}
                                 <li class="nav-item">
@@ -384,15 +378,8 @@
                 </a>
                 
 
-                <a href="{{ url_for('chat_assistant') }}" class="sidebar-link {% if request.path == url_for('chat_assistant') %}active{% endif %}">
-                    <span>Chat Assistant</span>
-                </a>
-                
-                {% if current_user.is_business_user or current_user.is_admin %}
-                <a href="{{ url_for('funny_chatbot') }}" class="sidebar-link {% if request.path == url_for('funny_chatbot') %}active{% endif %}">
-                    <span>Chat with AI</span>
-                </a>
-                {% endif %}
+
+
                 
                 {% if current_user.is_business_user or current_user.is_admin %}
                 <a href="{{ url_for('business_excel_import') }}" class="sidebar-link {% if request.path == url_for('business_excel_import') %}active{% endif %}">
