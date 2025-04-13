@@ -2248,9 +2248,14 @@ def upload_receipt():
             
             if form.create_new_expense.data:
                 # Create a new expense with the provided details
-                if not form.expense_date.data or not form.expense_description.data or not form.expense_category.data or not (form.expense_amount.data or auto_extracted_amount):
-                    flash('When creating a new expense, all expense fields are required.', 'danger')
-                    return redirect(url_for('index'))
+                if not form.expense_date.data or not form.expense_description.data or not form.expense_category.data:
+                    flash('Please provide date, description, and category for the new expense.', 'danger')
+                    return redirect(url_for('receipts'))
+                
+                # If we don't have an amount and couldn't extract one, show error
+                if not form.expense_amount.data and auto_extracted_amount is None:
+                    flash('Please provide an amount for the expense or use a clearer receipt image for automatic extraction.', 'danger')
+                    return redirect(url_for('receipts'))
                 
                 # Create the new expense with amount from form or auto-extracted
                 expense_amount = form.expense_amount.data if form.expense_amount.data else auto_extracted_amount
@@ -2271,13 +2276,13 @@ def upload_receipt():
                 # Use the selected existing expense
                 if not form.expense_id.data:
                     flash('Please select an expense to link the receipt to.', 'danger')
-                    return redirect(url_for('index'))
+                    return redirect(url_for('receipts'))
                 
                 # Verify the expense belongs to the current user
                 expense = Expense.query.filter_by(id=form.expense_id.data, user_id=current_user.id).first()
                 if not expense:
                     flash('The selected expense does not exist or does not belong to you.', 'danger')
-                    return redirect(url_for('index'))
+                    return redirect(url_for('receipts'))
                 
                 expense_id = form.expense_id.data
             
@@ -2296,7 +2301,7 @@ def upload_receipt():
             db.session.commit()
             
             flash('Receipt uploaded successfully!', 'success')
-            return redirect(url_for('index'))
+            return redirect(url_for('receipts'))
             
         except Exception as e:
             logger.exception("Error uploading receipt")
