@@ -46,10 +46,10 @@ def create_test_user(email, username, password, is_admin=False, is_business_user
         return new_user
 
 if __name__ == "__main__":
-    # Create or update test accounts
-    create_test_user("test.regular@example.com", "test_regular", "testpass123", is_admin=False, is_business_user=False)
-    create_test_user("test.business@example.com", "test_business", "testpass123", is_admin=False, is_business_user=True)
-    create_test_user("test.admin@example.com", "test_admin", "testpass123", is_admin=True, is_business_user=False)
+    # Create or update test accounts with simple passwords
+    create_test_user("test.regular@example.com", "test_regular", "test123", is_admin=False, is_business_user=False)
+    create_test_user("test.business@example.com", "test_business", "test123", is_admin=False, is_business_user=True)
+    create_test_user("test.admin@example.com", "test_admin", "test123", is_admin=True, is_business_user=False)
     
     # Reset password for specific user if provided
     if len(sys.argv) > 2:
