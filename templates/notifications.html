@@ -88,13 +88,19 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 }
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Refresh data
-                    fetchNotifications();
+                    // Move all unread notifications to read array
+                    const movedNotifications = [...notifications.unread];
+                    notifications.read = [...movedNotifications, ...notifications.read];
+                    notifications.unread = [];
+                    
+                    // Re-render the notifications with updated data
+                    renderNotifications();
                 }
                 // Reset button
                 markAllReadBtn.disabled = false;
@@ -231,13 +237,27 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 }
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Refresh the notification list
-                    fetchNotifications();
+                    // Move notification from unread to read in our local data
+                    const notificationIdInt = parseInt(notificationId);
+                    const notificationIndex = notifications.unread.findIndex(n => n.id === notificationIdInt);
+                    
+                    if (notificationIndex !== -1) {
+                        const notification = notifications.unread[notificationIndex];
+                        notifications.unread.splice(notificationIndex, 1);
+                        notifications.read.unshift(notification);
+                        
+                        // Re-render the notifications with updated data
+                        renderNotifications();
+                    } else {
+                        // If we can't find it, refresh everything
+                        fetchNotifications();
+                    }
                 } else {
                     button.disabled = false;
                     button.textContent = 'Mark as read';
