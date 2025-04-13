@@ -491,7 +491,10 @@
                         width: 2
                     }
                 },
-                hoverinfo: 'label+value+percent'
+                hoverinfo: 'label+value+percent',
+                // Make chart slices clickable to filter by category
+                customdata: categoryData.data.labels, // Store category names
+                hovertemplate: '<b>%{label}</b><br>$%{value:.2f}<br>%{percent}<extra></extra>'
             }];
             
             const pieLayout = {
@@ -503,7 +506,13 @@
                 margin: {t: 10, b: 10, l: 10, r: 10},
             };
             
-            Plotly.newPlot('categoryDistributionChart', pieData, pieLayout, {responsive: true});
+            const categoryChart = Plotly.newPlot('categoryDistributionChart', pieData, pieLayout, {responsive: true});
+            
+            // Add click event to filter by category when clicking on a slice
+            document.getElementById('categoryDistributionChart').on('plotly_click', function(data) {
+                const clickedCategory = data.points[0].label;
+                window.location.href = "{{ url_for('expenses_by_category', category='CATEGORY_PLACEHOLDER') }}".replace('CATEGORY_PLACEHOLDER', clickedCategory);
+            });
         } else {
             document.getElementById('categoryDistributionChart').innerHTML = 
                 '<div class="d-flex justify-content-center align-items-center h-100 text-muted">No category data available</div>';
