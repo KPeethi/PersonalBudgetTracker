@@ -673,14 +673,8 @@
                 }
             });
 
-            // Handle mark all as read
-            document.querySelector('.mark-all-read').addEventListener('click', function() {
-                const unreadNotifications = document.querySelectorAll('.notification-item[data-read="false"]');
-                unreadNotifications.forEach(item => {
-                    const notificationId = item.getAttribute('data-id');
-                    markAsRead(notificationId);
-                });
-            });
+            // Mark all as read functionality will be attached in updateNotifications
+            // This is because the button is dynamically shown/hidden and event listeners need to be reattached
 
             // Function to fetch notifications
             function fetchNotifications() {
@@ -692,6 +686,29 @@
                     .catch(error => {
                         console.error('Error fetching notifications:', error);
                     });
+            }
+            
+            // Function to mark all notifications as read
+            function markAllAsRead() {
+                fetch('/mark_all_notifications_read', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Refresh notifications
+                        fetchNotifications();
+                        
+                        // Update the badge count to zero
+                        updateNotificationBadge(0);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error marking all notifications as read:', error);
+                });
             }
 
             // Function to mark notification as read
@@ -705,15 +722,26 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Update UI
+                        // Update UI for this specific notification
                         const notificationItem = document.querySelector(`.notification-item[data-id="${notificationId}"]`);
                         if (notificationItem) {
                             notificationItem.setAttribute('data-read', 'true');
                             notificationItem.querySelector('.notification-dot').style.display = 'none';
                             
+                            // Remove the mark as read button
+                            const markReadBtn = notificationItem.querySelector('.mark-read');
+                            if (markReadBtn) {
+                                markReadBtn.remove();
+                            }
+                            
                             // Recalculate unread count
                             const unreadCount = document.querySelectorAll('.notification-item[data-read="false"]').length;
                             updateNotificationBadge(unreadCount);
+                            
+                            // If no unread notifications left, fetch all notifications to refresh UI
+                            if (unreadCount === 0) {
+                                fetchNotifications();
+                            }
                         }
                     }
                 })
@@ -760,6 +788,12 @@
                             notificationsContainer.appendChild(notificationElement);
                         });
                     }
+                    
+                    // Attach the mark all as read event listener
+                    markAllReadBtn.addEventListener('click', function() {
+                        markAllAsRead();
+                    });
+                    
                 } else {
                     // Hide badge and mark all read button
                     notificationBadge.style.display = 'none';
@@ -776,6 +810,15 @@
                         notificationsContainer.appendChild(placeholder.cloneNode(true));
                     }
                 }
+                
+                // Attach event listeners to individual mark as read buttons
+                const markReadButtons = document.querySelectorAll('.mark-read');
+                markReadButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        const notificationId = this.getAttribute('data-id');
+                        markAsRead(notificationId);
+                    });
+                });
             }
 
             // Function to create notification element

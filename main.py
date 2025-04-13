@@ -2153,6 +2153,25 @@ def mark_notification_read(notification_id):
     return jsonify({'success': True})
 
 
+@app.route('/mark_all_notifications_read', methods=['POST'])
+@login_required
+def mark_all_notifications_read():
+    """Mark all notifications as read for the current user"""
+    # Find all unread notifications for the current user
+    unread_notifications = UserNotification.query.filter_by(
+        user_id=current_user.id,
+        is_read=False
+    ).all()
+    
+    # Mark each as read
+    for notification in unread_notifications:
+        notification.is_read = True
+    
+    db.session.commit()
+    
+    return jsonify({'success': True, 'count': len(unread_notifications)})
+
+
 # Receipt Upload and Management Routes
 @app.route('/receipts', methods=['GET'])
 @login_required

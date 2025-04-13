@@ -83,38 +83,27 @@
             this.disabled = true;
             this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
 
-            // Process each notification
-            let processed = 0;
-            unreadItems.forEach(item => {
-                const notificationId = item.getAttribute('data-id');
-                
-                fetch(`/mark_notification_read/${notificationId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        processed++;
-                        
-                        // Check if all have been processed
-                        if (processed === unreadItems.length) {
-                            // Refresh data
-                            fetchNotifications();
-                            
-                            // Reset button
-                            markAllReadBtn.disabled = false;
-                            markAllReadBtn.textContent = 'Mark All as Read';
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error marking notification as read:', error);
-                    markAllReadBtn.disabled = false;
-                    markAllReadBtn.textContent = 'Mark All as Read';
-                });
+            // Use the more efficient mark all endpoint
+            fetch('/mark_all_notifications_read', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Refresh data
+                    fetchNotifications();
+                }
+                // Reset button
+                markAllReadBtn.disabled = false;
+                markAllReadBtn.textContent = 'Mark All as Read';
+            })
+            .catch(error => {
+                console.error('Error marking all notifications as read:', error);
+                markAllReadBtn.disabled = false;
+                markAllReadBtn.textContent = 'Mark All as Read';
             });
         });
 
