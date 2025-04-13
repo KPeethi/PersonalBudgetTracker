@@ -2338,6 +2338,71 @@ def delete_receipt(receipt_id):
     return redirect(url_for('receipts'))
 
 
+@app.route('/analyze_receipt/<int:receipt_id>', methods=['GET'])
+@login_required
+def analyze_receipt(receipt_id):
+    """Analyze a receipt using AI and extract details"""
+    receipt = Receipt.query.get_or_404(receipt_id)
+    
+    # Check if the user has permission to view this receipt
+    if receipt.user_id != current_user.id and not current_user.is_admin:
+        flash('You do not have permission to analyze this receipt.', 'danger')
+        return redirect(url_for('receipts'))
+    
+    try:
+        # Get the receipt details using the AI service
+        receipt_details = receipt_analyzer.get_receipt_details(receipt.file_path)
+        
+        if not receipt_details or not receipt_details.get('total'):
+            flash('Could not analyze the receipt. Please check the image quality.', 'warning')
+            return redirect(url_for('view_receipt', receipt_id=receipt_id))
+        
+        # Return the analysis results
+        return render_template('receipt_analysis.html', 
+                            receipt=receipt,
+                            analysis=receipt_details)
+                            
+    except Exception as e:
+        logger.exception("Error analyzing receipt")
+        flash(f'Error analyzing receipt: {str(e)}', 'danger')
+        return redirect(url_for('receipts'))
+
+
+@app.route('/extract_receipt_amount/<int:receipt_id>', methods=['POST'])
+@login_required
+def extract_receipt_amount(receipt_id):
+    """Extract just the total amount from a receipt using AI"""
+    receipt = Receipt.query.get_or_404(receipt_id)
+    
+    # Check if the user has permission to view this receipt
+    if receipt.user_id != current_user.id and not current_user.is_admin:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+    
+    try:
+        # Extract the total amount using the AI service
+        amount = receipt_analyzer.extract_total_amount(receipt.file_path)
+        
+        if amount is None:
+            return jsonify({
+                'success': False, 
+                'error': 'Could not extract amount from receipt'
+            }), 400
+        
+        # Return the extracted amount
+        return jsonify({
+            'success': True,
+            'amount': amount,
+            'formatted_amount': f"${amount:.2f}"
+        })
+                            
+    except Exception as e:
+        logger.exception("Error extracting receipt amount")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 # Conversational AI Assistant routes
 @app.route('/ai/conversational')
 @login_required

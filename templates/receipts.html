@@ -215,6 +215,16 @@
                                                    class="btn btn-sm btn-outline-primary" target="_blank">
                                                     <i class="bi bi-eye"></i>
                                                 </a>
+                                                {% if receipt.file_type.startswith('image/') %}
+                                                <a href="{{ url_for('analyze_receipt', receipt_id=receipt.id) }}"
+                                                   class="btn btn-sm btn-outline-info">
+                                                    <i class="bi bi-magic"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-outline-success receipt-extract-amount" 
+                                                        data-receipt-id="{{ receipt.id }}">
+                                                    <i class="bi bi-currency-dollar"></i>
+                                                </button>
+                                                {% endif %}
                                                 <button type="button" class="btn btn-sm btn-outline-danger" 
                                                         data-bs-toggle="modal" data-bs-target="#deleteReceiptModal{{ receipt.id }}">
                                                     <i class="bi bi-trash"></i>

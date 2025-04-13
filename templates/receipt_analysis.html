@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Receipt Analysis - Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-5 mb-3">Receipt Analysis Results</h1>
+            <p class="text-muted">AI-powered analysis of your receipt to extract important information.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0"><i class="bi bi-receipt me-2"></i>Receipt Details</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row mb-4">
+                        <!-- Image Preview -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-0 shadow-sm mb-3">
+                                <div class="card-body p-0">
+                                    <img src="{{ url_for('view_receipt', receipt_id=receipt.id) }}" 
+                                        class="img-fluid rounded" 
+                                        alt="Receipt Image">
+                                </div>
+                            </div>
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                                <a href="{{ url_for('view_receipt', receipt_id=receipt.id) }}" 
+                                    class="btn btn-outline-primary" 
+                                    target="_blank">
+                                    <i class="bi bi-fullscreen me-1"></i> View Full Image
+                                </a>
+                                <a href="{{ url_for('receipts') }}" 
+                                    class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-1"></i> Back to Receipts
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <!-- Analysis Results -->
+                        <div class="col-md-6">
+                            <h5 class="border-bottom pb-2 mb-3">Analysis Results</h5>
+                            <div class="list-group mb-4">
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <strong>Total Amount:</strong>
+                                    <span class="badge bg-primary rounded-pill fs-6">${{ analysis.total|float|round(2) }}</span>
+                                </div>
+                                
+                                {% if analysis.date %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <strong>Date:</strong>
+                                    <span>{{ analysis.date }}</span>
+                                </div>
+                                {% endif %}
+                                
+                                {% if analysis.merchant %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <strong>Merchant:</strong>
+                                    <span>{{ analysis.merchant }}</span>
+                                </div>
+                                {% endif %}
+                                
+                                {% if analysis.category %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <strong>Category:</strong>
+                                    <span class="badge bg-info rounded-pill">{{ analysis.category }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            {% if analysis.items and analysis.items|length > 0 %}
+                            <h5 class="border-bottom pb-2 mb-3">Items Found</h5>
+                            <ul class="list-group">
+                                {% for item in analysis.items %}
+                                    {% if item %}
+                                    <li class="list-group-item">{{ item }}</li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                            {% endif %}
+                            
+                            <div class="mt-4">
+                                <h5 class="border-bottom pb-2 mb-3">Create Expense</h5>
+                                <form action="{{ url_for('add_expense') }}" method="POST" id="createExpenseForm">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="date" value="{{ analysis.date or today_date }}">
+                                    <input type="hidden" name="description" value="{{ analysis.merchant or 'Receipt expense' }}">
+                                    <input type="hidden" name="category" value="{{ analysis.category or 'Miscellaneous' }}">
+                                    <input type="hidden" name="amount" value="{{ analysis.total|float|round(2) }}">
+                                    
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn btn-success">
+                                            <i class="bi bi-plus-circle me-1"></i> Create Expense from Receipt
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0"><i class="bi bi-info-circle me-2"></i>Receipt Information</h5>
+                </div>
+                <div class="card-body p-4">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item px-0">
+                            <strong>Filename:</strong> {{ receipt.filename }}
+                        </li>
+                        <li class="list-group-item px-0">
+                            <strong>Upload Date:</strong> {{ receipt.upload_date.strftime('%Y-%m-%d %H:%M') }}
+                        </li>
+                        <li class="list-group-item px-0">
+                            <strong>File Type:</strong> {{ receipt.file_type }}
+                        </li>
+                        <li class="list-group-item px-0">
+                            <strong>File Size:</strong> {{ (receipt.file_size / 1024)|round|int }} KB
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0"><i class="bi bi-lightbulb me-2"></i>AI Analysis Tips</h5>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-muted">For best results with receipt scanning:</p>
+                    <ul class="text-muted">
+                        <li>Ensure good lighting when taking the photo</li>
+                        <li>Flatten the receipt to avoid shadows and creases</li>
+                        <li>Include the entire receipt in the frame</li>
+                        <li>Make sure the text is clear and legible</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // You could add client-side validation here
+    console.log('Receipt analysis page loaded');
+});
+</script>
+{% endblock %}
