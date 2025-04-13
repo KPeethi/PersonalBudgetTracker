@@ -255,11 +255,7 @@
                                     <i class="bi bi-bank me-1"></i> Connect Bank
                                 </a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link {% if request.path == url_for('ai_assistant_home') %}active-nav-item{% endif %}" href="{{ url_for('ai_assistant_home') }}">
-                                    <i class="bi bi-robot me-1"></i> AI Assistant
-                                </a>
-                            </li>
+
                             <li class="nav-item">
                                 <a class="nav-link {% if request.path == url_for('funny_chatbot') %}active-nav-item{% endif %}" href="{{ url_for('funny_chatbot') }}">
                                     <i class="bi bi-chat-dots-fill me-1"></i> FinWit <span class="badge bg-warning text-dark rounded-pill">New</span>
@@ -385,10 +381,7 @@
                     <span>Connect Bank</span>
                 </a>
                 
-                <a href="{{ url_for('ai_assistant_home') }}" class="sidebar-link {% if request.path == url_for('ai_assistant_home') %}active{% endif %}">
-                    <span>AI Assistant</span>
-                </a>
-                
+
                 <a href="{{ url_for('chat_assistant') }}" class="sidebar-link {% if request.path == url_for('chat_assistant') %}active{% endif %}">
                     <span>Chat Assistant</span>
                 </a>
