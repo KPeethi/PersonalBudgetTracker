@@ -51,6 +51,12 @@ def extract_total_amount(image_path):
         system_prompt = """
         You are a smart OCR and receipt analysis AI. Your job is to extract the total amount spent 
         from scanned receipts. Always return only the final amount paid in U.S. dollars. 
+        
+        For grocery store receipts like Market Basket:
+        - Look for 'TOTAL' or 'TOTAL TENDERED' on the receipt
+        - Don't confuse it with SUBTOTAL (which doesn't include tax)
+        - Don't return CHANGE amount
+        
         If there is a breakdown (items, taxes, tips), still give the grand total.
         Ignore anything that looks like change or balance. If the image is not a valid receipt, 
         return: "No valid receipt found."
@@ -125,11 +131,11 @@ def get_receipt_details(image_path):
         # System prompt for the comprehensive analysis
         system_prompt = """
         You are an expert receipt analysis AI. Extract the following information from the receipt:
-        1. Total amount
-        2. Date of purchase
-        3. Merchant/store name
-        4. Items purchased (if visible)
-        5. Category of purchase (e.g., Groceries, Restaurant, etc.)
+        1. Total amount - For grocery store receipts, look for TOTAL or TOTAL TENDERED. Don't confuse with SUBTOTAL or CHANGE.
+        2. Date of purchase - Format as YYYY-MM-DD if available
+        3. Merchant/store name - For example "Market Basket" or the actual store name
+        4. Items purchased (if visible) - Extract up to 10 main items
+        5. Category of purchase - Use "Groceries" for supermarkets, "Restaurant" for dining, etc.
         
         Format your response as JSON with the following structure:
         {
@@ -141,6 +147,7 @@ def get_receipt_details(image_path):
         }
         
         If the image is not a valid receipt, or if any field cannot be determined, use null for that field.
+        Be precise about the total amount - this is the most important field.
         """
         
         # Call OpenAI API with JSON response format
