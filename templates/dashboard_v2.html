@@ -131,8 +131,19 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('monthly_summary') }}">Monthly</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Category</a>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="categoryDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Category
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="categoryDropdown">
+                        {% if category_chart_data and category_chart_data.data and category_chart_data.data.labels %}
+                            {% for category in category_chart_data.data.labels %}
+                                <li><a class="dropdown-item" href="{{ url_for('expenses_by_category', category=category) }}">{{ category }}</a></li>
+                            {% endfor %}
+                        {% else %}
+                            <li><a class="dropdown-item disabled" href="#">No categories available</a></li>
+                        {% endif %}
+                    </ul>
                 </li>
             </ul>
         </div>
