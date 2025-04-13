@@ -158,6 +158,11 @@
                                                  style="width: 32px; height: 32px; font-size: 14px;">
                                                 {{ user.username[0] | upper }}
                                             </div>
+                                            {% elif user.is_business_user %}
+                                            <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center me-2" 
+                                                 style="width: 32px; height: 32px; font-size: 14px;">
+                                                {{ user.username[0] | upper }}
+                                            </div>
                                             {% else %}
                                             <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-2" 
                                                  style="width: 32px; height: 32px; font-size: 14px;">
@@ -171,6 +176,8 @@
                                     <td>
                                         {% if user.is_admin %}
                                         <span class="badge bg-primary rounded-pill">admin</span>
+                                        {% elif user.is_business_user %}
+                                        <span class="badge bg-success rounded-pill">business</span>
                                         {% else %}
                                         <span class="badge bg-secondary rounded-pill">user</span>
                                         {% endif %}
