@@ -1050,6 +1050,9 @@ def admin_panel():
     total_users = User.query.count()
     active_users = User.query.filter_by(is_active=True).count()
     suspended_users = User.query.filter_by(is_suspended=True).count()
+    
+    # Count unread system notifications 
+    unread_notifications = UserNotification.query.filter_by(is_read=False).count()
 
     # Get some statistics
     expense_stats = db.session.query(
@@ -1081,7 +1084,8 @@ def admin_panel():
                            active_users=active_users,
                            suspended_users=suspended_users,
                            expense_stats=expense_stats,
-                           user_spending=user_spending)
+                           user_spending=user_spending,
+                           unread_notifications=unread_notifications)
 
 
 @app.route('/admin/make_admin/<int:user_id>', methods=['POST'])

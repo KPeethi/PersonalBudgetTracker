@@ -86,7 +86,16 @@
                         <h6 class="card-title mb-0">System Status</h6>
                     </div>
                     <h2 class="fw-bold mb-0">Online</h2>
-                    <p class="card-text text-muted small mb-0">2 alerts require attention</p>
+                    <p class="card-text text-muted small mb-0">
+                        {% if unread_notifications > 0 %}
+                            <a href="{{ url_for('notifications') }}" class="text-decoration-none">
+                                {{ unread_notifications }} alert{% if unread_notifications != 1 %}s{% endif %} require attention
+                                <i class="bi bi-arrow-right-short"></i>
+                            </a>
+                        {% else %}
+                            All systems operational
+                        {% endif %}
+                    </p>
                 </div>
             </div>
         </div>
