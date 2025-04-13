@@ -2431,10 +2431,16 @@ def extract_receipt_amount(receipt_id):
 @app.route('/ai/conversational')
 @login_required
 def chat_assistant():
-    """Redirect from conversational AI assistant interface"""
-    logger.debug(f"Redirecting from conversational assistant, user: {current_user.username}")
-    flash('This feature has been deprecated and is no longer available.', 'info')
-    return redirect(url_for('dashboard'))
+    """Conversational AI assistant interface"""
+    logger.debug(f"Loading conversational assistant for user: {current_user.username}")
+    # Get the last month predictions to display in the forecast section
+    try:
+        last_month_data = conversation_assistant.get_last_month_predictions(current_user.id)
+    except Exception as e:
+        logger.error(f"Error loading last month predictions: {str(e)}")
+        last_month_data = None
+    
+    return render_template('ai/chat_assistant.html', last_month_data=last_month_data)
 
 @app.route('/ai/process_query', methods=['POST'])
 @login_required
