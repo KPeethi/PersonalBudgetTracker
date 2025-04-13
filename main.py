@@ -33,6 +33,7 @@ import excel_processor
 import excel_visualizer
 import perplexity_service
 import openai_service
+import receipt_analyzer
 
 # Directory for storing uploaded receipts
 UPLOAD_FOLDER = 'static/uploads/receipts'
