@@ -684,7 +684,11 @@
 
             // Function to fetch notifications
             function fetchNotifications() {
-                fetch('/notifications')
+                fetch('/notifications', {
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    }
+                })
                     .then(response => response.json())
                     .then(data => {
                         updateNotifications(data);
@@ -700,6 +704,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
                     }
                 })
                 .then(response => response.json())
@@ -737,6 +742,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
                     }
                 })
                 .then(response => response.json())
