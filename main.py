@@ -2882,6 +2882,11 @@ def last_month_predictions():
 @login_required
 def funny_chatbot():
     """Show the professional financial assistant interface."""
+    # Check if user has business or admin access
+    if not current_user.is_business_user and not current_user.is_admin:
+        flash('You need business user access to use the AI chat feature.', 'warning')
+        return redirect(url_for('request_business_upgrade'))
+        
     # Try OpenAI first, then fallback to Perplexity
     openai_available = openai_service.check_api_availability()
     perplexity_available = perplexity_service.check_api_availability()
@@ -2952,6 +2957,13 @@ def funny_chatbot():
 @login_required
 def funny_chat_process():
     """Process a query to the professional financial assistant."""
+    # Check if user has business or admin access
+    if not current_user.is_business_user and not current_user.is_admin:
+        return jsonify({
+            'success': False,
+            'error': 'Access denied',
+            'response': 'You need business user access to use the AI chat feature.'
+        })
     # Add console output for debugging
     print("===== FUNNY CHAT PROCESS =====")
     print("Received request!")
