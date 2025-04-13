@@ -121,22 +121,9 @@
         </div>
     </div>
 
-    <!-- Tab Navigation -->
+    <!-- Time Period Selector -->
     <div class="row mb-4">
-        <div class="col-8">
-            <ul class="nav nav-tabs">
-                <li class="nav-item">
-                    <a class="nav-link active" href="#overview">Overview</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('monthly_summary') }}">Monthly</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Category</a>
-                </li>
-            </ul>
-        </div>
-        <div class="col-4">
+        <div class="col-12">
             <div class="d-flex justify-content-end">
                 <div class="dropdown">
                     <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="timeRangeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
@@ -153,32 +140,7 @@
         </div>
     </div>
 
-    <!-- Main Charts Section - Monthly Expense Distribution and Monthly Expense Trend side by side -->
-    <div class="row mb-4">
-        <!-- Monthly Expense Distribution (Category Pie Chart) -->
-        <div class="col-md-6 mb-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-transparent border-0 py-3">
-                    <h5 class="mb-0">Monthly Expense Distribution</h5>
-                </div>
-                <div class="card-body">
-                    <div id="categoryDistributionChart" style="height: 350px;"></div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Monthly Expense Trend (Line Chart) -->
-        <div class="col-md-6 mb-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-transparent border-0 py-3">
-                    <h5 class="mb-0">Monthly Expense Trend</h5>
-                </div>
-                <div class="card-body">
-                    <div id="monthlyTrendChart" style="height: 350px;"></div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Main content area starts below -->
 
     <!-- Budget Section -->
     <div class="row">
