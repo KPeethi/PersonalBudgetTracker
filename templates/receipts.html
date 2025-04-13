@@ -285,6 +285,95 @@
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
         
+        // Receipt amount extraction functionality
+        const extractButtons = document.querySelectorAll('.receipt-extract-amount');
+        extractButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const receiptId = this.getAttribute('data-receipt-id');
+                const button = this;
+                
+                // Change button appearance to indicate loading
+                button.disabled = true;
+                button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+                
+                // Make request to extract receipt amount
+                fetch(`/extract_receipt_amount/${receiptId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    button.disabled = false;
+                    
+                    if (data.success) {
+                        // Show success alert with amount
+                        const alertHtml = `
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <strong>Amount detected:</strong> ${data.formatted_amount}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        `;
+                        
+                        // Insert alert before the receipts table
+                        const tableParent = document.querySelector('.table-responsive').parentNode;
+                        const alertDiv = document.createElement('div');
+                        alertDiv.innerHTML = alertHtml;
+                        tableParent.insertBefore(alertDiv.firstChild, tableParent.firstChild);
+                        
+                        // Reset button
+                        button.innerHTML = '<i class="bi bi-currency-dollar"></i>';
+                        
+                        // Auto-fill the amount field if creating a new receipt
+                        const amountInput = document.getElementById('expense_amount');
+                        if (amountInput) {
+                            amountInput.value = data.amount;
+                        }
+                    } else {
+                        // Show error alert
+                        const alertHtml = `
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <strong>Error:</strong> ${data.error || 'Could not extract amount from receipt'}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        `;
+                        
+                        // Insert alert before the receipts table
+                        const tableParent = document.querySelector('.table-responsive').parentNode;
+                        const alertDiv = document.createElement('div');
+                        alertDiv.innerHTML = alertHtml;
+                        tableParent.insertBefore(alertDiv.firstChild, tableParent.firstChild);
+                        
+                        // Reset button
+                        button.innerHTML = '<i class="bi bi-currency-dollar"></i>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    
+                    // Reset button
+                    button.disabled = false;
+                    button.innerHTML = '<i class="bi bi-currency-dollar"></i>';
+                    
+                    // Show error alert
+                    const alertHtml = `
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <strong>Error:</strong> A network error occurred while analyzing the receipt
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    `;
+                    
+                    // Insert alert before the receipts table
+                    const tableParent = document.querySelector('.table-responsive').parentNode;
+                    const alertDiv = document.createElement('div');
+                    alertDiv.innerHTML = alertHtml;
+                    tableParent.insertBefore(alertDiv.firstChild, tableParent.firstChild);
+                });
+            });
+        });
+        
         // Admin toggle for showing all users' receipts
         const showAllCheckbox = document.getElementById('showAllReceipts');
         if (showAllCheckbox) {
