@@ -88,7 +88,7 @@
                     <h2 class="fw-bold mb-0">Online</h2>
                     <p class="card-text text-muted small mb-0">
                         {% if unread_notifications > 0 %}
-                            <a href="{{ url_for('notifications') }}" class="text-decoration-none">
+                            <a href="{{ url_for('all_notifications_page') }}" class="text-decoration-none">
                                 {{ unread_notifications }} alert{% if unread_notifications != 1 %}s{% endif %} require attention
                                 <i class="bi bi-arrow-right-short"></i>
                             </a>
