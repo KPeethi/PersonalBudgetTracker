@@ -1112,6 +1112,38 @@ def remove_admin(user_id):
     return redirect(url_for('admin_panel'))
 
 
+@app.route('/admin/toggle_business/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def toggle_business_status(user_id):
+    """Toggle business status for a user"""
+    user = User.query.get_or_404(user_id)
+    
+    # Toggle the business status
+    user.is_business_user = not user.is_business_user
+    
+    # Create notification for the user
+    if user.is_business_user:
+        message = 'Your account has been upgraded to a business account. You now have access to business features.'
+        status_text = 'now has'
+    else:
+        message = 'Your business access has been revoked. You no longer have access to business features.'
+        status_text = 'no longer has'
+    
+    notification = UserNotification(
+        user_id=user.id,
+        title='Business Status Updated',
+        message=message,
+        notification_type='info'
+    )
+    
+    db.session.add(notification)
+    db.session.commit()
+    
+    flash(f'{user.username} {status_text} business user status!', 'success')
+    return redirect(url_for('admin_panel'))
+
+
 @app.route('/admin/deactivate/<int:user_id>', methods=['POST'])
 @login_required
 @admin_required
