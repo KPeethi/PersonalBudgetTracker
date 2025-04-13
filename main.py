@@ -2341,10 +2341,10 @@ def delete_receipt(receipt_id):
 @app.route('/ai/conversational')
 @login_required
 def chat_assistant():
-    """Show conversational AI assistant interface"""
-    logger.debug(f"Accessing conversational assistant, user: {current_user.username}")
-    
-    return render_template('ai/chat_assistant.html', title='Conversational Assistant')
+    """Redirect from conversational AI assistant interface"""
+    logger.debug(f"Redirecting from conversational assistant, user: {current_user.username}")
+    flash('This feature has been deprecated and is no longer available.', 'info')
+    return redirect(url_for('dashboard'))
 
 @app.route('/ai/process_query', methods=['POST'])
 @login_required
@@ -2881,83 +2881,21 @@ def last_month_predictions():
 @app.route('/ai/funny-chatbot')
 @login_required
 def funny_chatbot():
-    """Show the professional financial assistant interface."""
-    # Check if user has business or admin access
-    if not current_user.is_business_user and not current_user.is_admin:
-        flash('You need business user access to use the AI chat feature.', 'warning')
-        return redirect(url_for('request_business_upgrade'))
-        
-    # Try OpenAI first, then fallback to Perplexity
-    openai_available = openai_service.check_api_availability()
-    perplexity_available = perplexity_service.check_api_availability()
-    api_available = openai_available or perplexity_available
-    
-    # Log which API is being used
-    if openai_available:
-        logger.info("Using OpenAI for financial assistant")
-    elif perplexity_available:
-        logger.info("Using Perplexity for financial assistant")
-    else:
-        logger.warning("No AI API available, using fallback responses")
-    
-    # Get top spending categories for the current user
-    categories_data = []
-    try:
-        # Get the current user's expenses (excluding Excel imports)
-        expenses = Expense.query.filter_by(user_id=current_user.id, excel_import_id=None).all()
-        
-        # Calculate category totals
-        category_totals = {}
-        for expense in expenses:
-            if expense.category in category_totals:
-                category_totals[expense.category] += expense.amount
-            else:
-                category_totals[expense.category] = expense.amount
-        
-        # Sort categories by total amount
-        sorted_categories = sorted(category_totals.items(), key=lambda x: x[1], reverse=True)
-        
-        # Get top 5 categories
-        top_categories = sorted_categories[:5]
-        
-        # Format for template
-        for category, amount in top_categories:
-            categories_data.append({
-                'name': category,
-                'amount': amount
-            })
-    except Exception as e:
-        logger.exception("Error fetching category data for funny chatbot")
-    
-    # Get a daily financial tip - prefer OpenAI if available
-    try:
-        if openai_available:
-            daily_tip = openai_service.get_financial_tip()
-            logger.info("Using OpenAI for financial tip")
-        elif perplexity_available:
-            daily_tip = perplexity_service.get_financial_tip()
-            logger.info("Using Perplexity for financial tip")
-        else:
-            daily_tip = "Tip of the day: Remember that the best investment you can make is in yourself. And maybe a good coffee machine."
-            logger.warning("No AI API available for financial tip, using fallback")
-    except Exception as e:
-        logger.error(f"Error getting financial tip: {str(e)}")
-        daily_tip = "Tip of the day: Automating your savings is one of the most effective ways to build wealth consistently over time."
-    
-    return render_template(
-        'ai/funny_chatbot_new.html',
-        title='Financial Assistant',
-        api_available=api_available,
-        categories_data=categories_data,
-        daily_tip=daily_tip
-    )
+    """Redirect from financial assistant interface"""
+    logger.debug(f"Redirecting from financial assistant, user: {current_user.username}")
+    flash('This feature has been deprecated and is no longer available.', 'info')
+    return redirect(url_for('dashboard'))
 
 
 @app.route('/ai/funny-chat', methods=['POST'])
 @login_required
 def funny_chat_process():
-    """Process a query to the professional financial assistant."""
-    # Check if user has business or admin access
+    """Redirect from professional financial assistant API endpoint."""
+    return jsonify({
+        'success': False,
+        'error': 'Feature unavailable',
+        'response': 'This feature has been deprecated and is no longer available.'
+    })
     if not current_user.is_business_user and not current_user.is_admin:
         return jsonify({
             'success': False,
