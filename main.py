@@ -2225,21 +2225,34 @@ def upload_receipt():
             # Save file
             file.save(file_path)
             
+            # Auto-extract amount from receipt if creating a new expense and amount is not provided
+            auto_extracted_amount = None
+            if form.create_new_expense.data and not form.expense_amount.data:
+                try:
+                    logger.info(f"Attempting to auto-extract amount from receipt: {file_path}")
+                    auto_extracted_amount = receipt_analyzer.extract_total_amount(file_path)
+                    if auto_extracted_amount:
+                        logger.info(f"Successfully extracted amount: ${auto_extracted_amount:.2f}")
+                        form.expense_amount.data = auto_extracted_amount
+                except Exception as ex:
+                    logger.exception(f"Error auto-extracting amount: {str(ex)}")
+            
             # Determine if we're creating a new expense or using an existing one
             expense_id = None
             
             if form.create_new_expense.data:
                 # Create a new expense with the provided details
-                if not form.expense_date.data or not form.expense_description.data or not form.expense_category.data or not form.expense_amount.data:
+                if not form.expense_date.data or not form.expense_description.data or not form.expense_category.data or not (form.expense_amount.data or auto_extracted_amount):
                     flash('When creating a new expense, all expense fields are required.', 'danger')
                     return redirect(url_for('index'))
                 
-                # Create the new expense
+                # Create the new expense with amount from form or auto-extracted
+                expense_amount = form.expense_amount.data if form.expense_amount.data else auto_extracted_amount
                 new_expense = Expense(
                     date=form.expense_date.data,
                     description=form.expense_description.data,
                     category=form.expense_category.data,
-                    amount=form.expense_amount.data,
+                    amount=expense_amount,
                     user_id=current_user.id
                 )
                 

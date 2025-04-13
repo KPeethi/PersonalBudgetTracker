@@ -406,6 +406,41 @@
                     
                     // Change button text
                     selectFileBtn.textContent = 'Change File';
+                    
+                    // Show a processing indicator next to amount field if creating a new expense
+                    const createNewExpenseCheckbox = document.getElementById('create_new_expense');
+                    const amountField = document.getElementById('expense_amount');
+                    
+                    if (createNewExpenseCheckbox.checked && amountField.value === '') {
+                        // Show processing indicator next to amount field
+                        const amountRow = amountField.closest('.mb-0');
+                        const processingIndicator = document.createElement('small');
+                        processingIndicator.className = 'text-muted ms-2 processing-indicator';
+                        processingIndicator.innerHTML = '<i class="bi bi-arrow-repeat spinner me-1"></i> Will auto-extract amount from receipt during upload';
+                        
+                        // Remove any existing indicator first
+                        const existingIndicator = amountRow.querySelector('.processing-indicator');
+                        if (existingIndicator) {
+                            existingIndicator.remove();
+                        }
+                        
+                        // Add the new indicator
+                        amountField.insertAdjacentElement('afterend', processingIndicator);
+                        
+                        // Add a small spinner animation
+                        const style = document.createElement('style');
+                        style.innerHTML = `
+                            .spinner {
+                                display: inline-block;
+                                animation: spin 2s linear infinite;
+                            }
+                            @keyframes spin {
+                                0% { transform: rotate(0deg); }
+                                100% { transform: rotate(360deg); }
+                            }
+                        `;
+                        document.head.appendChild(style);
+                    }
                 } else {
                     fileNameDisplay.textContent = 'No file chosen';
                     
@@ -415,6 +450,12 @@
                     
                     // Reset button text
                     selectFileBtn.textContent = 'Choose File';
+                    
+                    // Remove any processing indicator
+                    const processingIndicator = document.querySelector('.processing-indicator');
+                    if (processingIndicator) {
+                        processingIndicator.remove();
+                    }
                 }
             });
         }
@@ -441,6 +482,27 @@
                     document.getElementById('expense_category').required = true;
                     document.getElementById('expense_amount').required = true;
                     document.getElementById('expense_id').required = false;
+                    
+                    // Show auto-extract indicator if a file is selected and amount is empty
+                    const fileInput = document.getElementById('receipt_file');
+                    const amountField = document.getElementById('expense_amount');
+                    
+                    if (fileInput.files.length > 0 && amountField.value === '') {
+                        // Show processing indicator next to amount field
+                        const amountRow = amountField.closest('.mb-0');
+                        const processingIndicator = document.createElement('small');
+                        processingIndicator.className = 'text-muted ms-2 processing-indicator';
+                        processingIndicator.innerHTML = '<i class="bi bi-arrow-repeat spinner me-1"></i> Will auto-extract amount from receipt during upload';
+                        
+                        // Remove any existing indicator first
+                        const existingIndicator = amountRow.querySelector('.processing-indicator');
+                        if (existingIndicator) {
+                            existingIndicator.remove();
+                        }
+                        
+                        // Add the new indicator
+                        amountField.insertAdjacentElement('afterend', processingIndicator);
+                    }
                 } else {
                     existingExpenseSection.style.display = 'block';
                     newExpenseSection.style.display = 'none';
@@ -450,6 +512,12 @@
                     document.getElementById('expense_description').required = false;
                     document.getElementById('expense_category').required = false;
                     document.getElementById('expense_amount').required = false;
+                    
+                    // Remove any processing indicator
+                    const processingIndicator = document.querySelector('.processing-indicator');
+                    if (processingIndicator) {
+                        processingIndicator.remove();
+                    }
                 }
             }
         }
