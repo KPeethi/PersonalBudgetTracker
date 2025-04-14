@@ -7,7 +7,10 @@ This guide will walk you through setting up the Expense Tracker application in V
 1. **Visual Studio Code**: [Download and install VS Code](https://code.visualstudio.com/)
 2. **Python**: Version 3.8 or higher
 3. **Git**: For version control
-4. **PostgreSQL**: Database for storing application data
+4. **Database**: One of the following:
+   - **SQL Server**: SQL Server Express or higher with ODBC Driver 17 for SQL Server installed
+   - **PostgreSQL**: Database for storing application data (alternative)
+   - **MySQL**: Database for storing application data (alternative)
 
 ## Quick Setup (Recommended)
 
@@ -79,16 +82,43 @@ python setup_vscode_env.py
 
 ## Step 4: Set Up Database
 
+### Option A: SQL Server Setup
+1. Ensure SQL Server is installed and running
+2. Create a new database named `ExpenseDB` in SQL Server
+3. Ensure ODBC Driver 17 for SQL Server is installed
+4. Create a `.env` file in the project root with the following:
+
+```
+# Database URL for SQL Server with Windows Authentication
+DATABASE_URL=mssql+pyodbc:///?odbc_connect=DRIVER={ODBC Driver 17 for SQL Server};SERVER=NAME\SQLEXPRESS;DATABASE=ExpenseDB;Trusted_Connection=yes
+
+# Plaid configuration
+PLAID_CLIENT_ID=your-plaid-client-id
+PLAID_SECRET=your-plaid-secret
+PLAID_ENV=sandbox
+PLAID_REDIRECT_URI=http://localhost:5000/plaid/oauth-callback
+
+# OpenAI configuration
+OPENAI_API_KEY=your-openai-api-key
+
+# Session Secret
+SESSION_SECRET=your-secret-key
+```
+
+Replace `NAME\SQLEXPRESS` with your actual SQL Server instance name.
+
+### Option B: PostgreSQL Setup (Alternative)
 1. Create a PostgreSQL database for the application
 2. Create a `.env` file in the project root:
 
 ```
 DATABASE_URL=postgresql://username:password@localhost/expense_tracker
-FLASK_SECRET_KEY=your-secret-key
+SESSION_SECRET=your-secret-key
 OPENAI_API_KEY=your-openai-api-key  # Optional for AI features
 PLAID_CLIENT_ID=your-plaid-client-id  # Optional for Plaid integration
 PLAID_SECRET=your-plaid-secret  # Optional for Plaid integration
 PLAID_ENV=sandbox  # Optional for Plaid integration
+PLAID_REDIRECT_URI=http://localhost:5000/plaid/oauth-callback
 ```
 
 Replace `username`, `password`, and other values with your actual credentials.
@@ -172,10 +202,18 @@ Use these credentials to access admin features:
 
 ### Database Connection Issues
 
-If you have trouble connecting to the database, verify:
-- PostgreSQL is running
-- Your database credentials in the `.env` file are correct
-- The database exists and is accessible
+#### For SQL Server:
+- Ensure SQL Server is running
+- Verify the server instance name in your connection string (e.g., `NAME\SQLEXPRESS`)
+- Verify the database `ExpenseDB` exists in your SQL Server instance
+- Make sure ODBC Driver 17 for SQL Server is installed
+- If using Windows Authentication, ensure your Windows user has access to the database
+- Try connecting with SQL Server Management Studio to verify your credentials
+
+#### For PostgreSQL:
+- Ensure PostgreSQL is running
+- Verify your database credentials in the `.env` file are correct
+- Confirm the database exists and is accessible
 
 ### Missing Dependencies
 

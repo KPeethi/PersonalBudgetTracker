@@ -1,0 +1,38 @@
+{
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.linting.flake8Enabled": false,
+    "python.formatting.provider": "black",
+    "python.terminal.activateEnvironment": true,
+    "terminal.integrated.profiles.windows": {
+        "PowerShell": {
+            "source": "PowerShell",
+            "icon": "terminal-powershell"
+        },
+        "Command Prompt": {
+            "path": "${env:windir}\\System32\\cmd.exe",
+            "args": [],
+            "icon": "terminal-cmd"
+        }
+    },
+    "terminal.integrated.defaultProfile.windows": "Command Prompt",
+    "python.defaultInterpreterPath": "${workspaceFolder}\\venv\\Scripts\\python.exe",
+    "sqltools.connections": [
+        {
+            "name": "SQL Server - ExpenseDB",
+            "server": "NAME\\SQLEXPRESS",
+            "driver": "MSSQL",
+            "database": "ExpenseDB",
+            "authenticationType": "Integrated",
+            "username": "",
+            "password": ""
+        }
+    ],
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/.pytest_cache": true,
+        "**/.vscode": false,
+        "**/venv": false
+    },
+    "editor.formatOnSave": true
+}

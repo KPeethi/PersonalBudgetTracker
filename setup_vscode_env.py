@@ -32,6 +32,22 @@ def create_vscode_config():
                 ],
                 "jinja": True,
                 "justMyCode": True
+            },
+            {
+                "name": "Python: Current File",
+                "type": "python",
+                "request": "launch",
+                "program": "${file}",
+                "console": "integratedTerminal",
+                "justMyCode": True
+            },
+            {
+                "name": "Python: Main Application",
+                "type": "python",
+                "request": "launch",
+                "program": "main.py",
+                "console": "integratedTerminal",
+                "justMyCode": True
             }
         ]
     }
@@ -44,6 +60,37 @@ def create_vscode_config():
         "python.linting.enabled": True,
         "python.linting.pylintEnabled": True,
         "python.formatting.provider": "black",
+        "python.terminal.activateEnvironment": True,
+        "terminal.integrated.profiles.windows": {
+            "PowerShell": {
+                "source": "PowerShell",
+                "icon": "terminal-powershell"
+            },
+            "Command Prompt": {
+                "path": "${env:windir}\\System32\\cmd.exe",
+                "args": [],
+                "icon": "terminal-cmd"
+            }
+        },
+        "terminal.integrated.defaultProfile.windows": "Command Prompt",
+        "python.defaultInterpreterPath": "${workspaceFolder}\\venv\\Scripts\\python.exe",
+        "sqltools.connections": [
+            {
+                "name": "SQL Server - ExpenseDB",
+                "server": "NAME\\SQLEXPRESS",
+                "driver": "MSSQL",
+                "database": "ExpenseDB",
+                "authenticationType": "Integrated",
+                "username": "",
+                "password": ""
+            }
+        ],
+        "files.exclude": {
+            "**/__pycache__": True,
+            "**/.pytest_cache": True,
+            "**/.vscode": False,
+            "**/venv": False
+        },
         "editor.formatOnSave": True,
         "python.analysis.extraPaths": ["."],
         "[python]": {
@@ -66,18 +113,29 @@ def create_env_example():
 # Copy this file to .env and update with your values
 
 # Database Configuration
-DATABASE_URL=postgresql://username:password@localhost/expense_tracker
+# PostgreSQL (default for Replit)
+# DATABASE_URL=postgresql://username:password@localhost/expense_tracker
 
-# Flask Configuration
-FLASK_SECRET_KEY=your-super-secret-key
+# MySQL
+# DATABASE_URL=mysql+pymysql://username:password@localhost/expense_tracker
 
-# OpenAI API Configuration (Optional - for AI assistant features)
-OPENAI_API_KEY=your-openai-api-key
+# SQL Server with Windows Authentication
+DATABASE_URL=mssql+pyodbc:///?odbc_connect=DRIVER={ODBC Driver 17 for SQL Server};SERVER=NAME\\SQLEXPRESS;DATABASE=ExpenseDB;Trusted_Connection=yes
 
-# Plaid API Configuration (Optional - for bank integration)
+# Plaid configuration
 PLAID_CLIENT_ID=your-plaid-client-id
 PLAID_SECRET=your-plaid-secret
 PLAID_ENV=sandbox
+PLAID_REDIRECT_URI=http://localhost:5000/plaid/oauth-callback
+
+# OpenAI configuration
+OPENAI_API_KEY=your-openai-api-key
+
+# Session Secret
+SESSION_SECRET=your-secret-key
+
+# Python path configuration (for VSCode)
+PYTHONPATH=${workspaceFolder}
 """
 
     with open(".env.example", "w") as f:
@@ -86,14 +144,38 @@ PLAID_ENV=sandbox
     print(".env.example file created. Copy to .env and update with your values.")
 
 def create_python_path_file():
-    """Create a .env file for Python path configuration."""
-    pythonpath_content = """PYTHONPATH=${workspaceFolder}
-"""
+    """Create a .env file for Python path configuration if it doesn't exist."""
+    # Check if .env file exists
+    if os.path.exists(".env"):
+        # Append Python path configuration if file exists
+        with open(".env", "a") as f:
+            f.write("\n# Python path configuration (for VSCode)\n")
+            f.write("PYTHONPATH=${workspaceFolder}\n")
+        print("Python path configuration appended to existing .env file.")
+    else:
+        # Create minimal .env file if it doesn't exist
+        with open(".env", "w") as f:
+            f.write("""# Database URL for SQL Server with Windows Authentication
+DATABASE_URL=mssql+pyodbc:///?odbc_connect=DRIVER={ODBC Driver 17 for SQL Server};SERVER=NAME\\SQLEXPRESS;DATABASE=ExpenseDB;Trusted_Connection=yes
+
+# Plaid configuration - replace with your actual values
+PLAID_CLIENT_ID=
+PLAID_SECRET=
+PLAID_ENV=sandbox
+PLAID_REDIRECT_URI=http://localhost:5000/plaid/oauth-callback
+
+# OpenAI configuration - replace with your actual key
+OPENAI_API_KEY=
+
+# Session Secret
+SESSION_SECRET=your-secret-key-change-in-production
+
+# Python path configuration (for VSCode)
+PYTHONPATH=${workspaceFolder}
+""")
+        print("Created new .env file with Python path configuration.")
     
-    with open(".env", "w") as f:
-        f.write(pythonpath_content)
-    
-    print("Python path configuration added to .env file.")
+    print("Note: Remember to update .env with your actual credentials and API keys.")
 
 def main():
     """Main function to set up VS Code environment."""
