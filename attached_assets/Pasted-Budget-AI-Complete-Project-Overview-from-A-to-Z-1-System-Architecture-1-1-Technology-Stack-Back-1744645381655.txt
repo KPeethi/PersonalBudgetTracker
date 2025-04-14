@@ -1,0 +1,219 @@
+Budget AI: Complete Project Overview from A to Z
+1. System Architecture
+1.1 Technology Stack
+Backend: Python/Flask with SQLAlchemy ORM
+Database: PostgreSQL (default), with support for SQL Server and MySQL
+Authentication: Flask-Login
+Data Visualization: Plotly, Matplotlib
+External APIs: Plaid (financial data), OpenAI/Perplexity (AI analysis)
+Data Processing: Pandas, NumPy
+1.2 Database Schema
+Users table: Stores user information and authentication data
+Expenses table: Core table for expense entries with categories
+Business_Users table: Links users to business accounts
+Categories table: Pre-defined and custom expense categories
+Receipts table: Stores uploaded receipt images and metadata
+Excel_Imports table: Tracks imported data from Excel files
+Notifications table: User-specific alerts and notifications
+Budget_Limits table: User-defined spending limits by category
+2. User Authentication System
+2.1 Registration Process
+Users register with username, email, and password
+Email validation checks for valid format and detects potentially fake emails
+Password requirements: 8+ characters, upper/lowercase, numbers, special character
+Users are created with regular user status by default
+User data is stored in Users table with hashed passwords
+2.2 Login Process
+Users provide email and password
+System validates credentials against database records
+Upon successful login, Flask-Login creates a user session
+Failed login attempts are logged and limited
+"Remember me" option extends session duration
+2.3 Password Recovery
+Users enter their email address
+System sends a password reset link to the email
+Reset link contains a time-limited secure token
+Users set a new password, which is hashed and updated
+3. User Roles and Permissions
+3.1 Regular User
+Access: Personal expenses, basic reports, visualizations
+Capabilities:
+Add, edit, delete personal expenses
+Upload and analyze receipts
+Generate basic reports and visualizations
+Export personal expense data as CSV
+Access personal dashboard with financial overview
+Receive budget limit notifications
+Use AI assistant for expense analysis
+3.2 Business User
+Access: All regular features plus business-specific features
+Capabilities:
+Import Excel data using templates
+Access advanced prediction models
+Generate detailed business reports
+Enhanced visualizations with trends analysis
+Multi-category budget tracking
+Advanced OCR receipt processing
+Create expense projections
+3.3 Administrator
+Access: System-wide access and management functions
+Capabilities:
+Manage all user accounts
+Grant/revoke business user status
+View system-wide statistics
+Perform database maintenance
+Manage predefined categories
+Configure system settings
+View audit logs and activity
+4. Core Features Breakdown
+4.1 Expense Management
+Manual expense entry with category, amount, date, description
+Batch import from Excel/CSV files
+Automatic categorization using AI
+Receipt upload with OCR data extraction
+Recurring expense setup
+Split transaction capability
+Expense search and filtering
+4.2 Data Visualization
+Interactive charts using Plotly
+Spending by category (pie/donut charts)
+Spending over time (line/bar charts)
+Budget vs. actual comparison
+Trend analysis with forecasting
+Custom date range visualizations
+Exportable chart data
+4.3 Budget Tracking
+Set budget limits by category and time period
+Visual progress bars showing budget usage
+Notifications when approaching or exceeding limits
+Monthly budget rollover options
+Budget adjustment recommendations based on spending patterns
+Historical budget performance tracking
+4.4 Receipt Management
+Upload receipt images (jpg, png, pdf)
+OCR processing to extract:
+Total amount
+Merchant name
+Date of purchase
+Individual line items
+Manual verification and correction
+Receipt-to-expense matching
+Receipt search and filtering
+Receipt archive and organization
+4.5 AI Assistant
+Natural language query processing
+Expense pattern analysis
+Spending recommendations
+Category optimization suggestions
+Future expense predictions
+Budget adjustment recommendations
+Financial goal tracking and advice
+5. Plaid Integration
+5.1 Connection Process
+Users initiate Plaid connection from dashboard
+Plaid Link interface helps users select financial institution
+Users securely authenticate with their bank credentials
+Plaid token is generated and stored
+Account selection for transaction importing
+5.2 Data Synchronization
+Periodic sync of transaction data
+Transaction categorization matching system categories
+Duplicate detection to prevent double-counting
+Manual transaction approval workflow
+Historical data import options
+Account balance monitoring
+5.3 Security Measures
+Encrypted Plaid tokens
+No storage of banking credentials
+Secure API communication
+User-revocable access
+Compliance with financial data regulations
+6. AI Components
+6.1 Expense Analysis
+Pattern detection in spending habits
+Anomaly detection for unusual expenses
+Category optimization suggestions
+Seasonality analysis of expenses
+Fixed vs. variable expense breakdown
+Discretionary spending analysis
+6.2 Receipt Analysis
+OCR text extraction from images
+Entity recognition for merchant names
+Amount and date extraction
+Line item categorization
+Tax and tip identification
+Receipt validity verification
+6.3 Predictive Modeling
+Time-series forecasting for future expenses
+Monthly spending projections
+Category-specific trend predictions
+Seasonal pattern detection
+Budget adjustment recommendations
+"What-if" scenario modeling
+7. Notification System
+7.1 Types of Notifications
+Budget limit alerts
+Unusual spending patterns
+Recurring payment reminders
+Goal progress updates
+System announcements
+Feature updates
+Import/processing completion
+7.2 Delivery Methods
+In-app notifications
+Email notifications (optional)
+Dashboard alerts
+Real-time updates via WebSockets
+Priority-based notification hierarchy
+8. Data Export/Import
+8.1 Export Options
+CSV export of expenses
+Excel formatted reports
+PDF reports with visualizations
+Custom date range exports
+Category and tag filtered exports
+Summary vs. detailed export options
+8.2 Import Methods
+Excel template import
+CSV file import
+Plaid transaction import
+Manual data entry
+Receipt-based expense creation
+SQL data import for migrations
+9. Technical Implementation Details
+9.1 Database Connection Handling
+Connection pooling for efficiency
+Automatic reconnection on failure
+Transaction isolation and integrity
+Cross-database compatibility layer
+Schema migration tools
+Database health monitoring
+9.2 Security Implementation
+CSRF token protection
+Password hashing with Werkzeug
+Session management security
+Input validation and sanitization
+Rate limiting for sensitive endpoints
+API key security for external services
+9.3 Error Handling
+Comprehensive logging system
+User-friendly error messages
+Admin error notifications
+Automatic issue categorization
+Recovery procedures for common failures
+Database transaction rollback on error
+10. System Deployment
+10.1 Development Environment
+Replit cloud-based development
+GitHub source control
+Testing framework with pytest
+Development/production configuration separation
+Feature branch workflow
+Continuous integration
+10.2 Production Deployment
+Gunicorn WSGI HTTP server
+PostgreSQL production database
+Environment-based configuration
+Secure secret management
+Database migration process
+Backup and recovery procedures
