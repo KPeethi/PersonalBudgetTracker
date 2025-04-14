@@ -17,10 +17,32 @@ echo "Activating virtual environment..."
 source venv/bin/activate
 
 echo "Installing dependencies..."
-pip install flask flask-login flask-sqlalchemy flask-wtf email-validator gunicorn pyodbc numpy pandas plotly werkzeug markupsafe antropic openai twilio sqlalchemy plaid-python requests trafilatura python-dotenv
+# Note: We're removing email-validator since we now use our own implementation
+pip install flask flask-login flask-sqlalchemy flask-wtf gunicorn pyodbc numpy pandas plotly werkzeug markupsafe antropic openai twilio sqlalchemy plaid-python requests trafilatura python-dotenv
 
 echo "Setting up VS Code configuration..."
 python setup_vscode_env.py
+
+# Create directories for SQL sample files if they don't exist
+echo "Creating directories for sample files..."
+mkdir -p static/templates
+
+# Generate sample SQL import files
+echo "Generating sample SQL import files..."
+python -c "
+import os
+import sys
+sys.path.insert(0, os.getcwd())
+try:
+    import sql_import
+    os.makedirs('static/templates', exist_ok=True)
+    sql_import.generate_sample_sql_import_file('static/templates/sample_import_postgresql.sql', 'postgresql')
+    sql_import.generate_sample_sql_import_file('static/templates/sample_import_mysql.sql', 'mysql')
+    sql_import.generate_sample_sql_import_file('static/templates/sample_import_mssql.sql', 'mssql')
+    print('Sample SQL import files generated successfully')
+except Exception as e:
+    print(f'Error generating sample SQL files: {str(e)}')
+"
 
 echo "Creating .env file from example..."
 if [ ! -f .env ]; then

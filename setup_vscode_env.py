@@ -48,6 +48,14 @@ def create_vscode_config():
                 "program": "main.py",
                 "console": "integratedTerminal",
                 "justMyCode": True
+            },
+            {
+                "name": "Python: SQL Import Tool",
+                "type": "python",
+                "request": "launch",
+                "program": "sql_import.py",
+                "console": "integratedTerminal",
+                "justMyCode": True
             }
         ]
     }
@@ -99,6 +107,10 @@ def create_vscode_config():
         },
         "[html]": {
             "editor.defaultFormatter": "vscode.html-language-features"
+        },
+        "[sql]": {
+            "editor.defaultFormatter": "mtxr.sqltools",
+            "editor.formatOnSave": true
         }
     }
     
@@ -177,12 +189,111 @@ PYTHONPATH=${workspaceFolder}
     
     print("Note: Remember to update .env with your actual credentials and API keys.")
 
+def create_sql_templates():
+    """Create sample SQL query templates for different database dialects."""
+    # Create templates directory if it doesn't exist
+    os.makedirs("static/templates", exist_ok=True)
+    
+    # PostgreSQL sample
+    postgresql_sample = """
+-- Sample expense data for import (PostgreSQL)
+-- This will return expense records in the format expected by the import utility
+SELECT 
+    '2025-04-01'::date as date,
+    49.99 as amount,
+    'Groceries' as category,
+    'Weekly grocery shopping' as description,
+    'Credit Card' as payment_method,
+    'Local Supermarket' as merchant
+UNION ALL SELECT 
+    '2025-04-02'::date as date,
+    12.50 as amount,
+    'Transportation' as category,
+    'Bus fare' as description,
+    'Cash' as payment_method,
+    'City Transit' as merchant
+UNION ALL SELECT 
+    '2025-04-03'::date as date,
+    8.75 as amount,
+    'Food & Dining' as category,
+    'Lunch at cafe' as description,
+    'Debit Card' as payment_method,
+    'Corner Cafe' as merchant;
+"""
+    
+    # MySQL sample
+    mysql_sample = """
+-- Sample expense data for import (MySQL)
+-- This will return expense records in the format expected by the import utility
+SELECT 
+    STR_TO_DATE('2025-04-01', '%Y-%m-%d') as date,
+    49.99 as amount,
+    'Groceries' as category,
+    'Weekly grocery shopping' as description,
+    'Credit Card' as payment_method,
+    'Local Supermarket' as merchant
+UNION ALL SELECT 
+    STR_TO_DATE('2025-04-02', '%Y-%m-%d') as date,
+    12.50 as amount,
+    'Transportation' as category,
+    'Bus fare' as description,
+    'Cash' as payment_method,
+    'City Transit' as merchant
+UNION ALL SELECT 
+    STR_TO_DATE('2025-04-03', '%Y-%m-%d') as date,
+    8.75 as amount,
+    'Food & Dining' as category,
+    'Lunch at cafe' as description,
+    'Debit Card' as payment_method,
+    'Corner Cafe' as merchant;
+"""
+    
+    # SQL Server sample
+    mssql_sample = """
+-- Sample expense data for import (SQL Server)
+-- This will return expense records in the format expected by the import utility
+SELECT 
+    CAST('2025-04-01' AS DATE) as date,
+    49.99 as amount,
+    'Groceries' as category,
+    'Weekly grocery shopping' as description,
+    'Credit Card' as payment_method,
+    'Local Supermarket' as merchant
+UNION ALL SELECT 
+    CAST('2025-04-02' AS DATE) as date,
+    12.50 as amount,
+    'Transportation' as category,
+    'Bus fare' as description,
+    'Cash' as payment_method,
+    'City Transit' as merchant
+UNION ALL SELECT 
+    CAST('2025-04-03' AS DATE) as date,
+    8.75 as amount,
+    'Food & Dining' as category,
+    'Lunch at cafe' as description,
+    'Debit Card' as payment_method,
+    'Corner Cafe' as merchant;
+"""
+    
+    # Write the SQL templates
+    with open("static/templates/sample_import_postgresql.sql", "w") as f:
+        f.write(postgresql_sample)
+    
+    with open("static/templates/sample_import_mysql.sql", "w") as f:
+        f.write(mysql_sample)
+    
+    with open("static/templates/sample_import_mssql.sql", "w") as f:
+        f.write(mssql_sample)
+    
+    print("SQL template files created in static/templates/")
+
 def main():
     """Main function to set up VS Code environment."""
     print("Setting up VS Code environment for Expense Tracker...")
     create_vscode_config()
     create_env_example()
     create_python_path_file()
+    create_sql_templates()
     
     print("\nSetup complete! Next steps:")
     print("1. Install the recommended VS Code extensions")
@@ -190,7 +301,7 @@ def main():
     print("3. Set up a Python virtual environment")
     print("4. Install required packages")
     print("5. Initialize the database")
-    print("\nSee INSTALLATION_VSCODE.md for detailed instructions.")
+    print("\nSee INSTALLATION_VSCODE.md for detailed instructions on using the SQL Import feature.")
 
 if __name__ == "__main__":
     main()

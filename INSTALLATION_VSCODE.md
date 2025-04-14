@@ -31,6 +31,7 @@ The scripts will:
 - Install all required dependencies
 - Set up VS Code configuration files
 - Create template environment files
+- Generate sample SQL import files for data import
 
 After running the script, skip to Step 4 (Database Setup) below.
 
@@ -67,10 +68,12 @@ source venv/bin/activate
 Install the necessary packages:
 
 ```bash
-pip install flask flask-login flask-sqlalchemy flask-wtf email-validator gunicorn 
+pip install flask flask-login flask-sqlalchemy flask-wtf gunicorn 
 pip install psycopg2-binary numpy pandas plotly werkzeug markupsafe
-pip install antropic openai twilio sqlalchemy plaid-python requests trafilatura
+pip install antropic openai twilio sqlalchemy plaid-python requests trafilatura python-dotenv
 ```
+
+Note: We use our own custom email validation, so `email-validator` is no longer required.
 
 ### Step 3.5: Set Up VS Code Configuration
 
@@ -137,7 +140,7 @@ This script will:
 - Add default expense categories
 - Create a default admin user (admin@example.com / Password123!)
 
-If you encounter any issues, ensure your database connection details in the `.env` file are correct and that your PostgreSQL server is running.
+If you encounter any issues, ensure your database connection details in the `.env` file are correct and that your database server is running.
 
 ## Step 6: Install VS Code Extensions
 
@@ -198,6 +201,86 @@ Use these credentials to access admin features:
 - Email: admin@example.com
 - Password: Password123!
 
+## Importing Data from SQL
+
+The application supports importing expense data directly from SQL files or queries. This is particularly useful when you have existing expense data in another database.
+
+### Using the SQL Import Utility
+
+1. **Import from SQL File:**
+   ```python
+   from sql_import import import_expenses_from_sql_file
+   
+   # Import expenses from a SQL file
+   success, message, count = import_expenses_from_sql_file(
+       'path/to/your_query.sql',
+       user_id=1,  # The user ID to associate expenses with
+       import_description='Imported from external system'
+   )
+   
+   print(f"Import result: {message}")
+   print(f"Imported {count} records")
+   ```
+
+2. **Import from SQL Query:**
+   ```python
+   from sql_import import import_expenses_from_sql
+   
+   # SQL query to retrieve expense data
+   query = """
+   SELECT 
+       date, 
+       amount, 
+       category, 
+       description, 
+       payment_method, 
+       merchant
+   FROM external_expenses
+   WHERE user_id = 123
+   """
+   
+   # Import expenses from the SQL query
+   success, message, count = import_expenses_from_sql(
+       query,
+       user_id=1,
+       import_description='Imported from external database'
+   )
+   ```
+
+3. **Import from External Database Table:**
+   ```python
+   from sql_import import import_expenses_from_database_table
+   
+   # Import from external database
+   success, message, count = import_expenses_from_database_table(
+       table_name='expenses',
+       db_url='postgresql://username:password@hostname/database',
+       user_id=1,
+       import_description='Imported from legacy system'
+   )
+   ```
+
+### Data Format Requirements
+
+The SQL query or file must return data with these mandatory columns:
+- `date`: The date of the expense (in a recognizable date format)
+- `amount`: The amount of the expense (numeric)
+- `category`: The expense category (text)
+- `description`: Description of the expense (text)
+
+Optional columns:
+- `payment_method`: Payment method used (text)
+- `merchant`: Merchant/vendor name (text)
+
+### Sample SQL Files
+
+The setup script generates sample SQL import files for different database dialects in the `static/templates` folder:
+- `sample_import_postgresql.sql`: Sample for PostgreSQL
+- `sample_import_mysql.sql`: Sample for MySQL
+- `sample_import_mssql.sql`: Sample for SQL Server
+
+You can use these as templates for your own import files.
+
 ## Troubleshooting
 
 ### Database Connection Issues
@@ -230,6 +313,13 @@ If port 5000 is already in use, you can change it in the `main.py` file or run:
 ```bash
 python main.py --port=5001
 ```
+
+### Email Validation Issues
+
+If you encounter email validation errors, check:
+1. We use our own custom email validator instead of the external library
+2. The custom validator is in `forms.py` and doesn't require external dependencies
+3. The validator performs comprehensive Gmail validation for detecting fake accounts
 
 ## Development Tips
 
