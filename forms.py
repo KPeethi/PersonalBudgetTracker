@@ -8,6 +8,7 @@ from flask_wtf.file import FileField, FileRequired, FileAllowed
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, FloatField, DateField, TextAreaField, SelectField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, NumberRange, Optional
 from models import User
+import re
 
 # List of industry options for the business upgrade form
 INDUSTRY_CHOICES = [
@@ -71,17 +72,39 @@ class RegistrationForm(FlaskForm):
     
     def validate_email(self, email):
         """Validate that email is unique and appears legitimate."""
-        from gmail_validator import validate_registration_email
-        
         # First check if the email already exists in the database
         user = User.query.filter_by(email=email.data).first()
         if user:
             raise ValidationError('That email is already registered. Please use a different one.')
         
-        # Then perform additional validation for Gmail addresses
-        is_valid, message = validate_registration_email(email.data)
-        if not is_valid and message:
-            raise ValidationError(message)
+        # Custom Gmail validation directly in the form
+        if email.data and email.data.lower().endswith('@gmail.com'):
+            username = email.data.split('@')[0].lower()
+            
+            # Check minimum length
+            if len(username) < 6:
+                raise ValidationError("Gmail addresses are typically at least 6 characters before the @ symbol.")
+            
+            # Check for repeated characters (aaaaa, 11111)
+            if re.search(r'(.)\1{4,}', username):
+                raise ValidationError("This email contains too many repeated characters, which is uncommon for real addresses.")
+            
+            # Check for keyboard patterns (qwerty, 12345)
+            keyboard_patterns = ['qwerty', 'asdfgh', '123456', 'zxcvbn']
+            for pattern in keyboard_patterns:
+                if pattern in username:
+                    raise ValidationError("This email contains keyboard patterns that suggest it may be a test account.")
+            
+            # Check for test patterns
+            test_patterns = [
+                r'^test', r'test$', r'^[a-z]{1,3}\d{3,}', r'^admin', r'^user\d+',
+                r'^temp', r'^fake', r'^\d{3,}', r'^[a-z]+\d{4,}', r'^sample',
+                r'^demo', r'^dummy'
+            ]
+            
+            for pattern in test_patterns:
+                if re.search(pattern, username):
+                    raise ValidationError("This email matches patterns commonly used for test or temporary accounts.")
 
 class LoginForm(FlaskForm):
     """Form for user login."""

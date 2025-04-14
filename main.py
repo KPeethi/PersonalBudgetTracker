@@ -11,6 +11,7 @@ import csv
 import io
 import os
 import sys
+import re
 from werkzeug.utils import secure_filename
 from app import app, db
 
@@ -125,12 +126,45 @@ def login():
         
         # Gmail validation only for non-existing emails
         if form.email.data and form.email.data.lower().endswith('@gmail.com'):
-            from gmail_validator import is_valid_gmail_address
-            is_valid, message = is_valid_gmail_address(form.email.data)
-            if not is_valid and message:
+            email = form.email.data
+            username = email.split('@')[0].lower()
+            
+            # Check minimum length
+            if len(username) < 6:
+                message = "Gmail addresses are typically at least 6 characters before the @ symbol."
                 logger.debug(f"Invalid Gmail format: {message}")
                 flash(message, 'danger')
                 return render_template('login.html', title='Login', form=form)
+            
+            # Check for repeated characters (aaaaa, 11111)
+            if re.search(r'(.)\1{4,}', username):
+                message = "This email contains too many repeated characters, which is uncommon for real addresses."
+                logger.debug(f"Invalid Gmail format: {message}")
+                flash(message, 'danger')
+                return render_template('login.html', title='Login', form=form)
+            
+            # Check for keyboard patterns (qwerty, 12345)
+            keyboard_patterns = ['qwerty', 'asdfgh', '123456', 'zxcvbn']
+            for pattern in keyboard_patterns:
+                if pattern in username:
+                    message = "This email contains keyboard patterns that suggest it may be a test account."
+                    logger.debug(f"Invalid Gmail format: {message}")
+                    flash(message, 'danger')
+                    return render_template('login.html', title='Login', form=form)
+            
+            # Check for test patterns
+            test_patterns = [
+                r'^test', r'test$', r'^[a-z]{1,3}\d{3,}', r'^admin', r'^user\d+',
+                r'^temp', r'^fake', r'^\d{3,}', r'^[a-z]+\d{4,}', r'^sample',
+                r'^demo', r'^dummy'
+            ]
+            
+            for pattern in test_patterns:
+                if re.search(pattern, username):
+                    message = "This email matches patterns commonly used for test or temporary accounts."
+                    logger.debug(f"Invalid Gmail format: {message}")
+                    flash(message, 'danger')
+                    return render_template('login.html', title='Login', form=form)
         
         user = User.query.filter_by(email=form.email.data).first()
         if user:
