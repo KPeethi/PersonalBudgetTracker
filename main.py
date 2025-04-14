@@ -168,7 +168,7 @@ def login():
                       'danger')
         else:
             logger.debug(f"No user found with email: {form.email.data}")
-            flash('Login unsuccessful. Please check email and password.',
+            flash('Invalid email. This email address is not registered in our system.',
                   'danger')
     return render_template('login.html', title='Login', form=form)
 
