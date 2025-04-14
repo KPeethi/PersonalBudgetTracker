@@ -1,0 +1,36 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run Budget AI",
+            "type": "shell",
+            "command": "${command:python.interpreterPath}",
+            "args": [
+                "main.py"
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Initialize Database",
+            "type": "shell",
+            "command": "${command:python.interpreterPath}",
+            "args": [
+                "setup_mssql.py"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Create Admin User",
+            "type": "shell",
+            "command": "${command:python.interpreterPath}",
+            "args": [
+                "create_admin.py"
+            ],
+            "problemMatcher": []
+        }
+    ]
+}
