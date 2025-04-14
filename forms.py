@@ -6,9 +6,25 @@ Defines the forms used in the application.
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, FloatField, DateField, TextAreaField, SelectField
-from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, NumberRange, Optional
+from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, NumberRange, Optional
 from models import User
 import re
+
+# Custom email validator to replace wtforms Email() validator which requires email_validator package
+class CustomEmailValidator:
+    def __init__(self, message=None):
+        self.message = message or 'Invalid email address.'
+        
+    def __call__(self, form, field):
+        email = field.data
+        
+        if not email:
+            return
+            
+        # Simple regex for basic email validation
+        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(pattern, email):
+            raise ValidationError(self.message)
 
 # List of industry options for the business upgrade form
 INDUSTRY_CHOICES = [
@@ -52,7 +68,7 @@ class RegistrationForm(FlaskForm):
     ])
     email = StringField('Email', validators=[
         DataRequired(), 
-        Email()
+        CustomEmailValidator()
     ])
     password = PasswordField('Password', validators=[
         DataRequired(),
@@ -110,7 +126,7 @@ class LoginForm(FlaskForm):
     """Form for user login."""
     email = StringField('Email', validators=[
         DataRequired(), 
-        Email()
+        CustomEmailValidator()
     ])
     password = PasswordField('Password', validators=[
         DataRequired()
@@ -215,7 +231,7 @@ class BusinessUpgradeRequestForm(FlaskForm):
     ])
     business_email = StringField('Business Email', validators=[
         Optional(),
-        Email()
+        CustomEmailValidator()
     ])
     phone_number = StringField('Phone Number', validators=[
         Optional(),
