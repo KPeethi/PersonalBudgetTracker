@@ -70,10 +70,18 @@ class RegistrationForm(FlaskForm):
             raise ValidationError('That username is already taken. Please choose a different one.')
     
     def validate_email(self, email):
-        """Validate that email is unique."""
+        """Validate that email is unique and appears legitimate."""
+        from email_validator import validate_registration_email
+        
+        # First check if the email already exists in the database
         user = User.query.filter_by(email=email.data).first()
         if user:
             raise ValidationError('That email is already registered. Please use a different one.')
+        
+        # Then perform additional validation for Gmail addresses
+        is_valid, message = validate_registration_email(email.data)
+        if not is_valid:
+            raise ValidationError(message)
 
 class LoginForm(FlaskForm):
     """Form for user login."""
