@@ -1,240 +1,252 @@
 """
-SQL Server setup script for Budget AI application.
-Creates all necessary tables and admin user.
+SQL Server setup script for the Budget AI application.
+This script creates all necessary database tables for SQL Server.
 """
-import logging
-import sys
+
 import os
-from sqlalchemy import create_engine, text, inspect
-from werkzeug.security import generate_password_hash
+import sys
+import time
+from sqlalchemy import text, inspect
+import werkzeug.security
 
-# Setup logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Handle relative imports
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-# Load environment variables
+# Load environment variables from .env file
 try:
     from dotenv import load_dotenv
     load_dotenv()
-    logger.info("Loaded environment variables from .env file")
+    print("Loaded environment variables from .env file")
 except ImportError:
-    logger.info("Python-dotenv not installed, using environment variables directly")
+    print("python-dotenv not installed, using environment variables directly")
 
-# Get database connection URL
-DATABASE_URL = os.environ.get('DATABASE_URL')
-if not DATABASE_URL:
-    logger.error("DATABASE_URL environment variable is not set")
+# Import Flask app and database
+try:
+    from app import app, db
+    from models import User
+except ImportError as e:
+    print(f"Error importing application modules: {e}")
+    print("Make sure you're running this script from the project root directory.")
     sys.exit(1)
 
-# Create database engine
-engine = create_engine(DATABASE_URL)
-
-def execute_sql(sql, params=None):
-    """Execute SQL safely with proper error handling."""
+def check_database_connection():
+    """Verify database connection."""
     try:
-        with engine.connect() as conn:
-            if params:
-                result = conn.execute(text(sql), params)
-            else:
-                result = conn.execute(text(sql))
-            conn.commit()
-            return True, result
+        with app.app_context():
+            # Test the connection by executing a simple query
+            db.session.execute(text("SELECT 1"))
+            db.session.commit()
+            print("Database connection successful!")
+            return True
     except Exception as e:
-        logger.error(f"SQL Error: {str(e)}")
-        return False, None
+        print(f"Database connection failed: {e}")
+        return False
 
-def check_table_exists(table_name):
+def check_if_table_exists(table_name):
     """Check if a table exists in the database."""
-    inspector = inspect(engine)
-    return table_name in inspector.get_table_names()
+    with app.app_context():
+        inspector = inspect(db.engine)
+        return table_name in inspector.get_table_names()
 
 def create_tables():
-    """Create all necessary tables for Budget AI application."""
-    
-    # Create users table
-    if not check_table_exists('users'):
-        logger.info("Creating users table...")
-        users_sql = """
-        CREATE TABLE users (
-            id INT IDENTITY(1,1) PRIMARY KEY,
-            username NVARCHAR(64) NOT NULL UNIQUE,
-            email NVARCHAR(120) NOT NULL UNIQUE,
-            password_hash NVARCHAR(256) NOT NULL,
-            created_at DATETIME DEFAULT GETDATE(),
-            is_admin BIT DEFAULT 0,
-            is_business_user BIT DEFAULT 0,
-            last_login DATETIME NULL,
-            is_active BIT DEFAULT 1,
-            is_suspended BIT DEFAULT 0,
-            suspension_reason NVARCHAR(255) NULL
-        )
-        """
-        success, _ = execute_sql(users_sql)
-        if not success:
+    """Create all database tables."""
+    with app.app_context():
+        try:
+            # Create all tables
+            db.create_all()
+            print("All tables created successfully!")
+            return True
+        except Exception as e:
+            print(f"Error creating tables: {e}")
             return False
-        logger.info("Users table created successfully")
-    else:
-        logger.info("Users table already exists")
-    
-    # Create expenses table
-    if not check_table_exists('expenses'):
-        logger.info("Creating expenses table...")
-        expenses_sql = """
-        CREATE TABLE expenses (
-            id INT IDENTITY(1,1) PRIMARY KEY,
-            date DATE NOT NULL DEFAULT GETDATE(),
-            description NVARCHAR(255) NOT NULL,
-            category NVARCHAR(100) NOT NULL,
-            amount FLOAT NOT NULL,
-            user_id INT NULL REFERENCES users(id),
-            created_at DATETIME DEFAULT GETDATE(),
-            payment_method NVARCHAR(50) NULL,
-            merchant NVARCHAR(100) NULL,
-            excel_import_id INT NULL
-        )
-        """
-        success, _ = execute_sql(expenses_sql)
-        if not success:
-            return False
-        logger.info("Expenses table created successfully")
-    else:
-        logger.info("Expenses table already exists")
-    
-    # Create budgets table
-    if not check_table_exists('budgets'):
-        logger.info("Creating budgets table...")
-        budgets_sql = """
-        CREATE TABLE budgets (
-            id INT IDENTITY(1,1) PRIMARY KEY,
-            user_id INT NOT NULL REFERENCES users(id),
-            total_budget FLOAT DEFAULT 3000.0,
-            food FLOAT DEFAULT 500.0,
-            transportation FLOAT DEFAULT 300.0,
-            entertainment FLOAT DEFAULT 200.0,
-            bills FLOAT DEFAULT 800.0,
-            shopping FLOAT DEFAULT 400.0,
-            other FLOAT DEFAULT 800.0,
-            month INT DEFAULT DATEPART(month, GETDATE()),
-            year INT DEFAULT DATEPART(year, GETDATE()),
-            created_at DATETIME DEFAULT GETDATE(),
-            updated_at DATETIME DEFAULT GETDATE()
-        )
-        """
-        success, _ = execute_sql(budgets_sql)
-        if not success:
-            return False
-        logger.info("Budgets table created successfully")
-    else:
-        logger.info("Budgets table already exists")
-    
-    # Create business_upgrade_requests table
-    if not check_table_exists('business_upgrade_requests'):
-        logger.info("Creating business_upgrade_requests table...")
-        business_requests_sql = """
-        CREATE TABLE business_upgrade_requests (
-            id INT IDENTITY(1,1) PRIMARY KEY,
-            user_id INT NOT NULL REFERENCES users(id),
-            status NVARCHAR(20) DEFAULT 'pending',
-            company_name NVARCHAR(100) NOT NULL,
-            industry NVARCHAR(100) NULL,
-            business_email NVARCHAR(120) NULL,
-            phone_number NVARCHAR(20) NULL,
-            reason NVARCHAR(MAX) NULL,
-            admin_notes NVARCHAR(MAX) NULL,
-            handled_by INT NULL REFERENCES users(id),
-            created_at DATETIME DEFAULT GETDATE(),
-            updated_at DATETIME DEFAULT GETDATE()
-        )
-        """
-        success, _ = execute_sql(business_requests_sql)
-        if not success:
-            return False
-        logger.info("Business_upgrade_requests table created successfully")
-    else:
-        logger.info("Business_upgrade_requests table already exists")
-    
-    # Create excel_imports table
-    if not check_table_exists('excel_imports'):
-        logger.info("Creating excel_imports table...")
-        excel_imports_sql = """
-        CREATE TABLE excel_imports (
-            id INT IDENTITY(1,1) PRIMARY KEY,
-            user_id INT NOT NULL REFERENCES users(id),
-            filename NVARCHAR(255) NOT NULL,
-            file_path NVARCHAR(512) NOT NULL,
-            file_size INT NOT NULL,
-            num_rows INT NULL,
-            records_imported INT NULL,
-            status NVARCHAR(20) DEFAULT 'pending',
-            error_message NVARCHAR(MAX) NULL,
-            description NVARCHAR(MAX) NULL,
-            upload_date DATETIME DEFAULT GETDATE(),
-            completed_at DATETIME NULL,
-            created_at DATETIME DEFAULT GETDATE()
-        )
-        """
-        success, _ = execute_sql(excel_imports_sql)
-        if not success:
-            return False
-        logger.info("Excel_imports table created successfully")
-    else:
-        logger.info("Excel_imports table already exists")
-    
-    # Add more tables as needed
-    
-    return True
 
 def create_admin_user():
-    """Create admin user if it doesn't exist."""
-    # Check if admin exists
-    check_sql = "SELECT COUNT(*) FROM users WHERE email = 'admin@example.com'"
-    success, result = execute_sql(check_sql)
-    
-    if success:
-        count = result.scalar()
-        if count == 0:
-            logger.info("Creating admin user...")
-            # Hash the password
-            password_hash = generate_password_hash("Password123!")
-            
-            # Insert admin user
-            insert_sql = """
-            INSERT INTO users (username, email, password_hash, is_admin, is_active)
-            VALUES ('admin', 'admin@example.com', :password_hash, 1, 1)
-            """
-            success, _ = execute_sql(insert_sql, {"password_hash": password_hash})
-            if success:
-                logger.info("Admin user created successfully")
+    """Create an admin user if no users exist."""
+    with app.app_context():
+        try:
+            user_count = User.query.count()
+            if user_count == 0:
+                # Create admin user
+                admin = User(
+                    username="admin",
+                    email="admin@example.com",
+                    password_hash=werkzeug.security.generate_password_hash("Password123!"),
+                    is_admin=True
+                )
+                db.session.add(admin)
+                db.session.commit()
+                print("Admin user created: admin@example.com / Password123!")
                 return True
             else:
-                logger.error("Failed to create admin user")
-                return False
-        else:
-            logger.info("Admin user already exists")
+                print(f"Users already exist in the database ({user_count} found). Skipping admin creation.")
+                return True
+        except Exception as e:
+            print(f"Error creating admin user: {e}")
+            return False
+
+def add_business_user_field():
+    """Add is_business_user column to users table if it doesn't exist."""
+    with app.app_context():
+        try:
+            print("Checking if is_business_user field exists in users table.")
+            with db.engine.connect() as conn:
+                # Check if column exists - SQL Server syntax
+                column_exists_query = text("""
+                SELECT COUNT(*) AS column_exists
+                FROM information_schema.columns 
+                WHERE table_name='users' AND column_name='is_business_user'
+                """)
+                
+                result = conn.execute(column_exists_query)
+                column_exists = result.scalar() > 0
+                
+                if not column_exists:
+                    print("Adding is_business_user column to users table...")
+                    # SQL Server syntax for adding a column
+                    add_column_query = text("""
+                    ALTER TABLE users 
+                    ADD is_business_user BIT NOT NULL DEFAULT 0
+                    """)
+                    
+                    conn.execute(add_column_query)
+                    print("Successfully added is_business_user column to users table.")
+                else:
+                    print("is_business_user column already exists in users table.")
+            
             return True
-    else:
-        logger.error("Failed to check for existing admin user")
-        return False
+        except Exception as e:
+            print(f"Error adding is_business_user field: {e}")
+            return False
+
+def create_business_upgrade_requests_table():
+    """Create the business_upgrade_requests table if it doesn't exist."""
+    with app.app_context():
+        if check_if_table_exists('business_upgrade_requests'):
+            print("business_upgrade_requests table already exists.")
+            return True
+        
+        try:
+            print("Creating business_upgrade_requests table...")
+            with db.engine.connect() as conn:
+                # Create the table with SQL Server compatible syntax
+                create_table_query = text("""
+                CREATE TABLE business_upgrade_requests (
+                    id INT IDENTITY(1,1) PRIMARY KEY,
+                    user_id INTEGER NOT NULL FOREIGN KEY REFERENCES users(id),
+                    status VARCHAR(20) DEFAULT 'pending',
+                    company_name VARCHAR(100) NOT NULL,
+                    industry VARCHAR(100),
+                    business_email VARCHAR(120),
+                    phone_number VARCHAR(20),
+                    reason TEXT,
+                    admin_notes TEXT,
+                    handled_by INTEGER FOREIGN KEY REFERENCES users(id),
+                    created_at DATETIME DEFAULT GETDATE(),
+                    updated_at DATETIME DEFAULT GETDATE()
+                )
+                """)
+                
+                conn.execute(create_table_query)
+                print("Successfully created business_upgrade_requests table.")
+                return True
+        except Exception as e:
+            print(f"Error creating business_upgrade_requests table: {e}")
+            return False
+
+def create_excel_imports_table():
+    """Create the excel_imports table if it doesn't exist."""
+    with app.app_context():
+        if check_if_table_exists('excel_imports'):
+            print("excel_imports table already exists.")
+            return True
+        
+        try:
+            print("Creating excel_imports table...")
+            with db.engine.connect() as conn:
+                # Create the table with SQL Server compatible syntax
+                create_table_query = text("""
+                CREATE TABLE excel_imports (
+                    id INT IDENTITY(1,1) PRIMARY KEY,
+                    user_id INTEGER NOT NULL FOREIGN KEY REFERENCES users(id),
+                    filename VARCHAR(255) NOT NULL,
+                    file_path VARCHAR(512) NOT NULL,
+                    file_size INTEGER NOT NULL,
+                    num_rows INTEGER,
+                    records_imported INTEGER,
+                    status VARCHAR(20) DEFAULT 'pending',
+                    error_message TEXT,
+                    description TEXT,
+                    upload_date DATETIME DEFAULT GETDATE(),
+                    completed_at DATETIME,
+                    created_at DATETIME DEFAULT GETDATE()
+                )
+                """)
+                
+                conn.execute(create_table_query)
+                print("Successfully created excel_imports table.")
+                return True
+        except Exception as e:
+            print(f"Error creating excel_imports table: {e}")
+            return False
 
 def main():
-    """Main function to set up the database."""
-    logger.info("Starting Budget AI SQL Server setup...")
+    """Main setup function."""
+    print("-" * 50)
+    print("Budget AI - SQL Server Setup")
+    print("-" * 50)
     
-    # Create tables
+    # Step 1: Check database connection
+    print("\nStep 1: Checking database connection...")
+    if not check_database_connection():
+        print("Database connection failed. Please check your connection string.")
+        return False
+    
+    # Step 2: Create all tables
+    print("\nStep 2: Creating database tables...")
     if not create_tables():
-        logger.error("Failed to create tables")
+        print("Failed to create tables. Aborting setup.")
         return False
     
-    # Create admin user
+    # Step 3: Create admin user
+    print("\nStep 3: Creating admin user...")
     if not create_admin_user():
-        logger.error("Failed to create admin user")
+        print("Failed to create admin user. Aborting setup.")
         return False
     
-    logger.info("Budget AI SQL Server setup completed successfully")
+    # Step 4: Add business user field
+    print("\nStep 4: Adding business user field...")
+    if not add_business_user_field():
+        print("Failed to add business user field. Aborting setup.")
+        return False
+    
+    # Step 5: Create business upgrade requests table
+    print("\nStep 5: Creating business upgrade requests table...")
+    if not create_business_upgrade_requests_table():
+        print("Failed to create business upgrade requests table. Aborting setup.")
+        return False
+    
+    # Step 6: Create excel imports table
+    print("\nStep 6: Creating excel imports table...")
+    if not create_excel_imports_table():
+        print("Failed to create excel imports table. Aborting setup.")
+        return False
+    
+    print("\nSetup completed successfully!")
+    print("-" * 50)
+    print("You can now start the application by running:")
+    print("python main.py")
+    print("-" * 50)
+    
     return True
 
 if __name__ == "__main__":
-    success = main()
-    if not success:
+    try:
+        success = main()
+        if not success:
+            sys.exit(1)
+    except KeyboardInterrupt:
+        print("\nSetup interrupted by user.")
         sys.exit(1)
-    sys.exit(0)
+    except Exception as e:
+        print(f"\nUnexpected error: {e}")
+        sys.exit(1)

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Test Mode - Budget AI{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Test Mode</h3>
+                </div>
+                <div class="card-body">
+                    <h4 class="card-title">You are in test mode</h4>
+                    <p class="card-text">
+                        This version of Budget AI is running without authentication for testing purposes.
+                        You are automatically logged in as a test user with admin privileges.
+                    </p>
+                    <p class="card-text">
+                        <strong>Username:</strong> {{ current_user.username }}<br>
+                        <strong>Email:</strong> {{ current_user.email }}<br>
+                        <strong>Admin:</strong> {{ "Yes" if current_user.is_admin else "No" }}<br>
+                        <strong>Business User:</strong> {{ "Yes" if current_user.is_business_user else "No" }}
+                    </p>
+                    <div class="alert alert-warning">
+                        <strong>Warning:</strong> This mode is not secure and should only be used for testing.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Navigation</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg btn-block">
+                                <i class="fas fa-home"></i> Home
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-info btn-lg btn-block">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('admin') }}" class="btn btn-warning btn-lg btn-block">
+                                <i class="fas fa-user-shield"></i> Admin
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('profile') }}" class="btn btn-secondary btn-lg btn-block">
+                                <i class="fas fa-user"></i> Profile
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('summary') }}" class="btn btn-success btn-lg btn-block">
+                                <i class="fas fa-chart-bar"></i> Summary
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('import_page') }}" class="btn btn-primary btn-lg btn-block">
+                                <i class="fas fa-file-import"></i> Import
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('receipts') }}" class="btn btn-info btn-lg btn-block">
+                                <i class="fas fa-receipt"></i> Receipts
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('budget_page') }}" class="btn btn-warning btn-lg btn-block">
+                                <i class="fas fa-money-bill"></i> Budget
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

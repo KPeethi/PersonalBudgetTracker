@@ -15,6 +15,15 @@
             }
         },
         {
+            "label": "Run Budget AI - Test Mode",
+            "type": "shell",
+            "command": "${command:python.interpreterPath}",
+            "args": [
+                "test_app.py"
+            ],
+            "problemMatcher": []
+        },
+        {
             "label": "Initialize Database",
             "type": "shell",
             "command": "${command:python.interpreterPath}",

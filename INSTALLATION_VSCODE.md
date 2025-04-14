@@ -45,19 +45,14 @@ pip install -r requirements.txt
 Create a `.env` file in the project root with the following content (already provided in the project):
 
 ```
-DATABASE_URL=mssql+pyodbc://NAME\\kulka@NAME\\SQLEXPRESS/budget_ai?driver=ODBC+Driver+17+for+SQL+Server
+DATABASE_URL=mssql+pyodbc:///?odbc_connect=DRIVER={ODBC Driver 17 for SQL Server};SERVER=localhost\SQLEXPRESS;DATABASE=budget_ai;Trusted_Connection=yes
 FLASK_SECRET_KEY=myRandomSecretKey123!
 SESSION_SECRET=myRandomSecretKey123!
 ```
 
-Update the database URL with your SQL Server information:
-- Replace `NAME\\kulka` with your Windows username
-- Replace `NAME\\SQLEXPRESS` with your SQL Server instance name
-- Replace `budget_ai` with your database name
-
-If you're having trouble with this format, you can try the Trusted Connection format:
-```
-DATABASE_URL=mssql+pyodbc:///?odbc_connect=DRIVER={ODBC Driver 17 for SQL Server};SERVER=YOUR_SERVER\\SQLEXPRESS;DATABASE=budget_ai;Trusted_Connection=yes
+This connection string uses Windows Authentication (Trusted Connection) to connect to your local SQL Server Express instance. You may need to adjust:
+- The `SERVER` value if your SQL Server instance has a different name than SQLEXPRESS
+- The `DATABASE` value if you want to use a different database name
 ```
 
 ### 6. Create the database
@@ -87,9 +82,26 @@ This project includes VS Code tasks to make common operations easier:
 1. Press `Ctrl+Shift+P` to open the Command Palette
 2. Type "Tasks: Run Task" and select it
 3. Choose from the available tasks:
-   - "Run Budget AI" - Starts the application
+   - "Run Budget AI" - Starts the application normally (requires login)
+   - "Run Budget AI - Test Mode" - Starts in test mode without login requirements
    - "Initialize Database" - Sets up the database tables
    - "Create Admin User" - Creates an admin user
+
+## Test Mode for Developers and Testers
+
+For testing purposes, you can run the application in test mode which bypasses all login requirements:
+
+```bash
+python test_app.py
+```
+
+This will:
+1. Start the app on port 5001 (regular app uses port 5000)
+2. Automatically create a test user with admin and business user privileges
+3. Allow access to all parts of the application without login
+4. Show a test mode indicator at the top of the page
+
+**Warning**: Test mode should only be used during development and testing, not in production environments.
 
 ## Troubleshooting
 
