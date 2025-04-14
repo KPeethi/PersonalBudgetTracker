@@ -124,10 +124,10 @@ def login():
         logger.debug(f"Login form submitted with email: {form.email.data}")
         
         # Gmail validation only for non-existing emails
-        if form.email.data.lower().endswith('@gmail.com'):
-            from email_validator import is_valid_gmail_address
+        if form.email.data and form.email.data.lower().endswith('@gmail.com'):
+            from gmail_validator import is_valid_gmail_address
             is_valid, message = is_valid_gmail_address(form.email.data)
-            if not is_valid:
+            if not is_valid and message:
                 logger.debug(f"Invalid Gmail format: {message}")
                 flash(message, 'danger')
                 return render_template('login.html', title='Login', form=form)
