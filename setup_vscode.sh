@@ -17,7 +17,7 @@ echo "Activating virtual environment..."
 source venv/bin/activate
 
 echo "Installing dependencies..."
-pip install flask flask-login flask-sqlalchemy flask-wtf email-validator gunicorn psycopg2-binary numpy pandas plotly werkzeug markupsafe antropic openai twilio sqlalchemy plaid-python requests trafilatura
+pip install flask flask-login flask-sqlalchemy flask-wtf email-validator gunicorn pyodbc numpy pandas plotly werkzeug markupsafe antropic openai twilio sqlalchemy plaid-python requests trafilatura python-dotenv
 
 echo "Setting up VS Code configuration..."
 python setup_vscode_env.py
