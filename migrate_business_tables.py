@@ -22,23 +22,22 @@ def add_business_user_field():
     """Add is_business_user column to users table if it doesn't exist."""
     logger.info("Checking if is_business_user field exists in users table...")
     with db.engine.connect() as conn:
-        # Check if column exists
+        # Check if column exists - SQL Server syntax
         column_exists_query = text("""
-        SELECT EXISTS (
-            SELECT 1 
-            FROM information_schema.columns 
-            WHERE table_name='users' AND column_name='is_business_user'
-        )
+        SELECT COUNT(*) AS column_exists
+        FROM information_schema.columns 
+        WHERE table_name='users' AND column_name='is_business_user'
         """)
         
-        column_exists = conn.execute(column_exists_query).scalar()
+        column_exists = conn.execute(column_exists_query).scalar() > 0
         
         if not column_exists:
             logger.info("Adding is_business_user column to users table...")
             try:
+                # SQL Server syntax for adding a column
                 add_column_query = text("""
                 ALTER TABLE users 
-                ADD COLUMN is_business_user BOOLEAN NOT NULL DEFAULT false
+                ADD is_business_user BIT NOT NULL DEFAULT 0
                 """)
                 
                 conn.execute(add_column_query)
@@ -61,10 +60,10 @@ def create_business_upgrade_requests_table():
     logger.info("Creating business_upgrade_requests table...")
     try:
         with db.engine.connect() as conn:
-            # Create the table manually to avoid conflicts with existing sequences
+            # Create the table with SQL Server compatible syntax
             create_table_query = text("""
             CREATE TABLE business_upgrade_requests (
-                id SERIAL PRIMARY KEY,
+                id INT IDENTITY(1,1) PRIMARY KEY,
                 user_id INTEGER NOT NULL REFERENCES users(id),
                 status VARCHAR(20) DEFAULT 'pending',
                 company_name VARCHAR(100) NOT NULL,
@@ -74,8 +73,8 @@ def create_business_upgrade_requests_table():
                 reason TEXT,
                 admin_notes TEXT,
                 handled_by INTEGER REFERENCES users(id),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                created_at DATETIME DEFAULT GETDATE(),
+                updated_at DATETIME DEFAULT GETDATE()
             )
             """)
             
@@ -96,19 +95,22 @@ def create_excel_imports_table():
     logger.info("Creating excel_imports table...")
     try:
         with db.engine.connect() as conn:
-            # Create the table manually to avoid conflicts with existing sequences
+            # Create the table with SQL Server compatible syntax
             create_table_query = text("""
             CREATE TABLE excel_imports (
-                id SERIAL PRIMARY KEY,
+                id INT IDENTITY(1,1) PRIMARY KEY,
                 user_id INTEGER NOT NULL REFERENCES users(id),
                 filename VARCHAR(255) NOT NULL,
                 file_path VARCHAR(512) NOT NULL,
                 file_size INTEGER NOT NULL,
                 num_rows INTEGER,
+                records_imported INTEGER,
                 status VARCHAR(20) DEFAULT 'pending',
                 error_message TEXT,
-                upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                processed_date TIMESTAMP
+                description TEXT,
+                upload_date DATETIME DEFAULT GETDATE(),
+                completed_at DATETIME,
+                created_at DATETIME DEFAULT GETDATE()
             )
             """)
             
