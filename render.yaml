@@ -1,22 +1,21 @@
 services:
-  # A web service
   - type: web
     name: budget-ai
     env: python
+    plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn --bind 0.0.0.0:$PORT --reuse-port --reload main:app
+    startCommand: gunicorn --bind 0.0.0.0:$PORT main:app
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11
       - key: DATABASE_URL
-        # Google Cloud SQL database
-        value: postgresql://postgres:PASSWORD@34.60.72.203:5432/budget_ai
+        value: postgresql+psycopg2://postgres:123456@34.133.153.251:5432/expense
+      - key: SECRET_KEY
+        value: myRandomSecretKey123!
+      - key: SESSION_SECRET
+        value: myRandomSecretKey123!
       - key: ENVIRONMENT
         value: production
-      - key: SECRET_KEY
-        generateValue: true
-      - key: FLASK_APP
-        value: main.py
+      - key: DEBUG
+        value: false
       - key: PLAID_CLIENT_ID
         value: 67a4290da237bf001e5c7ac6
       - key: PLAID_SECRET
@@ -24,6 +23,10 @@ services:
       - key: PLAID_ENV
         value: sandbox
       - key: PLAID_REDIRECT_URI
-        value: https://budget-ai.onrender.com/plaid/oauth-callback
+        fromService:
+          name: budget-ai
+          type: web
+          property: url
+        suffix: /plaid/oauth-callback
       - key: OPENAI_API_KEY
         value: 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

@@ -3,6 +3,10 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from sqlalchemy.orm import DeclarativeBase
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Import configuration
 from config import DATABASE_URL, SECRET_KEY, DEBUG
@@ -25,6 +29,9 @@ def create_app():
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
         "pool_recycle": 300,
         "pool_pre_ping": True,
+        "connect_args": {
+            "connect_timeout": 10
+        }
     }
     app.config["DEBUG"] = DEBUG
     
