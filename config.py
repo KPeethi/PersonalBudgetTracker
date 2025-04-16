@@ -35,7 +35,12 @@ IS_DEVELOPMENT = not IS_PRODUCTION
 # The application supports both PostgreSQL and MySQL
 
 # PostgreSQL is used by default on Replit
-DATABASE_URL = os.environ.get("DATABASE_URL")
+# Use Google Cloud SQL in production
+if IS_PRODUCTION:
+    DATABASE_URL = "postgresql://postgres:PASSWORD@34.60.72.203:5432/budget_ai"
+else:
+    # Use environment variable for development
+    DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://postgres:PASSWORD@34.60.72.203:5432/budget_ai")
 
 # For local MySQL deployments, uncomment and configure this:
 # DATABASE_URL = "mysql+pymysql://username:password@localhost/ExpenseDB"
