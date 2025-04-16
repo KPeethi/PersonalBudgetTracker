@@ -10,6 +10,8 @@ import calendar
 import csv
 import io
 import os
+from dotenv import load_dotenv
+load_dotenv("/etc/secrets/.env")
 import sys
 import re
 from werkzeug.utils import secure_filename
