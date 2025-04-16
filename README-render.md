@@ -12,11 +12,18 @@ This guide explains how to deploy the Budget AI application on Render.com.
 
 ### 1. Set Up PostgreSQL Database
 
-You have two options for the database:
+You have three options for the database:
 
-#### Option A: Use Your Existing Google Cloud SQL Database
+#### Option A: Use Your Existing Neon PostgreSQL Database (Recommended)
 
-If you want to use your existing Google Cloud SQL PostgreSQL database:
+You already have a Neon PostgreSQL database set up, which is perfectly compatible with Render:
+- Database connection string: `postgresql://neondb_owner:npg_Hclv1yP9IEeL@ep-lively-smoke-a5b0oxbb.us-east-2.aws.neon.tech/neondb?sslmode=require`
+
+This is the simplest option as your application is already configured to use this database.
+
+#### Option B: Use Your Google Cloud SQL Database
+
+If you want to use your Google Cloud SQL PostgreSQL database instead:
 - Make sure your database has public access enabled (shown in your screenshots)
 - Note your database connection details:
   - Host: 34.60.72.203 (from your screenshots)
@@ -24,13 +31,15 @@ If you want to use your existing Google Cloud SQL PostgreSQL database:
   - Database Name: your database name
   - Username: your username
   - Password: your password
+- Create a connection string in this format: `postgresql://username:password@34.60.72.203:5432/database_name`
 
-#### Option B: Create a New PostgreSQL Database on Render
+#### Option C: Create a New PostgreSQL Database on Render
 
 Alternatively, you can create a new PostgreSQL database on Render:
 1. In your Render dashboard, go to "New" > "PostgreSQL"
 2. Configure the database settings (name, region, plan)
 3. Create the database and note the connection details provided
+4. You'll need to migrate your data to this new database
 
 ### 2. Deploy the Web Service
 

@@ -9,10 +9,19 @@ services:
       - key: PYTHON_VERSION
         value: 3.11
       - key: DATABASE_URL
-        sync: false # this means you'll need to set it in the Render dashboard
+        # Neon PostgreSQL database
+        value: postgresql://neondb_owner:npg_Hclv1yP9IEeL@ep-lively-smoke-a5b0oxbb.us-east-2.aws.neon.tech/neondb?sslmode=require
       - key: ENVIRONMENT
         value: production
       - key: SECRET_KEY
         generateValue: true
       - key: FLASK_APP
         value: main.py
+      - key: PLAID_CLIENT_ID
+        sync: false
+      - key: PLAID_SECRET
+        sync: false
+      - key: PLAID_ENV
+        value: sandbox
+      - key: OPENAI_API_KEY
+        sync: false
