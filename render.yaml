@@ -9,8 +9,8 @@ services:
       - key: PYTHON_VERSION
         value: 3.11
       - key: DATABASE_URL
-        # Neon PostgreSQL database
-        value: postgresql://neondb_owner:npg_Hclv1yP9IEeL@ep-lively-smoke-a5b0oxbb.us-east-2.aws.neon.tech/neondb?sslmode=require
+        # Google Cloud SQL database
+        value: postgresql://postgres:CgdvKS7p@34.60.72.203:5432/budget_ai
       - key: ENVIRONMENT
         value: production
       - key: SECRET_KEY

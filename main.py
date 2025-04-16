@@ -41,6 +41,20 @@ UPLOAD_FOLDER = 'static/uploads/receipts'
 # Ensure the upload directory exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+# Health check endpoint for Render deployment
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Health check endpoint for Render"""
+    try:
+        # Attempt a simple database query to check connection
+        with app.app_context():
+            from models import User
+            User.query.limit(1).all()
+        return jsonify({"status": "healthy", "database": "connected"}), 200
+    except Exception as e:
+        app.logger.error(f"Health check failed: {str(e)}")
+        return jsonify({"status": "unhealthy", "error": str(e)}), 500
+
 # Directory for Excel uploads
 EXCEL_UPLOAD_FOLDER = 'uploads/excel'
 os.makedirs(EXCEL_UPLOAD_FOLDER, exist_ok=True)
