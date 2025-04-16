@@ -37,6 +37,8 @@
   - [7.1 System Requirements](#71-system-requirements)
   - [7.2 Installation Process](#72-installation-process)
   - [7.3 Configuration Management](#73-configuration-management)
+  - [7.4 Database Migration](#74-database-migration)
+  - [7.5 Securing Credentials](#75-securing-credentials)
 - [8. Conclusion](#8-conclusion)
   - [8.1 Current State](#81-current-state)
   - [8.2 Limitations and Constraints](#82-limitations-and-constraints)
@@ -205,6 +207,244 @@ This technology stack represents a balanced approach to implementing Budget AI's
 ## 3. Database Design
 
 [Continue with the rest of the sections...]
+
+## 7. Deployment
+
+Budget AI is designed for flexible deployment across various environments from local development machines to cloud platforms. This section details the requirements, processes, and configurations necessary for successful deployment in different environments.
+
+### 7.1 System Requirements
+
+The Budget AI platform has been designed with reasonable system requirements to ensure accessibility across a wide range of deployment environments. The following specifications represent the minimum recommended configuration for production deployment:
+
+- **Hardware Requirements**:
+  - CPU: 2+ cores
+  - RAM: 4GB minimum (8GB recommended)
+  - Storage: 10GB for application and database (excluding backups)
+
+- **Software Requirements**:
+  - Operating System: Linux (Ubuntu 20.04 LTS or later recommended), Windows Server 2016+, or macOS
+  - Python: Version 3.9 or later
+  - Database: PostgreSQL 12+ (primary), MySQL 8.0+ (alternative), or SQLite 3.30+ (development)
+  - Web Server: Gunicorn or uWSGI with Nginx for production environments
+
+- **Network Requirements**:
+  - Outbound Internet Access: Required for external API integrations (Plaid, OpenAI)
+  - Inbound Access: HTTP/HTTPS ports open for web access
+  - Secure Socket Layer (SSL): Certificate required for production deployment
+
+Development environments can operate with reduced specifications, particularly for hardware resources. The application's modular design allows components to be disabled to accommodate resource constraints in more limited environments.
+
+### 7.2 Installation Process
+
+The installation process for Budget AI follows industry standard practices for Python web applications. The process can be adapted for different deployment targets while maintaining a consistent set of core steps.
+
+#### Local Development Installation
+
+1. **Clone Repository and Set Up Environment**:
+   ```bash
+   git clone https://github.com/example/budget-ai.git
+   cd budget-ai
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+
+2. **Configure Environment Variables**:
+   - Copy `.env.example` to `.env`
+   - Update database connection string and API keys
+   - Adjust environment-specific settings
+
+3. **Initialize Database**:
+   ```bash
+   python init_database.py
+   ```
+
+4. **Run Development Server**:
+   ```bash
+   python run_app.py
+   ```
+
+#### Production Deployment (Render.com)
+
+1. **Prepare Repository**:
+   - Ensure `render.yaml` configuration is updated
+   - Verify runtime.txt specifies Python 3.11
+   - Confirm Procfile contains appropriate web server command
+
+2. **Configure Database**:
+   - Create PostgreSQL instance on Render or use external database
+   - Update DATABASE_URL in environment variables
+
+3. **Deploy Application**:
+   - Connect repository to Render
+   - Deploy using web interface or CLI
+   - Verify deployment through health check endpoint
+
+4. **Post-Deployment Configuration**:
+   - Set up custom domain if needed
+   - Configure SSL
+   - Set environment variables for API keys and secrets
+
+The deployment process is designed to be repeatable and automated where possible. Continuous integration pipelines can be configured to run tests, security checks, and automatic deployment upon successful validation.
+
+### 7.3 Configuration Management
+
+Budget AI uses a layered approach to configuration management, allowing different deployment environments to share core configuration while specializing where needed. This approach enhances maintainability while preserving flexibility.
+
+#### Configuration Sources
+
+Configuration settings are loaded from multiple sources in the following priority order:
+
+1. **Environment Variables**: Highest priority, override all other settings
+2. **Environment-Specific Config Files**: Settings for development, testing, production
+3. **Default Configuration**: Baseline settings defined in config.py
+
+This layered approach allows deployment-specific settings to be managed through environment variables without modifying source code. Critical settings like database credentials, API keys, and security parameters should always be provided through environment variables rather than configuration files.
+
+#### Key Configuration Parameters
+
+The following parameters represent the most critical configuration settings that must be properly set for each deployment:
+
+- **Database Configuration**:
+  - `DATABASE_URL`: Connection string for the primary database
+  - `DATABASE_POOL_SIZE`: Connection pool size (default: 10)
+  - `DATABASE_TIMEOUT`: Query timeout in seconds (default: 30)
+
+- **Security Configuration**:
+  - `SECRET_KEY`: Flask secret key for session security
+  - `SESSION_COOKIE_SECURE`: Set to True for production HTTPS environments
+  - `PASSWORD_SALT`: Salt for password hashing (if not using environment default)
+
+- **External API Configuration**:
+  - `PLAID_CLIENT_ID` and `PLAID_SECRET`: Credentials for Plaid API
+  - `PLAID_ENVIRONMENT`: Sandbox or production environment
+  - `OPENAI_API_KEY`: API key for OpenAI integration
+
+- **Application Behavior**:
+  - `DEBUG`: Enable debug mode (should be False in production)
+  - `LOG_LEVEL`: Logging verbosity (INFO, WARNING, ERROR)
+  - `ALLOWED_HOSTS`: List of allowed hostnames for production
+
+Detailed examples of these configuration parameters can be found in the `.env.example` file included with the application source code.
+
+### 7.4 Database Migration
+
+Budget AI supports multiple database platforms and includes tools for migrating between different database systems. This flexibility allows organizations to choose the database platform that best fits their environment and scale requirements.
+
+#### Supported Database Platforms
+
+The application has been tested and verified with the following database systems:
+
+1. **PostgreSQL**: Primary recommended database for production deployments
+   - Versions: 12.0 and later
+   - Configurations: Neon PostgreSQL (cloud), Google Cloud SQL, and self-hosted
+
+2. **MySQL/MariaDB**: Alternative option for environments with existing MySQL infrastructure
+   - Versions: MySQL 8.0+ or MariaDB 10.5+
+   - Note: Some advanced text search features have reduced functionality
+
+3. **SQLite**: Supported for development and testing environments
+   - Version: 3.30 or later
+   - Not recommended for production use due to concurrency limitations
+
+The application uses SQLAlchemy ORM abstraction, which provides consistent behavior across different database backends while leveraging platform-specific features where appropriate.
+
+#### Migrating Between Database Platforms
+
+Database migration between platforms (e.g., from Neon PostgreSQL to Google Cloud SQL) involves exporting data from the source database and importing it to the target database. The recommended migration process is as follows:
+
+1. **Preparation**:
+   - Create target database instance with appropriate configuration
+   - Set up network access between source and target databases
+   - Schedule downtime if migrating a production system
+
+2. **Schema Migration**:
+   - Use the export_database.py utility to generate schema creation scripts
+   - Review and apply schema to target database
+   - Verify table structure and constraints
+
+3. **Data Migration**:
+   - Export data from source database using export_database.py
+   - Import data to target database using appropriate methods
+   - Verify row counts and data integrity
+
+4. **Application Configuration**:
+   - Update DATABASE_URL in configuration to point to new database
+   - Update any database-specific settings
+   - Test application connectivity with new database
+
+5. **Validation**:
+   - Run application test suite against new database
+   - Verify core functionality works as expected
+   - Check performance metrics for any significant changes
+
+The export_database.py utility included with Budget AI provides specialized functions for migrating between supported database platforms while preserving data integrity.
+
+### 7.5 Securing Credentials
+
+Protecting sensitive credentials is a critical aspect of Budget AI deployment security. The application handles various types of credentials including database connection strings, API keys, and encryption secrets. This section outlines best practices for securing these credentials across different deployment environments.
+
+#### Credential Management Principles
+
+Budget AI follows these core principles for credential management:
+
+1. **Environment-Based Storage**: Credentials should be stored in environment variables or secure parameter stores, not in code or configuration files.
+
+2. **Least Privilege**: Database users and API accounts should have the minimum permissions necessary for operation.
+
+3. **Credential Rotation**: Support for rotating credentials without application downtime.
+
+4. **Secure Transmission**: Credentials should only be transmitted over encrypted connections.
+
+5. **Audit Logging**: Access to credential management systems should be logged and monitored.
+
+#### Securing Database Credentials
+
+Database credentials are particularly sensitive as they provide direct access to user data. The following practices should be implemented:
+
+- **Use Connection Strings**: Store complete connection strings in environment variables rather than individual components.
+  
+  ```
+  # Recommended
+  DATABASE_URL=postgresql://username:password@hostname:port/database
+  
+  # Not recommended
+  DB_USER=username
+  DB_PASSWORD=password
+  DB_HOST=hostname
+  DB_PORT=5432
+  DB_NAME=database
+  ```
+
+- **Connection Pooling**: Configure appropriate connection pooling to avoid repeatedly authenticating to the database.
+
+- **Read-Only Access**: For reporting and analysis purposes, create read-only database users when full write access is not required.
+
+- **Credential Isolation**: Use different database credentials for different environments (development, staging, production).
+
+#### API Key Security
+
+Budget AI integrates with external services like Plaid and OpenAI that require API keys. These keys should be protected using these measures:
+
+- **Environment Variables**: Store API keys in environment variables that are accessible only to the application process.
+
+- **Key Restrictions**: When possible, restrict API keys to specific IP addresses or functionality.
+
+- **Separate Development and Production Keys**: Never use production API keys in development environments.
+
+- **Regeneration Procedure**: Document procedures for quickly regenerating API keys if they are compromised.
+
+#### Deployment-Specific Considerations
+
+Different deployment platforms offer varying capabilities for credential management:
+
+- **Render.com Deployment**: Use Render's environment variable feature to securely store credentials. Ensure these are marked as secret values to prevent display in logs.
+
+- **Local Development**: Use .env files for local development but ensure these are excluded from version control with .gitignore.
+
+- **CI/CD Pipelines**: Use the secret management features of your CI/CD platform to inject credentials during deployment.
+
+By implementing these credential security measures, Budget AI deployments can maintain robust protection for sensitive access keys while enabling necessary functionality.
 
 ## References
 
