@@ -18,10 +18,12 @@ services:
       - key: FLASK_APP
         value: main.py
       - key: PLAID_CLIENT_ID
-        sync: false
+        value: 67a4290da237bf001e5c7ac6
       - key: PLAID_SECRET
-        sync: false
+        value: 02e5286ff3222322801b1649e99ca5
       - key: PLAID_ENV
         value: sandbox
+      - key: PLAID_REDIRECT_URI
+        value: https://budget-ai.onrender.com/plaid/oauth-callback
       - key: OPENAI_API_KEY
-        sync: false
+        value: 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
