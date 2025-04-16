@@ -1,0 +1,18 @@
+services:
+  # A web service
+  - type: web
+    name: budget-ai
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --reuse-port --reload main:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11
+      - key: DATABASE_URL
+        sync: false # this means you'll need to set it in the Render dashboard
+      - key: ENVIRONMENT
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FLASK_APP
+        value: main.py
